@@ -3,30 +3,48 @@ package dean
 import (
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
 )
 
-type id uint64
-
 type Msg struct {
-	Src id
+	dean *dean
+	src *websocket.Conn
 	Path string
 	Data []byte
+}
+
+func (m Msg) Reply() {
+	websocket.JSON.Send(m.src, m)
+}
+
+func (m Msg) Broadcast() {
+	d := m.dean
+	d.RLock()
+	for conn := range d.conns {
+		if m.src != conn {
+			websocket.JSON.Send(conn, m)
+		}
+	}
+	d.RUnlock()
 }
 
 type handler func(m Msg)
 
 type dean struct {
+	sync.RWMutex
+	conns map[*websocket.Conn]bool
+	connQ chan bool
 	handlers map[string]handler
-	bus chan(Msg)
 }
 
 func New() *dean {
 	return &dean{
+		conns: make(map[*websocket.Conn]bool),
+		connQ: make(chan bool, 10),
 		handlers: make(map[string]handler),
-		bus: make(chan(Msg)),
 	}
 }
 
@@ -40,7 +58,7 @@ func (d *dean) dial(url string) {
 			time.Sleep(time.Second)
 			continue
 		}
-		websocket.JSON.Send(ws, &Msg{Src: 1, Path: "path/to/msg", Data: []byte("foo")})
+		websocket.JSON.Send(ws, &Msg{Path: "path/to/msg", Data: []byte("foo")})
 		d.serve(ws)
 	}
 }
@@ -54,19 +72,36 @@ func (d *dean) Handle(path string, h handler) {
 }
 
 func (d *dean) receive(m Msg) {
+	time.Sleep(time.Second)
 	handler, ok := d.handlers[m.Path]
 	if ok {
 		handler(m)
 	}
 }
 
+func (d *dean) plugin(ws *websocket.Conn) {
+	d.connQ <- true
+	d.Lock()
+	d.conns[ws] = true
+	d.Unlock()
+}
+
+func (d *dean) unplug(ws *websocket.Conn) {
+	d.Lock()
+	delete(d.conns, ws)
+	d.Unlock()
+	<-d.connQ
+}
+
 func (d *dean) serve(ws *websocket.Conn) {
 	println("connected")
+	d.plugin(ws)
 	for {
-		var msg Msg
+		var msg = Msg{dean: d, src: ws}
 		if err := websocket.JSON.Receive(ws, &msg); err != nil {
 			if err == io.EOF {
 				println("disconnected")
+				d.unplug(ws)
 				break
 			}
 			println("read error", err.Error())

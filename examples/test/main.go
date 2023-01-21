@@ -9,6 +9,8 @@ import (
 
 func handler(m dean.Msg) {
 	fmt.Printf("%v\n", m)
+	m.Data = []byte("bar")
+	m.Reply()
 }
 
 func main () {
