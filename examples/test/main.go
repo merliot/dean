@@ -1,16 +1,20 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/merliot/dean"
 )
 
 func handler(m dean.Msg) {
+	fmt.Printf("%v\n", m)
 }
 
 func main () {
 	d := dean.New()
 	d.Handle("path/to/msg", handler)
-	d.Dial("ws://localhost/ws")
-	d.Serve(":80")
-	//d.ServeTLS(":443")
+	d.Dial("ws://localhost:8080/ws")
+	http.HandleFunc("/ws", d.Serve)
+	http.ListenAndServe(":8080", nil)
 }

@@ -2,6 +2,7 @@ package dean
 
 import (
 	"io"
+	"net/http"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -29,11 +30,7 @@ func New() *dean {
 	}
 }
 
-func (d *dean) receive(m Msg) {
-	println("Src", m.Src, "Path", m.Path, "Data", len(m.Data))
-}
-
-func (d *dean) Dial(url string) {
+func (d *dean) dial(url string) {
 	origin := "http://localhost/"
 
 	for {
@@ -43,29 +40,43 @@ func (d *dean) Dial(url string) {
 			time.Sleep(time.Second)
 			continue
 		}
-		println("connected")
-		for {
-			var msg Msg
-			if err := websocket.JSON.Receive(ws, &msg); err != nil {
-				if err == io.EOF {
-					println("disconected")
-					break
-				}
-				println("read error", err.Error())
-			}
-			d.receive(msg)
-		}
+		websocket.JSON.Send(ws, &Msg{Src: 1, Path: "path/to/msg", Data: []byte("foo")})
+		d.serve(ws)
 	}
+}
+
+func (d *dean) Dial(url string) {
+	go d.dial(url)
 }
 
 func (d *dean) Handle(path string, h handler) {
 	d.handlers[path] = h
 }
 
-func (d *dean) Serve(port string) error {
-	return nil
+func (d *dean) receive(m Msg) {
+	handler, ok := d.handlers[m.Path]
+	if ok {
+		handler(m)
+	}
 }
 
-func (d *dean) ServeTLS(port string) error {
-	return nil
+func (d *dean) serve(ws *websocket.Conn) {
+	println("connected")
+	for {
+		var msg Msg
+		if err := websocket.JSON.Receive(ws, &msg); err != nil {
+			if err == io.EOF {
+				println("disconnected")
+				break
+			}
+			println("read error", err.Error())
+		}
+		d.receive(msg)
+	}
+}
+
+func (d *dean) Serve(w http.ResponseWriter, r *http.Request) {
+	s := websocket.Server{Handler: websocket.Handler(d.serve)}
+	s.ServeHTTP(w, r)
+
 }
