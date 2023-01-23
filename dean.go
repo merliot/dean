@@ -13,14 +13,14 @@ type Msg struct {
 	dean *dean
 	src *websocket.Conn
 	Path string
-	Data []byte
+	Data any
 }
 
-func (m Msg) Reply() {
+func (m *Msg) Reply() {
 	websocket.JSON.Send(m.src, m)
 }
 
-func (m Msg) Broadcast() {
+func (m *Msg) Broadcast() {
 	d := m.dean
 	d.RLock()
 	for conn := range d.conns {
@@ -31,7 +31,7 @@ func (m Msg) Broadcast() {
 	d.RUnlock()
 }
 
-type handler func(m Msg)
+type handler func(m *Msg)
 
 type dean struct {
 	sync.RWMutex
@@ -58,7 +58,6 @@ func (d *dean) dial(url string) {
 			time.Sleep(time.Second)
 			continue
 		}
-		websocket.JSON.Send(ws, &Msg{Path: "path/to/msg", Data: []byte("foo")})
 		d.serve(ws)
 	}
 }
@@ -71,7 +70,7 @@ func (d *dean) Handle(path string, h handler) {
 	d.handlers[path] = h
 }
 
-func (d *dean) receive(m Msg) {
+func (d *dean) receive(m *Msg) {
 	time.Sleep(time.Second)
 	handler, ok := d.handlers[m.Path]
 	if ok {
@@ -97,8 +96,8 @@ func (d *dean) serve(ws *websocket.Conn) {
 	println("connected")
 	d.plugin(ws)
 	for {
-		var msg = Msg{dean: d, src: ws}
-		if err := websocket.JSON.Receive(ws, &msg); err != nil {
+		var msg = &Msg{dean: d, src: ws}
+		if err := websocket.JSON.Receive(ws, msg); err != nil {
 			if err == io.EOF {
 				println("disconnected")
 				d.unplug(ws)
@@ -114,4 +113,9 @@ func (d *dean) Serve(w http.ResponseWriter, r *http.Request) {
 	s := websocket.Server{Handler: websocket.Handler(d.serve)}
 	s.ServeHTTP(w, r)
 
+}
+
+func (d *dean) Run(run func(*Msg)) {
+	var msg = Msg{dean: d}
+	run(&msg)
 }

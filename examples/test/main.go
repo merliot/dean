@@ -1,22 +1,31 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"net/http"
 
 	"github.com/merliot/dean"
 )
 
-func handler(m dean.Msg) {
+var state struct {
+	Foo int
+}
+
+func getState(m dean.Msg) {
 	fmt.Printf("%v\n", m)
-	m.Data = []byte("bar")
+	m.Data = state
 	m.Reply()
 }
 
+//go:embed index.html
+var fs embed.FS
+
 func main () {
 	d := dean.New()
-	d.Handle("path/to/msg", handler)
-	d.Dial("ws://localhost:8080/ws")
+	d.Handle("get/state", getState)
+	//d.Dial("ws://localhost:8080/ws")
 	http.HandleFunc("/ws", d.Serve)
+	http.Handle("/", http.FileServer(http.FS(fs)))
 	http.ListenAndServe(":8080", nil)
 }
