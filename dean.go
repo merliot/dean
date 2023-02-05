@@ -10,112 +10,155 @@ import (
 )
 
 type Msg struct {
-	dean *dean
-	src *websocket.Conn
-	Path string
-	Data any
+	bus *Bus
+	src Socket
+	payload []byte
+}
+
+func NewMsg(payload []byte) *Msg {
+	return &Msg{payload: payload}
+}
+
+func (m *Msg) Bytes() []byte {
+	return m.payload
 }
 
 func (m *Msg) Reply() {
-	websocket.JSON.Send(m.src, m)
+	m.src.Send(m)
 }
 
 func (m *Msg) Broadcast() {
-	d := m.dean
-	d.RLock()
-	for conn := range d.conns {
-		if m.src != conn {
-			websocket.JSON.Send(conn, m)
+	m.bus.broadcast(m)
+}
+
+type Socket interface {
+	Send(*Msg)
+}
+
+type Bus struct {
+	mu      sync.RWMutex
+	sockets map[Socket]bool
+	socketQ chan bool
+	handler func(*Msg)
+}
+
+func NewBus(maxSockets int, handler func(*Msg)) *Bus {
+	if handler == nil {
+		handler = func(*Msg){}
+	}
+	return &Bus{
+		sockets: make(map[Socket]bool),
+		socketQ: make(chan bool, maxSockets),
+		handler: handler,
+	}
+}
+
+func (b *Bus) plugin(s Socket) {
+	b.socketQ <- true
+	b.mu.Lock()
+	b.sockets[s] = true
+	b.mu.Unlock()
+}
+
+func (b *Bus) unplug(s Socket) {
+	b.mu.Lock()
+	delete(b.sockets, s)
+	b.mu.Unlock()
+	<-b.socketQ
+}
+
+func (b *Bus) broadcast(msg *Msg) {
+	b.mu.RLock()
+	for sock := range b.sockets {
+		if msg.src != sock {
+			sock.Send(msg)
 		}
 	}
-	d.RUnlock()
+	b.mu.RUnlock()
 }
 
-type handler func(m *Msg)
-
-type dean struct {
-	sync.RWMutex
-	conns map[*websocket.Conn]bool
-	connQ chan bool
-	handlers map[string]handler
+func (b *Bus) receive(msg *Msg) {
+	b.handler(msg)
 }
 
-func New() *dean {
-	return &dean{
-		conns: make(map[*websocket.Conn]bool),
-		connQ: make(chan bool, 10),
-		handlers: make(map[string]handler),
+type injector struct {
+	bus *Bus
+}
+
+func NewInjector(bus *Bus) *injector {
+	i := &injector{bus: bus}
+	bus.plugin(i)
+	return i
+}
+
+func (i *injector) Send(msg *Msg) {
+	// >/dev/null
+}
+
+func (i *injector) Inject(msg *Msg) {
+	msg.bus, msg.src = i.bus, i
+	i.bus.receive(msg)
+}
+
+type webSocket struct {
+	bus *Bus
+	conn *websocket.Conn
+}
+
+func NewWebSocket(bus *Bus) *webSocket {
+	return &webSocket{bus: bus}
+}
+
+func (w *webSocket) Send(msg *Msg) {
+	if w.conn != nil {
+		websocket.Message.Send(w.conn, msg.payload)
 	}
 }
 
-func (d *dean) dial(url string) {
+func (w *webSocket) Dial(url string) {
 	origin := "http://localhost/"
 
 	for {
-		ws, err := websocket.Dial(url, "", origin)
+		conn, err := websocket.Dial(url, "", origin)
 		if err != nil {
 			println("dial error", err.Error())
 			time.Sleep(time.Second)
 			continue
 		}
-		d.serve(ws)
+		w.serve(conn)
+		conn.Close()
 	}
 }
 
-func (d *dean) Dial(url string) {
-	go d.dial(url)
-}
-
-func (d *dean) Handle(path string, h handler) {
-	d.handlers[path] = h
-}
-
-func (d *dean) receive(m *Msg) {
-	time.Sleep(time.Second)
-	handler, ok := d.handlers[m.Path]
-	if ok {
-		handler(m)
-	}
-}
-
-func (d *dean) plugin(ws *websocket.Conn) {
-	d.connQ <- true
-	d.Lock()
-	d.conns[ws] = true
-	d.Unlock()
-}
-
-func (d *dean) unplug(ws *websocket.Conn) {
-	d.Lock()
-	delete(d.conns, ws)
-	d.Unlock()
-	<-d.connQ
-}
-
-func (d *dean) serve(ws *websocket.Conn) {
+func (w *webSocket) serve(conn *websocket.Conn) {
 	println("connected")
-	d.plugin(ws)
+	w.conn = conn
+	w.bus.plugin(w)
 	for {
-		var msg = &Msg{dean: d, src: ws}
-		if err := websocket.JSON.Receive(ws, msg); err != nil {
+		var msg = &Msg{bus: w.bus, src: w}
+		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
 			if err == io.EOF {
 				println("disconnected")
-				d.unplug(ws)
+				w.bus.unplug(w)
+				w.conn = nil
 				break
 			}
 			println("read error", err.Error())
 		}
-		d.receive(msg)
+		w.bus.receive(msg)
 	}
 }
 
-func (d *dean) Serve(w http.ResponseWriter, r *http.Request) {
-	s := websocket.Server{Handler: websocket.Handler(d.serve)}
-	s.ServeHTTP(w, r)
-
+type webSocketServer struct {
+	bus *Bus
 }
 
-func (d *dean) Run(run func(*Msg)) {
-	var msg = Msg{dean: d}
-	run(&msg)
+func NewWebSocketServer(bus *Bus) *webSocketServer {
+	return &webSocketServer{bus: bus}
+}
+
+func (s *webSocketServer) Serve(w http.ResponseWriter, r *http.Request) {
+	ws := NewWebSocket(s.bus)
+	server := websocket.Server{Handler: websocket.Handler(ws.serve)}
+	server.ServeHTTP(w, r)
 }
