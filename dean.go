@@ -2,7 +2,6 @@ package dean
 
 import (
 	"io"
-	"net/http"
 	"sync"
 	"time"
 
@@ -147,18 +146,4 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 		}
 		w.bus.receive(msg)
 	}
-}
-
-type webSocketServer struct {
-	bus *Bus
-}
-
-func NewWebSocketServer(bus *Bus) *webSocketServer {
-	return &webSocketServer{bus: bus}
-}
-
-func (s *webSocketServer) Serve(w http.ResponseWriter, r *http.Request) {
-	ws := NewWebSocket(s.bus)
-	server := websocket.Server{Handler: websocket.Handler(ws.serve)}
-	server.ServeHTTP(w, r)
 }

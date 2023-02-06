@@ -32,20 +32,14 @@ func handler(msg *dean.Msg) {
 
 func main () {
 
-	bus := dean.NewBus(10, handler)
-
-	client := dean.NewWebSocket(bus)
-	go client.Dial("ws://localhost:8080/ws")
-
-	server := dean.NewWebSocketServer(bus)
-	http.HandleFunc("/ws", server.Serve)
 	http.Handle("/", http.FileServer(http.FS(fs)))
-	go http.ListenAndServe(":8080", nil)
 
-	host := dean.NewInjector(bus)
+	thing := dean.NewThing(10, handler)
+	thing.Addr = ":8080"
+	go thing.ListenAndServe()
 
 	for {
-		host.Inject(dean.NewMsg([]byte("hello")))
+		thing.Feed(dean.NewMsg([]byte("hello")))
 		time.Sleep(time.Second)
 	}
 }
