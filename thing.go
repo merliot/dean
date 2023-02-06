@@ -25,12 +25,12 @@ func NewThing(name string, maxSockets int, handler func(*Msg)) *Thing {
 }
 
 func (t *Thing) Dial(url string) {
-	client := NewWebSocket("dial " + url, t.bus)
+	client := NewWebSocket("websocket:" + url, t.bus)
 	go client.Dial(url)
 }
 
 func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
-	ws := NewWebSocket("serve " + r.Host, t.bus)
+	ws := NewWebSocket("websocket:" + r.Host, t.bus)
 	s := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	s.ServeHTTP(w, r)
 }

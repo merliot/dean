@@ -125,7 +125,7 @@ func (i *injector) Send(msg *Msg) {
 }
 
 func (i *injector) Name() string {
-	return "injector: " + i.name + ", bus: " + i.bus.Name()
+	return i.name
 }
 
 func (i *injector) Inject(msg *Msg) {
@@ -153,7 +153,7 @@ func (w *webSocket) Send(msg *Msg) {
 }
 
 func (w *webSocket) Name() string {
-	return "websocket: " + w.name + ", bus: " + w.bus.Name()
+	return w.name
 }
 
 func (w *webSocket) Dial(url string) {
