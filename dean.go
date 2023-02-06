@@ -28,10 +28,12 @@ func (m *Msg) String() string {
 }
 
 func (m *Msg) Reply() {
+	println("Reply: src", m.src.Name())
 	m.src.Send(m)
 }
 
 func (m *Msg) Broadcast() {
+	println("Broadcast: src", m.src.Name())
 	m.bus.broadcast(m)
 }
 
@@ -47,24 +49,31 @@ func (m *Msg) Marshal(v any) error {
 
 type Socket interface {
 	Send(*Msg)
+	Name() string
 }
 
 type Bus struct {
 	mu      sync.RWMutex
+	name    string
 	sockets map[Socket]bool
 	socketQ chan bool
 	handler func(*Msg)
 }
 
-func NewBus(maxSockets int, handler func(*Msg)) *Bus {
+func NewBus(name string, maxSockets int, handler func(*Msg)) *Bus {
 	if handler == nil {
 		handler = func(*Msg){}
 	}
 	return &Bus{
+		name:    name,
 		sockets: make(map[Socket]bool),
 		socketQ: make(chan bool, maxSockets),
 		handler: handler,
 	}
+}
+
+func (b *Bus) Name()  string {
+	return b.name
 }
 
 func (b *Bus) plugin(s Socket) {
@@ -84,7 +93,9 @@ func (b *Bus) unplug(s Socket) {
 func (b *Bus) broadcast(msg *Msg) {
 	b.mu.RLock()
 	for sock := range b.sockets {
+		println("broadcast:", sock.Name())
 		if msg.src != sock {
+			println("sending:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}
 	}
@@ -96,11 +107,15 @@ func (b *Bus) receive(msg *Msg) {
 }
 
 type injector struct {
+	name string
 	bus *Bus
 }
 
-func NewInjector(bus *Bus) *injector {
-	i := &injector{bus: bus}
+func NewInjector(name string, bus *Bus) *injector {
+	i := &injector{
+		name: name,
+		bus:  bus,
+	}
 	bus.plugin(i)
 	return i
 }
@@ -109,24 +124,36 @@ func (i *injector) Send(msg *Msg) {
 	// >/dev/null
 }
 
+func (i *injector) Name() string {
+	return "injector: " + i.name + ", bus: " + i.bus.Name()
+}
+
 func (i *injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
 	i.bus.receive(msg)
 }
 
 type webSocket struct {
+	name string
 	bus *Bus
 	conn *websocket.Conn
 }
 
-func NewWebSocket(bus *Bus) *webSocket {
-	return &webSocket{bus: bus}
+func NewWebSocket(name string, bus *Bus) *webSocket {
+	return &webSocket{
+		name: name,
+		bus:  bus,
+	}
 }
 
 func (w *webSocket) Send(msg *Msg) {
 	if w.conn != nil {
 		websocket.Message.Send(w.conn, msg.payload)
 	}
+}
+
+func (w *webSocket) Name() string {
+	return "websocket: " + w.name + ", bus: " + w.bus.Name()
 }
 
 func (w *webSocket) Dial(url string) {

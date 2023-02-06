@@ -7,28 +7,30 @@ import (
 )
 
 type Thing struct {
+	name string
 	http.Server
 	bus      *Bus
 	injector *injector
 }
 
-func NewThing(maxSockets int, handler func(*Msg)) *Thing {
-	bus := NewBus(maxSockets, handler)
+func NewThing(name string, maxSockets int, handler func(*Msg)) *Thing {
+	bus := NewBus("thing " + name, maxSockets, handler)
 	t := &Thing{
+		name:     name,
 		bus:      bus,
-		injector: NewInjector(bus),
+		injector: NewInjector("feed", bus),
 	}
 	http.HandleFunc("/ws/", t.serve)
 	return t
 }
 
 func (t *Thing) Dial(url string) {
-	client := NewWebSocket(t.bus)
+	client := NewWebSocket("dial " + url, t.bus)
 	go client.Dial(url)
 }
 
 func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
-	ws := NewWebSocket(t.bus)
+	ws := NewWebSocket("serve " + r.Host, t.bus)
 	s := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	s.ServeHTTP(w, r)
 }
