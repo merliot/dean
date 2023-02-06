@@ -9,28 +9,39 @@ import (
 	"github.com/merliot/dean"
 )
 
-/*
-var state struct {
+type dispatch struct {
+	Path string
+}
+
+type state struct {
+	dispatch
 	Foo int
 }
 
-func getState(m dean.Msg) {
-	fmt.Printf("%v\n", m)
-	m.Data = state
-	m.Reply()
-}
-*/
+var s state
 
 //go:embed index.html
 var fs embed.FS
 
 func handler(msg *dean.Msg) {
-	fmt.Printf("%v\n", msg)
-	msg.Reply()
-	//msg.Broadcast()
+	fmt.Printf("%s\n", msg.String())
+
+	var disp dispatch
+	msg.Unmarshal(disp)
+
+	switch disp.Path {
+	case "get/state":
+		s.Path = "reply/state"
+		msg.Marshal(s)
+		msg.Reply()
+	case "update":
+		msg.Broadcast()
+	}
 }
 
 func main () {
+
+	var msg dean.Msg
 
 	http.Handle("/", http.FileServer(http.FS(fs)))
 
@@ -39,7 +50,9 @@ func main () {
 	go thing.ListenAndServe()
 
 	for {
-		thing.Feed(dean.NewMsg([]byte("hello")))
+		s.Path = "update"
+		msg.Marshal(s)
+		thing.Broadcast(&msg)
 		time.Sleep(time.Second)
 	}
 }

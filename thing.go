@@ -33,6 +33,6 @@ func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
 	s.ServeHTTP(w, r)
 }
 
-func (t *Thing) Feed(msg *Msg) {
+func (t *Thing) Broadcast(msg *Msg) {
 	t.injector.Inject(msg)
 }

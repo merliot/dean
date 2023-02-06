@@ -1,6 +1,7 @@
 package dean
 
 import (
+	"encoding/json"
 	"io"
 	"sync"
 	"time"
@@ -22,12 +23,26 @@ func (m *Msg) Bytes() []byte {
 	return m.payload
 }
 
+func (m *Msg) String() string {
+	return string(m.payload)
+}
+
 func (m *Msg) Reply() {
 	m.src.Send(m)
 }
 
 func (m *Msg) Broadcast() {
 	m.bus.broadcast(m)
+}
+
+func (m *Msg) Unmarshal(v any) error {
+	return json.Unmarshal(m.payload, v)
+}
+
+func (m *Msg) Marshal(v any) error {
+	var err error
+	m.payload, err = json.Marshal(v)
+	return err
 }
 
 type Socket interface {
