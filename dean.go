@@ -37,14 +37,14 @@ func (m *Msg) Broadcast() {
 	m.bus.broadcast(m)
 }
 
-func (m *Msg) Unmarshal(v any) error {
-	return json.Unmarshal(m.payload, v)
+func (m *Msg) Unmarshal(v any) *Msg {
+	json.Unmarshal(m.payload, v)
+	return m
 }
 
-func (m *Msg) Marshal(v any) error {
-	var err error
-	m.payload, err = json.Marshal(v)
-	return err
+func (m *Msg) Marshal(v any) *Msg {
+	m.payload, _ = json.Marshal(v)
+	return m
 }
 
 type Socket interface {
@@ -156,7 +156,7 @@ func (w *webSocket) Name() string {
 	return w.name
 }
 
-func (w *webSocket) Dial(url string) {
+func (w *webSocket) Dial(url string, announce *Msg) {
 	origin := "http://localhost/"
 
 	for {
@@ -166,6 +166,8 @@ func (w *webSocket) Dial(url string) {
 			time.Sleep(time.Second)
 			continue
 		}
+		w.conn = conn
+		w.Send(announce)
 		w.serve(conn)
 		conn.Close()
 	}
@@ -173,7 +175,6 @@ func (w *webSocket) Dial(url string) {
 
 func (w *webSocket) serve(conn *websocket.Conn) {
 	println("connected")
-	w.conn = conn
 	w.bus.plugin(w)
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
