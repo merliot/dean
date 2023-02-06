@@ -25,8 +25,8 @@ func NewThing(name string, maxSockets int, handler func(*Msg)) *Thing {
 }
 
 func (t *Thing) Dial(url string, announce *Msg) {
-	client := NewWebSocket("websocket:" + url, t.bus)
-	go client.Dial(url, announce)
+	s := NewWebSocket("websocket:" + url, t.bus)
+	go s.Dial(url, announce)
 }
 
 func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +35,6 @@ func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
 	s.ServeHTTP(w, r)
 }
 
-func (t *Thing) Broadcast(msg *Msg) {
+func (t *Thing) Inject(msg *Msg) {
 	t.injector.Inject(msg)
 }

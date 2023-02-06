@@ -14,7 +14,7 @@ type dispatch struct {
 }
 
 type state struct {
-	dispatch
+	Path string
 	Foo int
 }
 
@@ -32,26 +32,25 @@ func handler(msg *dean.Msg) {
 	switch disp.Path {
 	case "get/state":
 		s.Path = "reply/state"
-		msg.Marshal(&s)
-		println(msg.String())
-		msg.Reply()
+		msg.Marshal(&s).Reply()
 	case "update":
 		msg.Broadcast()
 	}
 }
 
 type announce struct {
-	dispatch
+	Path string
 	Model string
+}
+
+var ann = announce{
+	Path: "announce",
+	Model: "foo",
 }
 
 func main () {
 
-	var msg dean.Msg
-	var ann = announce{
-		Path: "announce",
-		Model: "foo",
-	}
+	//var announce dean.Msg
 
 	http.Handle("/", http.FileServer(http.FS(fs)))
 
@@ -60,12 +59,12 @@ func main () {
 	thing.Addr = ":8080"
 	go thing.ListenAndServe()
 
-	thing.Dial("ws://localhost:8080/ws/", msg.Marshal(&ann))
+	//thing.Dial("ws://localhost:8080/ws/", announce.Marshal(&ann))
 
 	for {
+		var update dean.Msg
 		s.Path = "update"
-		msg.Marshal(&s)
-		//thing.Broadcast(&msg)
+		thing.Inject(update.Marshal(&s))
 		s.Foo++
 		time.Sleep(time.Second)
 	}
