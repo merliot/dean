@@ -148,7 +148,7 @@ func NewWebSocket(name string, bus *Bus) *webSocket {
 
 func (w *webSocket) Send(msg *Msg) {
 	if w.conn != nil {
-		websocket.Message.Send(w.conn, msg.payload)
+		websocket.Message.Send(w.conn, string(msg.payload))
 	}
 }
 
@@ -166,7 +166,7 @@ func (w *webSocket) Dial(url string, announce *Msg) {
 			time.Sleep(time.Second)
 			continue
 		}
-		websocket.Message.Send(conn, announce.payload)
+		websocket.Message.Send(conn, string(announce.payload))
 		w.serve(conn)
 		conn.Close()
 	}
@@ -174,6 +174,7 @@ func (w *webSocket) Dial(url string, announce *Msg) {
 
 func (w *webSocket) serve(conn *websocket.Conn) {
 	println("connected")
+
 	w.conn = conn
 	w.bus.plugin(w)
 	for {

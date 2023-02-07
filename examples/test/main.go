@@ -4,21 +4,39 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/merliot/dean"
 )
 
-type dispatch struct {
+var mu sync.Mutex
+
+var dispatch = struct {
 	Path string
+}{}
+
+var state = struct {
+	Path string
+	Foo  int
+}{
+	Path: "state",
 }
 
-type state struct {
+var announce = struct {
+	Path  string
+	Model string
+	Id    string
+	Name  string
+}{
+	Path: "announce",
+	Model: "foo",
+}
+
+type update struct {
 	Path string
 	Foo int
 }
-
-var s state
 
 //go:embed index.html
 var fs embed.FS
@@ -26,31 +44,25 @@ var fs embed.FS
 func handler(msg *dean.Msg) {
 	fmt.Printf("%s\n", msg.String())
 
-	var disp dispatch
-	msg.Unmarshal(&disp)
+	mu.Lock()
+	defer mu.Unlock()
 
-	switch disp.Path {
+	msg.Unmarshal(&dispatch)
+
+	switch dispatch.Path {
 	case "get/state":
-		s.Path = "reply/state"
-		msg.Marshal(&s).Reply()
+		msg.Marshal(&state).Reply()
 	case "update":
+		var up update
+		msg.Unmarshal(&up)
+		state.Foo = up.Foo
 		msg.Broadcast()
 	}
 }
 
-type announce struct {
-	Path string
-	Model string
-}
-
-var ann = announce{
-	Path: "announce",
-	Model: "foo",
-}
-
 func main () {
 
-	//var announce dean.Msg
+	//var ann dean.Msg
 
 	http.Handle("/", http.FileServer(http.FS(fs)))
 
@@ -59,13 +71,12 @@ func main () {
 	thing.Addr = ":8080"
 	go thing.ListenAndServe()
 
-	//thing.Dial("ws://localhost:8080/ws/", announce.Marshal(&ann))
+	//thing.Dial("ws://localhost:8080/ws/", ann.Marshal(&announce))
 
 	for {
-		var update dean.Msg
-		s.Path = "update"
-		thing.Inject(update.Marshal(&s))
-		s.Foo++
+		var msg dean.Msg
+		var up = update{Path: "update", Foo: state.Foo+1,}
+		thing.Inject(msg.Marshal(&up))
 		time.Sleep(time.Second)
 	}
 }
