@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
@@ -64,19 +63,17 @@ func main () {
 
 	//var ann dean.Msg
 
-	http.Handle("/", http.FileServer(http.FS(fs)))
-
-	thing := dean.NewThing("THING", 10, handler)
+	thing := dean.NewThing("THING", "user", "passwd", 10, handler, fs)
 
 	thing.Addr = ":8080"
 	go thing.ListenAndServe()
 
-	//thing.Dial("ws://localhost:8080/ws/", ann.Marshal(&announce))
+	//thing.Dial("ws://localhost:8080/ws/", "user", "passwd", ann.Marshal(&announce))
 
 	for {
 		var msg dean.Msg
 		var up = update{Path: "update", Foo: state.Foo+1,}
 		thing.Inject(msg.Marshal(&up))
-		time.Sleep(time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }

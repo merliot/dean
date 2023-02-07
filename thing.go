@@ -1,7 +1,9 @@
 package dean
 
 import (
-	"embed"
+	"crypto/sha256"
+	"crypto/subtle"
+	"io/fs"
 	"net/http"
 
 	"golang.org/x/net/websocket"
@@ -9,23 +11,26 @@ import (
 
 type Thing struct {
 	http.Server
-	name     string
-	bus      *Bus
-	injector *injector
+	name      string
+	fsHandler http.Handler
+	bus       *Bus
+	injector  *injector
 }
 
-func NewThing(name string, maxSockets int, handler func(*Msg)) *Thing {
+func NewThing(name, user, passwd string, maxSockets int, handler func(*Msg), fs fs.FS) *Thing {
 	bus := NewBus("thing " + name, maxSockets, handler)
 	t := &Thing{
 		name:     name,
 		bus:      bus,
 		injector: NewInjector("injector", bus),
 	}
-	http.HandleFunc("/ws/", t.basicAuth(t.serve))
+	t.fsHandler = http.FileServer(http.FS(fs))
+	http.HandleFunc("/", t.basicAuth(user, passwd, t.root))
+	http.HandleFunc("/ws/", t.basicAuth(user, passwd, t.serve))
 	return t
 }
 
-func (t *Thing) Dial(url string, announce *Msg) {
+func (t *Thing) Dial(url, user, passwd string, announce *Msg) {
 	s := NewWebSocket("websocket:" + url, t.bus)
 	go s.Dial(url, announce)
 }
@@ -60,6 +65,14 @@ func (t *Thing) basicAuth(user, passwd string, next http.HandlerFunc) http.Handl
 		writer.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
 		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
 	})
+}
+
+func (t *Thing) root(w http.ResponseWriter, r *http.Request) {
+	if t.fsHandler == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	t.fsHandler.ServeHTTP(w, r)
 }
 
 func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
