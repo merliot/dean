@@ -1,4 +1,4 @@
-package main
+package gps
 
 import (
 	"embed"
@@ -9,7 +9,8 @@ import (
 	"github.com/merliot/dean"
 )
 
-var mu sync.Mutex
+//go:embed index.html
+var fs embed.FS
 
 var dispatch = struct {
 	Path string
@@ -37,43 +38,51 @@ type update struct {
 	Foo int
 }
 
-//go:embed index.html
-var fs embed.FS
+type Gps struct {
+	*dean.Thing    `json:"-"`
+	mu  sync.Mutex
+	Path string
+	Foo int
+}
 
-func handler(msg *dean.Msg) {
+func New(user, passwd, name string, maxSockets int) *Gps {
+	var gps = Gps{
+		Path: "state",
+	}
+	gps.Thing = dean.NewThing(user, passwd, name, maxSockets, gps.handler, fs)
+	return &gps
+}
+
+func (g *Gps) handler(msg *dean.Msg) {
 	fmt.Printf("%s\n", msg.String())
 
-	mu.Lock()
-	defer mu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
 	msg.Unmarshal(&dispatch)
 
 	switch dispatch.Path {
 	case "get/state":
-		msg.Marshal(&state).Reply()
+		msg.Marshal(g).Reply()
 	case "update":
 		var up update
 		msg.Unmarshal(&up)
-		state.Foo = up.Foo
+		g.Foo = up.Foo
 		msg.Broadcast()
 	}
 }
 
-func main () {
-
+func (g *Gps) Announce() *dean.Msg {
 	var ann dean.Msg
+	ann.Marshal(&announce)
+	return &ann
+}
 
-	thing := dean.NewThing("user", "passwd", "THING", 10, handler, fs)
-
-	thing.Addr = ":8080"
-	go thing.ListenAndServe()
-
-	thing.Dial("user", "passwd", "ws://localhost:8080/ws/", ann.Marshal(&announce))
-
+func (g *Gps) Run() {
 	for {
 		var msg dean.Msg
-		var up = update{Path: "update", Foo: state.Foo+1,}
-		thing.Inject(msg.Marshal(&up))
+		var up = update{Path: "update", Foo: g.Foo+1,}
+		g.Inject(msg.Marshal(&up))
 		time.Sleep(10 * time.Second)
 	}
 }

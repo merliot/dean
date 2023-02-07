@@ -84,10 +84,3 @@ func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
 func (t *Thing) Inject(msg *Msg) {
 	t.injector.Inject(msg)
 }
-
-/*
-type Thinger interface {
-	Handler(*Msg)
-	FS() embed.FS
-}
-*/

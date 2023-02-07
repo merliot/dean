@@ -44,7 +44,11 @@ func (m *Msg) Unmarshal(v any) *Msg {
 }
 
 func (m *Msg) Marshal(v any) *Msg {
-	m.payload, _ = json.Marshal(v)
+	var err error
+	m.payload, err = json.Marshal(v)
+	if err != nil {
+		panic(err.Error())
+	}
 	return m
 }
 
@@ -96,7 +100,6 @@ func (b *Bus) broadcast(msg *Msg) {
 	for sock := range b.sockets {
 		println("broadcast:", sock.Name())
 		if msg.src != sock {
-			println("sending:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}
 	}
@@ -149,6 +152,7 @@ func NewWebSocket(name string, bus *Bus) *webSocket {
 
 func (w *webSocket) Send(msg *Msg) {
 	if w.conn != nil {
+		println("sending:", msg.src.Name(), msg.String())
 		websocket.Message.Send(w.conn, string(msg.payload))
 	}
 }
