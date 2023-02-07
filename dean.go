@@ -2,6 +2,7 @@ package dean
 
 import (
 	"encoding/json"
+	"net/http"
 	"io"
 	"sync"
 	"time"
@@ -156,18 +157,40 @@ func (w *webSocket) Name() string {
 	return w.name
 }
 
-func (w *webSocket) Dial(url string, announce *Msg) {
+func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 	origin := "http://localhost/"
 
+	// Configure the websocket
+	config, err := websocket.NewConfig(url, origin)
+	if err != nil {
+		println("Error creating config:", err.Error())
+		return
+	}
+
+	if user != "" {
+		// Set the basic auth header for the request
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			println("Error creating request:", err.Error())
+			return
+		}
+		req.SetBasicAuth(user, passwd)
+		config.Header = req.Header
+	}
+
 	for {
-		conn, err := websocket.Dial(url, "", origin)
+		// Dial the websocket
+		conn, err := websocket.DialConfig(config)
 		if err != nil {
 			println("dial error", err.Error())
 			time.Sleep(time.Second)
 			continue
 		}
+		// Send an announcement msg
 		websocket.Message.Send(conn, string(announce.payload))
+		// Serve websocket until EOF
 		w.serve(conn)
+		// Close websocket
 		conn.Close()
 	}
 }

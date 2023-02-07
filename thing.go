@@ -17,7 +17,7 @@ type Thing struct {
 	injector  *injector
 }
 
-func NewThing(name, user, passwd string, maxSockets int, handler func(*Msg), fs fs.FS) *Thing {
+func NewThing(user, passwd, name string, maxSockets int, handler func(*Msg), fs fs.FS) *Thing {
 	bus := NewBus("thing " + name, maxSockets, handler)
 	t := &Thing{
 		name:     name,
@@ -30,9 +30,9 @@ func NewThing(name, user, passwd string, maxSockets int, handler func(*Msg), fs 
 	return t
 }
 
-func (t *Thing) Dial(url, user, passwd string, announce *Msg) {
+func (t *Thing) Dial(user, passwd, url string, announce *Msg) {
 	s := NewWebSocket("websocket:" + url, t.bus)
-	go s.Dial(url, announce)
+	go s.Dial(user, passwd, url, announce)
 }
 
 func (t *Thing) basicAuth(user, passwd string, next http.HandlerFunc) http.HandlerFunc {

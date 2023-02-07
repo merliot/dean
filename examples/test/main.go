@@ -61,14 +61,14 @@ func handler(msg *dean.Msg) {
 
 func main () {
 
-	//var ann dean.Msg
+	var ann dean.Msg
 
-	thing := dean.NewThing("THING", "user", "passwd", 10, handler, fs)
+	thing := dean.NewThing("user", "passwd", "THING", 10, handler, fs)
 
 	thing.Addr = ":8080"
 	go thing.ListenAndServe()
 
-	//thing.Dial("ws://localhost:8080/ws/", "user", "passwd", ann.Marshal(&announce))
+	thing.Dial("user", "passwd", "ws://localhost:8080/ws/", ann.Marshal(&announce))
 
 	for {
 		var msg dean.Msg
