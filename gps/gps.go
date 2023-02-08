@@ -11,55 +11,30 @@ import (
 )
 
 //go:embed index.html
-var fs embed.FS
-
-var dispatch = struct {
-	Path string
-}{}
-
-var state = struct {
-	Path string
-	Foo  int
-}{
-	Path: "state",
-}
-
-var announce = struct {
-	Path  string
-	Model string
-	Id    string
-	Name  string
-}{
-	Path: "announce",
-	Model: "foo",
-}
+var fsys embed.FS
 
 type update struct {
-	Path string
+	dean.Dispatch
 	Foo int
 }
 
 type Gps struct {
 	*dean.Thing    `json:"-"`
-	mu  sync.Mutex
-	Path string
+	dean.Dispatch
+	name string
 	Foo int
+	mu   sync.Mutex
 }
 
-func New(user, passwd, name string, maxSockets int) *Gps {
-	var gps = Gps{
-		Path: "state",
-	}
-	gps.Thing = dean.NewThing(user, passwd, name, maxSockets, gps.Handler, fs)
+func (g *Gps) New(user, passwd, id, name string) *Gps {
+	var gps Gps
+	gps.Path, gps.Id, gps.name = "gps/state", id, name
+	gps.Thing = dean.NewThing(user, passwd, gps.Handler, fsys)
 	return &gps
 }
 
-func (g *Gps) New() *Gps {
-	return g
-}
-
 func (g *Gps) FileSystem() fs.FS {
-	return fs
+	return fsys
 }
 
 func (g *Gps) Handler(msg *dean.Msg) {
@@ -68,9 +43,10 @@ func (g *Gps) Handler(msg *dean.Msg) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	msg.Unmarshal(&dispatch)
+	var dis dean.Dispatch
+	msg.Unmarshal(&dis)
 
-	switch dispatch.Path {
+	switch dis.Path {
 	case "get/state":
 		msg.Marshal(g).Reply()
 	case "update":
@@ -82,15 +58,18 @@ func (g *Gps) Handler(msg *dean.Msg) {
 }
 
 func (g *Gps) Announce() *dean.Msg {
-	var ann dean.Msg
-	ann.Marshal(&announce)
-	return &ann
+	var msg dean.Msg
+	var ann dean.Announce
+	ann.Path, ann.Id, ann.Model, ann.Name = "announce", g.Id, "gps", g.name
+	msg.Marshal(&ann)
+	return &msg
 }
 
 func (g *Gps) Run() {
 	for {
 		var msg dean.Msg
-		var up = update{Path: "update", Foo: g.Foo+1,}
+		var up update
+		up.Path, up.Foo = "update", g.Foo+1
 		g.Inject(msg.Marshal(&up))
 		time.Sleep(10 * time.Second)
 	}

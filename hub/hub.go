@@ -49,11 +49,12 @@ func (h *Hub) Handler(msg *dean.Msg) {
 	}
 }
 
-func (h *Hub) Announce() (msg *dean.Msg) {
+func (h *Hub) Announce() *dean.Msg {
+	var msg dean.Msg
 	var ann dean.Announce
 	ann.Path, ann.Id, ann.Model, ann.Name = "announce", h.Id, "hub", h.name
 	msg.Marshal(&ann)
-	return
+	return &msg
 }
 
 func (h *Hub) Run() {
