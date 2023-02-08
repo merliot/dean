@@ -9,19 +9,25 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+type Thinger interface {
+	New(user, passwd, id, name string) Thinger
+	FileSystem() fs.FS
+	Announce() *Msg
+	Handler(*Msg)
+	Run()
+}
+
 type Thing struct {
 	http.Server
-	name      string
 	fsHandler http.Handler
-	bus       *Bus
+	*Bus
 	injector  *injector
 }
 
-func NewThing(user, passwd, name string, maxSockets int, handler func(*Msg), fs fs.FS) *Thing {
-	bus := NewBus("thing " + name, maxSockets, handler)
+func NewThing(user, passwd string, handler func(*Msg), fs fs.FS) *Thing {
+	bus := NewBus("thing bus", handler)
 	t := &Thing{
-		name:     name,
-		bus:      bus,
+		Bus:      bus,
 		injector: NewInjector("injector", bus),
 	}
 	t.fsHandler = http.FileServer(http.FS(fs))
@@ -31,7 +37,7 @@ func NewThing(user, passwd, name string, maxSockets int, handler func(*Msg), fs 
 }
 
 func (t *Thing) Dial(user, passwd, url string, announce *Msg) {
-	s := NewWebSocket("websocket:" + url, t.bus)
+	s := NewWebSocket("websocket:" + url, t.Bus)
 	go s.Dial(user, passwd, url, announce)
 }
 
@@ -76,7 +82,7 @@ func (t *Thing) root(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Thing) serve(w http.ResponseWriter, r *http.Request) {
-	ws := NewWebSocket("websocket:" + r.Host, t.bus)
+	ws := NewWebSocket("websocket:" + r.Host, t.Bus)
 	s := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	s.ServeHTTP(w, r)
 }

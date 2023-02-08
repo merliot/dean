@@ -65,20 +65,26 @@ type Bus struct {
 	handler func(*Msg)
 }
 
-func NewBus(name string, maxSockets int, handler func(*Msg)) *Bus {
+var defaultMaxSockets = 10
+
+func NewBus(name string, handler func(*Msg)) *Bus {
 	if handler == nil {
 		handler = func(*Msg){}
 	}
 	return &Bus{
 		name:    name,
 		sockets: make(map[Socket]bool),
-		socketQ: make(chan bool, maxSockets),
+		socketQ: make(chan bool, defaultMaxSockets),
 		handler: handler,
 	}
 }
 
-func (b *Bus) Name()  string {
+func (b *Bus) Name() string {
 	return b.name
+}
+
+func (b *Bus) MaxSockets(maxSockets int) {
+	b.socketQ = make(chan bool, maxSockets)
 }
 
 func (b *Bus) plugin(s Socket) {

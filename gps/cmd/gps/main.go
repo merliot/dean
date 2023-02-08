@@ -6,6 +6,10 @@ import (
 
 func main () {
 
+	t.fsHandler = 
+	http.HandleFunc("/id/", http.FileServer(http.FS(gps.FileSystem())))
+	//http.HandleFunc("/ws/id/", gps.WS)
+
 	gps := gps.New("user", "passwd", "GPS", 10)
 
 	gps.Addr = ":8080"

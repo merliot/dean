@@ -3,6 +3,7 @@ package gps
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"sync"
 	"time"
 
@@ -49,11 +50,19 @@ func New(user, passwd, name string, maxSockets int) *Gps {
 	var gps = Gps{
 		Path: "state",
 	}
-	gps.Thing = dean.NewThing(user, passwd, name, maxSockets, gps.handler, fs)
+	gps.Thing = dean.NewThing(user, passwd, name, maxSockets, gps.Handler, fs)
 	return &gps
 }
 
-func (g *Gps) handler(msg *dean.Msg) {
+func (g *Gps) New() *Gps {
+	return g
+}
+
+func (g *Gps) FileSystem() fs.FS {
+	return fs
+}
+
+func (g *Gps) Handler(msg *dean.Msg) {
 	fmt.Printf("%s\n", msg.String())
 
 	g.mu.Lock()
