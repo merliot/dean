@@ -26,7 +26,7 @@ type Gps struct {
 	mu   sync.Mutex
 }
 
-func (g *Gps) New(user, passwd, id, name string) *Gps {
+func (g *Gps) New(user, passwd, id, name string) dean.Thinger {
 	var gps Gps
 	gps.Path, gps.Id, gps.name = "gps/state", id, name
 	gps.Thing = dean.NewThing(user, passwd, gps.Handler, fsys)
@@ -69,7 +69,7 @@ func (g *Gps) Run() {
 	for {
 		var msg dean.Msg
 		var up update
-		up.Path, up.Foo = "update", g.Foo+1
+		up.Path, up.Id, up.Foo = "update", g.Id, g.Foo+1
 		g.Inject(msg.Marshal(&up))
 		time.Sleep(10 * time.Second)
 	}

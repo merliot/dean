@@ -17,13 +17,30 @@ type Hub struct {
 	dean.Dispatch
 	name string
 	mu   sync.Mutex
+	thingers map[string] dean.Thinger // keyed by model
+	things map[string] dean.Thinger   // keyed by id
 }
 
 func (h *Hub) New(user, passwd, id, name string) *Hub {
-	var hub Hub
+	var hub = Hub{
+		thingers: make(map[string] dean.Thinger),
+		things: make(map[string] dean.Thinger),
+	}
 	hub.Path, hub.Id, hub.name = "hub/state", id, name
 	hub.Thing = dean.NewThing(user, passwd, hub.Handler, fsys)
 	return &hub
+}
+
+func (h *Hub) Register(model string, thinger dean.Thinger) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.thingers[model] = thinger
+}
+
+func (h *Hub) Unregister(model string, thinger dean.Thinger) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.thingers, model)
 }
 
 func (h *Hub) FileSystem() fs.FS {
@@ -45,7 +62,10 @@ func (h *Hub) Handler(msg *dean.Msg) {
 	case "announce":
 		var ann dean.Announce
 		msg.Unmarshal(&ann)
-		// TODO hook in child
+		thinger, ok := h.thingers[ann.Model]
+		if ok {
+			h.things[ann.Id] = thinger.New("user", "passwd", ann.Model, ann.Name)
+		}
 	}
 }
 
