@@ -21,7 +21,7 @@ type Thing struct {
 	http.Server
 	fsHandler http.Handler
 	*Bus
-	injector  *injector
+	injector  *Injector
 }
 
 func NewThing(user, passwd string, handler func(*Msg), fs fs.FS) *Thing {

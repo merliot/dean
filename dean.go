@@ -116,13 +116,13 @@ func (b *Bus) receive(msg *Msg) {
 	b.handler(msg)
 }
 
-type injector struct {
+type Injector struct {
 	name string
 	bus *Bus
 }
 
-func NewInjector(name string, bus *Bus) *injector {
-	i := &injector{
+func NewInjector(name string, bus *Bus) *Injector {
+	i := &Injector{
 		name: name,
 		bus:  bus,
 	}
@@ -130,15 +130,15 @@ func NewInjector(name string, bus *Bus) *injector {
 	return i
 }
 
-func (i *injector) Send(msg *Msg) {
+func (i *Injector) Send(msg *Msg) {
 	// >/dev/null
 }
 
-func (i *injector) Name() string {
+func (i *Injector) Name() string {
 	return i.name
 }
 
-func (i *injector) Inject(msg *Msg) {
+func (i *Injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
 	i.bus.receive(msg)
 }

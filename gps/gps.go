@@ -19,7 +19,7 @@ type update struct {
 }
 
 type Gps struct {
-	*dean.Thing    `json:"-"`
+	*dean.Server
 	dean.Dispatch
 	name string
 	Foo int
