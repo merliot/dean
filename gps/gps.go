@@ -60,10 +60,6 @@ func (g *Gps) Handler(msg *dean.Msg) {
 }
 
 func (g *Gps) Serve(w http.ResponseWriter, r *http.Request) {
-	if g.fsHandler == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
 	g.fsHandler.ServeHTTP(w, r)
 }
 

@@ -13,6 +13,7 @@ type Server struct {
 	http.Server        `json:"-"`
 	*Bus               `json:"-"`
 	*Injector          `json:"-"`
+	mux *http.ServeMux
 	user string
 	passwd string
 }
@@ -20,6 +21,8 @@ type Server struct {
 func NewServer(thinger Thinger) *Server {
 	var s Server
 	s.thinger = thinger
+	s.mux = http.NewServeMux()
+	s.Handler = s.mux
 	s.Bus = NewBus("server bus", thinger.Handler)
 	s.Injector = NewInjector("server injector", s.Bus)
 	return &s
@@ -45,7 +48,7 @@ func (s *Server) Run() {
 }
 
 func (s *Server) HandleFunc(pattern string, handler http.HandlerFunc) {
-	http.HandleFunc(pattern, s.basicAuth(handler))
+	s.mux.HandleFunc(pattern, s.basicAuth(handler))
 }
 
 func (s *Server) basicAuth(next http.HandlerFunc) http.HandlerFunc {
