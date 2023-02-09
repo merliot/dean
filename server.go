@@ -9,6 +9,7 @@ import (
 )
 
 type Server struct {
+	thinger Thinger
 	http.Server        `json:"-"`
 	*Bus               `json:"-"`
 	*Injector          `json:"-"`
@@ -16,9 +17,10 @@ type Server struct {
 	passwd string
 }
 
-func NewServer(handler func(*Msg)) *Server {
+func NewServer(thinger Thinger) *Server {
 	var s Server
-	s.Bus = NewBus("server bus", handler)
+	s.thinger = thinger
+	s.Bus = NewBus("server bus", thinger.Handler)
 	s.Injector = NewInjector("server injector", s.Bus)
 	return &s
 }
@@ -36,6 +38,10 @@ func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
 	ws := NewWebSocket("websocket:" + r.Host, s.Bus)
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
+}
+
+func (s *Server) Run() {
+	s.thinger.Run(s.Injector)
 }
 
 func (s *Server) HandleFunc(pattern string, handler http.HandlerFunc) {

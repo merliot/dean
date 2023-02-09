@@ -1,18 +1,14 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/merliot/dean"
 	"github.com/merliot/dean/gps"
 )
 
 func main () {
-	var gps    *gps.Gps
-	var server *dean.Server
+	gps := gps.New("yyyyy", "gps", "gps1")
 
-	gps = gps.New("yyyyy", "gps", "gps1")
-	server = dean.NewServer(gps.Handler)
-
+	server := dean.NewServer(gps)
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8080"
 	server.Dial("user", "passwd", "ws://localhost:8081/ws/", gps.Announce())
@@ -22,5 +18,5 @@ func main () {
 
 	go server.ListenAndServe()
 
-	gps.Run()
+	server.Run()
 }

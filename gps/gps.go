@@ -3,7 +3,7 @@ package gps
 import (
 	"embed"
 	"fmt"
-	"io/fs"
+	"net/http"
 	"sync"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 )
 
 //go:embed index.html
-var fsys embed.FS
+var fs embed.FS
 
 type update struct {
 	dean.Dispatch
@@ -19,22 +19,24 @@ type update struct {
 }
 
 type Gps struct {
-	*dean.Server
 	dean.Dispatch
-	name string
 	Foo int
-	mu   sync.Mutex
+
+	model string
+	name string
+	fsHandler http.Handler
+	mu sync.Mutex
 }
 
-func (g *Gps) New(user, passwd, id, name string) dean.Thinger {
-	var gps Gps
-	gps.Path, gps.Id, gps.name = "gps/state", id, name
-	gps.Thing = dean.NewThing(user, passwd, gps.Handler, fsys)
+func New(id, model, name string) *Gps {
+	var gps = Gps{
+		model: model,
+		name: name,
+		fsHandler: http.FileServer(http.FS(fs)),
+	}
+	gps.Id = id
+	gps.Path = "state"
 	return &gps
-}
-
-func (g *Gps) FileSystem() fs.FS {
-	return fsys
 }
 
 func (g *Gps) Handler(msg *dean.Msg) {
@@ -57,20 +59,28 @@ func (g *Gps) Handler(msg *dean.Msg) {
 	}
 }
 
+func (g *Gps) Serve(w http.ResponseWriter, r *http.Request) {
+	if g.fsHandler == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	g.fsHandler.ServeHTTP(w, r)
+}
+
 func (g *Gps) Announce() *dean.Msg {
 	var msg dean.Msg
 	var ann dean.Announce
-	ann.Path, ann.Id, ann.Model, ann.Name = "announce", g.Id, "gps", g.name
+	ann.Path, ann.Id, ann.Model, ann.Name = "announce", g.Id, g.model, g.name
 	msg.Marshal(&ann)
 	return &msg
 }
 
-func (g *Gps) Run() {
+func (g *Gps) Run(i *dean.Injector) {
 	for {
 		var msg dean.Msg
 		var up update
 		up.Path, up.Id, up.Foo = "update", g.Id, g.Foo+1
-		g.Inject(msg.Marshal(&up))
+		i.Inject(msg.Marshal(&up))
 		time.Sleep(10 * time.Second)
 	}
 }
