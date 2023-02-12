@@ -13,7 +13,7 @@ type Server struct {
 	http.Server        `json:"-"`
 	*Bus               `json:"-"`
 	*Injector          `json:"-"`
-	mux *http.ServeMux
+	handlers map[string]http.HandlerFunc
 	user string
 	passwd string
 }
@@ -21,10 +21,12 @@ type Server struct {
 func NewServer(thinger Thinger) *Server {
 	var s Server
 	s.thinger = thinger
-	s.mux = http.NewServeMux()
-	s.Handler = s.mux
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.handler)
+	s.Handler = mux
 	s.Bus = NewBus("server bus", thinger.Handler)
 	s.Injector = NewInjector("server injector", s.Bus)
+	s.handlers = make(map[string]http.HandlerFunc)
 	return &s
 }
 
@@ -47,38 +49,58 @@ func (s *Server) Run() {
 	s.thinger.Run(s.Injector)
 }
 
-func (s *Server) HandleFunc(pattern string, handler http.HandlerFunc) {
-	s.mux.HandleFunc(pattern, s.basicAuth(handler))
+func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	handler, ok := s.handlers[path]
+	if ok {
+		handler(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
-func (s *Server) basicAuth(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
+func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
 
-		// skip basic authentication if no user
-		if s.user == "" {
-			next.ServeHTTP(writer, r)
+	// skip basic authentication if no user
+	if s.user == "" {
+		s.mux(w, r)
+		return
+	}
+
+	ruser, rpasswd, ok := r.BasicAuth()
+
+	if ok {
+		userHash := sha256.Sum256([]byte(s.user))
+		passHash := sha256.Sum256([]byte(s.passwd))
+		ruserHash := sha256.Sum256([]byte(ruser))
+		rpassHash := sha256.Sum256([]byte(rpasswd))
+
+		// https://www.alexedwards.net/blog/basic-authentication-in-go
+		userMatch := (subtle.ConstantTimeCompare(userHash[:], ruserHash[:]) == 1)
+		passMatch := (subtle.ConstantTimeCompare(passHash[:], rpassHash[:]) == 1)
+
+		if userMatch && passMatch {
+			s.mux(w, r)
 			return
 		}
+	}
 
-		ruser, rpasswd, ok := r.BasicAuth()
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+}
 
-		if ok {
-			userHash := sha256.Sum256([]byte(s.user))
-			passHash := sha256.Sum256([]byte(s.passwd))
-			ruserHash := sha256.Sum256([]byte(ruser))
-			rpassHash := sha256.Sum256([]byte(rpasswd))
+func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
+	s.handlers[path] = handler
+}
 
-			// https://www.alexedwards.net/blog/basic-authentication-in-go
-			userMatch := (subtle.ConstantTimeCompare(userHash[:], ruserHash[:]) == 1)
-			passMatch := (subtle.ConstantTimeCompare(passHash[:], rpassHash[:]) == 1)
+func (s *Server) UnhandleFunc(path string) {
+	delete(s.handlers, path)
+}
 
-			if userMatch && passMatch {
-				next.ServeHTTP(writer, r)
-				return
-			}
-		}
+func (s *Server) Handle(path string, handler http.Handler) {
+	s.handlers[path] = handler.ServeHTTP
+}
 
-		writer.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
-	})
+func (s *Server) Unhandle(path string) {
+	delete(s.handlers, path)
 }

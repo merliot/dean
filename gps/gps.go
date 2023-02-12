@@ -24,11 +24,14 @@ type Gps struct {
 
 	model string
 	name string
+
 	fsHandler http.Handler
+
 	mu sync.Mutex
 }
 
-func New(id, model, name string) *Gps {
+func New(id, model, name string) dean.Thinger {
+	println("NEW GPS")
 	var gps = Gps{
 		model: model,
 		name: name,

@@ -55,6 +55,7 @@ func (m *Msg) Marshal(v any) *Msg {
 type Socket interface {
 	Send(*Msg)
 	Name() string
+	Tag() string
 }
 
 type Bus struct {
@@ -69,7 +70,7 @@ var defaultMaxSockets = 10
 
 func NewBus(name string, handler func(*Msg)) *Bus {
 	if handler == nil {
-		handler = func(*Msg){}
+		handler = func(*Msg){/* drop */}
 	}
 	return &Bus{
 		name:    name,
@@ -105,7 +106,7 @@ func (b *Bus) broadcast(msg *Msg) {
 	b.mu.RLock()
 	for sock := range b.sockets {
 		println("broadcast:", sock.Name())
-		if msg.src != sock {
+		if msg.src != sock && msg.src.Tag() == sock.Tag() {
 			sock.Send(msg)
 		}
 	}
@@ -138,6 +139,10 @@ func (i *Injector) Name() string {
 	return i.name
 }
 
+func (i *Injector) Tag() string {
+	return ""
+}
+
 func (i *Injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
 	i.bus.receive(msg)
@@ -165,6 +170,10 @@ func (w *webSocket) Send(msg *Msg) {
 
 func (w *webSocket) Name() string {
 	return w.name
+}
+
+func (w *webSocket) Tag() string {
+	return ""
 }
 
 func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {

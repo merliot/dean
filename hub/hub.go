@@ -3,48 +3,54 @@ package hub
 import (
 	"embed"
 	"fmt"
-	"io/fs"
+	"net/http"
 	"sync"
 
 	"github.com/merliot/dean"
 )
 
 //go:embed index.html
-var fsys embed.FS
+var fs embed.FS
+
+type generator func(id, model, name string) dean.Thinger
 
 type Hub struct {
-	*dean.Thing    `json:"-"`
 	dean.Dispatch
+
+	model string
 	name string
-	mu   sync.Mutex
-	thingers map[string] dean.Thinger // keyed by model
-	things map[string] dean.Thinger   // keyed by id
+
+	fsHandler http.Handler
+
+	gens   map[string] generator    // keyed by model
+	//things map[string] dean.Thinger // keyed by id
+
+	mu sync.Mutex
 }
 
-func (h *Hub) New(user, passwd, id, name string) *Hub {
+func New(id, model, name string) *Hub {
 	var hub = Hub{
-		thingers: make(map[string] dean.Thinger),
-		things: make(map[string] dean.Thinger),
+		model: model,
+		name: name,
+		gens: make(map[string] generator),
+		//things: make(map[string] dean.Thinger),
+		fsHandler: http.FileServer(http.FS(fs)),
 	}
-	hub.Path, hub.Id, hub.name = "hub/state", id, name
-	hub.Thing = dean.NewThing(user, passwd, hub.Handler, fsys)
+	hub.Id = id
+	hub.Path = "state"
 	return &hub
 }
 
-func (h *Hub) Register(model string, thinger dean.Thinger) {
+func (h *Hub) Register(model string, gen generator, announce func(dean.Thinger)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.thingers[model] = thinger
+	h.gens[model] = gen
 }
 
-func (h *Hub) Unregister(model string, thinger dean.Thinger) {
+func (h *Hub) Unregister(model string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.thingers, model)
-}
-
-func (h *Hub) FileSystem() fs.FS {
-	return fsys
+	delete(h.gens, model)
 }
 
 func (h *Hub) Handler(msg *dean.Msg) {
@@ -62,21 +68,28 @@ func (h *Hub) Handler(msg *dean.Msg) {
 	case "announce":
 		var ann dean.Announce
 		msg.Unmarshal(&ann)
-		thinger, ok := h.thingers[ann.Model]
+		gen, ok := h.gens[ann.Model]
 		if ok {
-			h.things[ann.Id] = thinger.New("user", "passwd", ann.Model, ann.Name)
+			path := "/" + ann.Id + "/"
+			thing := gen(ann.Id, ann.Model, ann.Name)
+			//h.things[ann.Id] = thing
+			h.announce(path, thing)
 		}
 	}
+}
+
+func (h *Hub) Serve(w http.ResponseWriter, r *http.Request) {
+	h.fsHandler.ServeHTTP(w, r)
 }
 
 func (h *Hub) Announce() *dean.Msg {
 	var msg dean.Msg
 	var ann dean.Announce
-	ann.Path, ann.Id, ann.Model, ann.Name = "announce", h.Id, "hub", h.name
+	ann.Path, ann.Id, ann.Model, ann.Name = "announce", h.Id, h.model, h.name
 	msg.Marshal(&ann)
 	return &msg
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(i *dean.Injector) {
 	select{}
 }
