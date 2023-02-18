@@ -52,31 +52,35 @@ func (m *Msg) Marshal(v any) *Msg {
 	return m
 }
 
-type Socket interface {
-	Send(*Msg)
-	Name() string
-	Tag() string
-}
-
 type Bus struct {
 	mu      sync.RWMutex
 	name    string
 	sockets map[Socket]bool
 	socketQ chan bool
 	handler func(*Msg)
+	connect func(Socket)
+	disconnect func(Socket)
 }
 
 var defaultMaxSockets = 10
 
-func NewBus(name string, handler func(*Msg)) *Bus {
+func NewBus(name string, handler func(*Msg), connect, disconnect func(Socket)) *Bus {
 	if handler == nil {
 		handler = func(*Msg){/* drop */}
+	}
+	if connect == nil {
+		connect = func(Socket){/* don't notify */}
+	}
+	if disconnect == nil {
+		disconnect = func(Socket){/* don't notify */}
 	}
 	return &Bus{
 		name:    name,
 		sockets: make(map[Socket]bool),
 		socketQ: make(chan bool, defaultMaxSockets),
 		handler: handler,
+		connect: connect,
+		disconnect: disconnect,
 	}
 }
 
@@ -92,11 +96,13 @@ func (b *Bus) plugin(s Socket) {
 	b.socketQ <- true
 	b.mu.Lock()
 	b.sockets[s] = true
+	b.connect(s)
 	b.mu.Unlock()
 }
 
 func (b *Bus) unplug(s Socket) {
 	b.mu.Lock()
+	b.disconnect(s)
 	delete(b.sockets, s)
 	b.mu.Unlock()
 	<-b.socketQ
@@ -117,8 +123,16 @@ func (b *Bus) receive(msg *Msg) {
 	b.handler(msg)
 }
 
+type Socket interface {
+	Send(*Msg)
+	Name() string
+	Tag() string
+	SetTag(string)
+}
+
 type Injector struct {
 	name string
+	tag string
 	bus *Bus
 }
 
@@ -140,7 +154,11 @@ func (i *Injector) Name() string {
 }
 
 func (i *Injector) Tag() string {
-	return ""
+	return i.tag
+}
+
+func (i *Injector) SetTag(tag string) {
+	i.tag = tag
 }
 
 func (i *Injector) Inject(msg *Msg) {
@@ -150,6 +168,7 @@ func (i *Injector) Inject(msg *Msg) {
 
 type webSocket struct {
 	name string
+	tag string
 	bus *Bus
 	conn *websocket.Conn
 }
@@ -173,7 +192,11 @@ func (w *webSocket) Name() string {
 }
 
 func (w *webSocket) Tag() string {
-	return ""
+	return w.tag
+}
+
+func (w *webSocket) SetTag(tag string) {
+	w.tag = tag
 }
 
 func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {

@@ -18,13 +18,13 @@ type Server struct {
 	passwd string
 }
 
-func NewServer(thinger Thinger) *Server {
+func NewServer(thinger Thinger, connect, disconnect func(Socket)) *Server {
 	var s Server
 	s.thinger = thinger
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handler)
 	s.Handler = mux
-	s.Bus = NewBus("server bus", thinger.Handler)
+	s.Bus = NewBus("server bus", thinger.Handler, connect, disconnect)
 	s.Injector = NewInjector("server injector", s.Bus)
 	s.handlers = make(map[string]http.HandlerFunc)
 	return &s
@@ -40,6 +40,7 @@ func (s *Server) Dial(user, passwd, url string, announce *Msg) {
 }
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
+	// TODO get xxx from url ws://ws/xxx/ and ws.SetTag(xxx)
 	ws := NewWebSocket("websocket:" + r.Host, s.Bus)
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
@@ -91,10 +92,6 @@ func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 	s.handlers[path] = handler
-}
-
-func (s *Server) UnhandleFunc(path string) {
-	delete(s.handlers, path)
 }
 
 func (s *Server) Handle(path string, handler http.Handler) {

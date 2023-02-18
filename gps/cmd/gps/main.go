@@ -8,7 +8,7 @@ import (
 func main () {
 	gps := gps.New("yyyyy", "gps", "gps1")
 
-	server := dean.NewServer(gps)
+	server := dean.NewServer(gps, nil, nil)
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8080"
 	server.Dial("user", "passwd", "ws://localhost:8081/ws/", gps.Announce())

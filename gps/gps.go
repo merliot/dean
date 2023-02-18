@@ -67,11 +67,12 @@ func (g *Gps) Serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *Gps) Announce() *dean.Msg {
-	var msg dean.Msg
-	var ann dean.Announce
-	ann.Path, ann.Id, ann.Model, ann.Name = "announce", g.Id, g.model, g.name
-	msg.Marshal(&ann)
-	return &msg
+	//var msg dean.Msg
+	//var ann dean.Announce
+	//ann.Path, ann.Id, ann.Model, ann.Name = "announce", g.Id, g.model, g.name
+	//msg.Marshal(&ann)
+	//return &msg
+	return dean.ThingAnnounce(g)
 }
 
 func (g *Gps) Run(i *dean.Injector) {
