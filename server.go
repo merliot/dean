@@ -3,29 +3,34 @@ package dean
 import (
 	"crypto/sha256"
 	"crypto/subtle"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"golang.org/x/net/websocket"
 )
 
 type Server struct {
 	thinger Thinger
-	http.Server        `json:"-"`
-	*Bus               `json:"-"`
-	*Injector          `json:"-"`
+	http.Server
+	*Bus
+	*Injector
+	subs     Subscribers
 	handlers map[string]http.HandlerFunc
-	user string
-	passwd string
+	user     string
+	passwd   string
 }
 
 func NewServer(thinger Thinger, connect, disconnect func(Socket)) *Server {
 	var s Server
 	s.thinger = thinger
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", s.handler)
-	s.Handler = mux
-	s.Bus = NewBus("server bus", thinger.Handler, connect, disconnect)
+	s.Bus = NewBus("server bus", connect, disconnect)
+	s.Bus.Handle("", s.handler)
 	s.Injector = NewInjector("server injector", s.Bus)
+	s.subs = thinger.Subscribers()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.root)
+	s.Handler = mux
 	s.handlers = make(map[string]http.HandlerFunc)
 	return &s
 }
@@ -35,19 +40,40 @@ func (s *Server) BasicAuth(user, passwd string) {
 }
 
 func (s *Server) Dial(user, passwd, url string, announce *Msg) {
-	ws := NewWebSocket("websocket:" + url, s.Bus)
+	ws := NewWebSocket("websocket:"+url, s.Bus)
 	go ws.Dial(user, passwd, url, announce)
 }
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
-	// TODO get xxx from url ws://ws/xxx/ and ws.SetTag(xxx)
-	ws := NewWebSocket("websocket:" + r.Host, s.Bus)
+	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
+	path := r.URL.Path
+	println("path", path)
+	parts := strings.Split(path, "/")
+	if len(parts) == 2 {
+		tag := parts[1]
+		println("tag", tag)
+		ws.SetTag(tag)
+	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
 }
 
 func (s *Server) Run() {
 	s.thinger.Run(s.Injector)
+}
+
+func (s *Server) handler(msg *Msg) {
+	fmt.Printf("%s\n", msg.String())
+
+	s.thinger.Lock()
+	defer s.thinger.Unlock()
+
+	var tmsg ThingMsg
+	msg.Unmarshal(&tmsg)
+
+	if sub, ok := s.subs[tmsg.Path]; ok {
+		sub(msg)
+	}
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +86,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 
 	// skip basic authentication if no user
 	if s.user == "" {

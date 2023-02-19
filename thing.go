@@ -2,31 +2,63 @@ package dean
 
 import (
 	"net/http"
+	"sync"
 )
 
+type Subscribers map[string]func(*Msg)
+
 type Thinger interface {
-	Handler(*Msg)
+	Subscribers() Subscribers
 	Serve(http.ResponseWriter, *http.Request)
 	Announce() *Msg
 	Run(*Injector)
+	Id() string
+	Model() string
+	Name() string
+	Lock()
+	Unlock()
 }
 
-type Dispatch struct {
-	Id   string
+type ThingMsg struct {
 	Path string
 }
 
-type Announce struct {
-	Dispatch
+type ThingMsgAnnounce struct {
+	ThingMsg
+	Id    string
 	Model string
 	Name  string
 }
 
 func ThingAnnounce(t Thinger) *Msg {
 	var msg Msg
-	var ann Announce
-	ann.Path, ann.Id, ann.Model, ann.Name = "announce", "", "", ""
-	//ann.Path, ann.Id, ann.Model, ann.Name = "announce", t.ID(), t.Model(), t.Name()
+	var ann ThingMsgAnnounce
+	ann.Path, ann.Id, ann.Model, ann.Name = "announce", t.Id(), t.Model(), t.Name()
 	msg.Marshal(&ann)
 	return &msg
 }
+
+type Thing struct {
+	id    string
+	model string
+	name  string
+	mu sync.Mutex
+}
+
+func NewThing(id, model, name string) Thing {
+	return Thing{id: id, model: model, name: name}
+}
+
+func (t *Thing) Id() string { return t.id }
+func (t *Thing) Model() string { return t.model }
+func (t *Thing) Name() string { return t.name }
+func (t *Thing) Lock() { t.mu.Lock() }
+func (t *Thing) Unlock() { t.mu.Unlock() }
+
+func (t *Thing) Announce() *Msg {
+	var msg Msg
+	var ann = ThingMsgAnnounce{ThingMsg{"announce"}, t.Id(), t.Model(), t.Name()}
+	msg.Marshal(&ann)
+	return &msg
+}
+

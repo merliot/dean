@@ -2,7 +2,6 @@ package hub
 
 import (
 	"embed"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -12,69 +11,61 @@ import (
 //go:embed index.html
 var fs embed.FS
 
-type generator func(id, model, name string) dean.Thinger
+type Factory struct {
+	Gen func(id, model, name string) dean.Thinger
+	Ann func(dean.Socket, dean.Thinger)
+}
 
 type Hub struct {
-	dean.Dispatch
-
-	model string
-	name string
-
+	dean.Thing
+	dean.ThingMsg
 	fsHandler http.Handler
-
-	gens   map[string] generator    // keyed by model
+	factories map[string]Factory // keyed by model
 	//things map[string] dean.Thinger // keyed by id
-
 	mu sync.Mutex
 }
 
 func New(id, model, name string) *Hub {
-	var hub = Hub{
-		model: model,
-		name: name,
-		gens: make(map[string] generator),
+	return &Hub{
+		Thing: dean.NewThing(id, model, name),
+		ThingMsg: dean.ThingMsg{"state"},
 		//things: make(map[string] dean.Thinger),
 		fsHandler: http.FileServer(http.FS(fs)),
+		factories: make(map[string]Factory),
 	}
-	hub.Id = id
-	hub.Path = "state"
-	return &hub
 }
 
-func (h *Hub) Register(model string, gen generator, announce func(dean.Thinger)) {
+func (h *Hub) Register(model string, factory Factory) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.gens[model] = gen
+	h.factories[model] = factory
 }
 
 func (h *Hub) Unregister(model string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.gens, model)
+	delete(h.factories, model)
 }
 
-func (h *Hub) Handler(msg *dean.Msg) {
-	fmt.Printf("%s\n", msg.String())
+func (h *Hub) getState(msg *dean.Msg) {
+	msg.Marshal(h).Reply()
+}
 
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (h *Hub) announce(msg *dean.Msg) {
+	var ann dean.ThingMsgAnnounce
+	msg.Unmarshal(&ann)
+	factory, ok := h.factories[ann.Model]
+	if ok {
+		thing := factory.Gen(ann.Id, ann.Model, ann.Name)
+		//h.things[ann.Id] = thing
+		factory.Ann(msg.Src(), thing)
+	}
+}
 
-	var dis dean.Dispatch
-	msg.Unmarshal(&dis)
-
-	switch dis.Path {
-	case "get/state":
-		msg.Marshal(h).Reply()
-	case "announce":
-		var ann dean.Announce
-		msg.Unmarshal(&ann)
-		gen, ok := h.gens[ann.Model]
-		if ok {
-			path := "/" + ann.Id + "/"
-			thing := gen(ann.Id, ann.Model, ann.Name)
-			//h.things[ann.Id] = thing
-			h.announce(path, thing)
-		}
+func (h *Hub) Subscribers() dean.Subscribers {
+	return dean.Subscribers{
+		"get/state": h.getState,
+		"announce":  h.announce,
 	}
 }
 
@@ -82,14 +73,6 @@ func (h *Hub) Serve(w http.ResponseWriter, r *http.Request) {
 	h.fsHandler.ServeHTTP(w, r)
 }
 
-func (h *Hub) Announce() *dean.Msg {
-	var msg dean.Msg
-	var ann dean.Announce
-	ann.Path, ann.Id, ann.Model, ann.Name = "announce", h.Id, h.model, h.name
-	msg.Marshal(&ann)
-	return &msg
-}
-
 func (h *Hub) Run(i *dean.Injector) {
-	select{}
+	select {}
 }

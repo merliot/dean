@@ -5,7 +5,7 @@ import (
 	"github.com/merliot/dean/gps"
 )
 
-func main () {
+func main() {
 	gps := gps.New("yyyyy", "gps", "gps1")
 
 	server := dean.NewServer(gps, nil, nil)

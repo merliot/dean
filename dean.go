@@ -2,8 +2,8 @@ package dean
 
 import (
 	"encoding/json"
-	"net/http"
 	"io"
+	"net/http"
 	"sync"
 	"time"
 
@@ -11,13 +11,17 @@ import (
 )
 
 type Msg struct {
-	bus *Bus
-	src Socket
+	bus     *Bus
+	src     Socket
 	payload []byte
 }
 
 func NewMsg(payload []byte) *Msg {
 	return &Msg{payload: payload}
+}
+
+func (m *Msg) Src() Socket {
+	return m.src
 }
 
 func (m *Msg) Bytes() []byte {
@@ -53,35 +57,40 @@ func (m *Msg) Marshal(v any) *Msg {
 }
 
 type Bus struct {
-	mu      sync.RWMutex
-	name    string
-	sockets map[Socket]bool
-	socketQ chan bool
-	handler func(*Msg)
-	connect func(Socket)
+	mu         sync.RWMutex
+	name       string
+	sockets    map[Socket]bool
+	socketQ    chan bool
+	handlers   map[string]func(*Msg)
+	connect    func(Socket)
 	disconnect func(Socket)
 }
 
 var defaultMaxSockets = 10
 
-func NewBus(name string, handler func(*Msg), connect, disconnect func(Socket)) *Bus {
-	if handler == nil {
-		handler = func(*Msg){/* drop */}
-	}
+func NewBus(name string, connect, disconnect func(Socket)) *Bus {
 	if connect == nil {
-		connect = func(Socket){/* don't notify */}
+		connect = func(Socket) { /* don't notify */ }
 	}
 	if disconnect == nil {
-		disconnect = func(Socket){/* don't notify */}
+		disconnect = func(Socket) { /* don't notify */ }
 	}
 	return &Bus{
-		name:    name,
-		sockets: make(map[Socket]bool),
-		socketQ: make(chan bool, defaultMaxSockets),
-		handler: handler,
-		connect: connect,
+		name:       name,
+		sockets:    make(map[Socket]bool),
+		socketQ:    make(chan bool, defaultMaxSockets),
+		handlers:   make(map[string]func(*Msg)),
+		connect:    connect,
 		disconnect: disconnect,
 	}
+}
+
+func (b *Bus) Handle(tag string, handler func(*Msg)) {
+	b.handlers[tag] = handler
+}
+
+func (b *Bus) Unhandle(tag string) {
+	delete(b.handlers, tag)
 }
 
 func (b *Bus) Name() string {
@@ -120,7 +129,10 @@ func (b *Bus) broadcast(msg *Msg) {
 }
 
 func (b *Bus) receive(msg *Msg) {
-	b.handler(msg)
+	tag := msg.src.Tag()
+	if handler, ok := b.handlers[tag]; ok {
+		handler(msg)
+	}
 }
 
 type Socket interface {
@@ -130,35 +142,38 @@ type Socket interface {
 	SetTag(string)
 }
 
-type Injector struct {
+type socket struct {
 	name string
-	tag string
-	bus *Bus
+	tag  string
+	bus  *Bus
+}
+
+func (s *socket) Send(msg *Msg) {
+	// >/dev/null
+}
+
+func (s *socket) Name() string {
+	return s.name
+}
+
+func (s *socket) Tag() string {
+	return s.tag
+}
+
+func (s *socket) SetTag(tag string) {
+	s.tag = tag
+}
+
+type Injector struct {
+	socket
 }
 
 func NewInjector(name string, bus *Bus) *Injector {
 	i := &Injector{
-		name: name,
-		bus:  bus,
+		socket: socket{name, "", bus},
 	}
 	bus.plugin(i)
 	return i
-}
-
-func (i *Injector) Send(msg *Msg) {
-	// >/dev/null
-}
-
-func (i *Injector) Name() string {
-	return i.name
-}
-
-func (i *Injector) Tag() string {
-	return i.tag
-}
-
-func (i *Injector) SetTag(tag string) {
-	i.tag = tag
 }
 
 func (i *Injector) Inject(msg *Msg) {
@@ -167,16 +182,13 @@ func (i *Injector) Inject(msg *Msg) {
 }
 
 type webSocket struct {
-	name string
-	tag string
-	bus *Bus
+	socket
 	conn *websocket.Conn
 }
 
 func NewWebSocket(name string, bus *Bus) *webSocket {
 	return &webSocket{
-		name: name,
-		bus:  bus,
+		socket: socket{name, "", bus},
 	}
 }
 
@@ -185,18 +197,6 @@ func (w *webSocket) Send(msg *Msg) {
 		println("sending:", msg.src.Name(), msg.String())
 		websocket.Message.Send(w.conn, string(msg.payload))
 	}
-}
-
-func (w *webSocket) Name() string {
-	return w.name
-}
-
-func (w *webSocket) Tag() string {
-	return w.tag
-}
-
-func (w *webSocket) SetTag(tag string) {
-	w.tag = tag
 }
 
 func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
