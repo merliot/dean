@@ -15,24 +15,73 @@ type Server struct {
 	http.Server
 	*Bus
 	*Injector
-	subs     Subscribers
 	handlers map[string]http.HandlerFunc
+	clients  map[Socket]Thinger
 	user     string
 	passwd   string
 }
 
-func NewServer(thinger Thinger, connect, disconnect func(Socket)) *Server {
+func NewServer(thinger Thinger) *Server {
 	var s Server
+
+	s.handlers = make(map[string]http.HandlerFunc)
+	s.clients = make(map[Socket]Thinger)
+
 	s.thinger = thinger
-	s.Bus = NewBus("server bus", connect, disconnect)
-	s.Bus.Handle("", s.handler)
+
+	s.Bus = NewBus("server bus", s.connect, s.disconnect)
+	s.Bus.Handle("", handle(thinger))
 	s.Injector = NewInjector("server injector", s.Bus)
-	s.subs = thinger.Subscribers()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.root)
 	s.Handler = mux
-	s.handlers = make(map[string]http.HandlerFunc)
+
+	s.Handle("/", thinger)
+	s.HandleFunc("/ws/", s.Serve)
+
 	return &s
+}
+
+func (s *Server) Register(socket Socket, client Thinger) {
+	id := client.Id()
+	s.clients[socket] = client
+	socket.SetTag(id)
+	s.Bus.Handle(id, handle(client))
+	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", client))
+	s.HandleFunc("/ws/"+id+"/", s.Serve)
+}
+
+func (s *Server) connect(socket Socket) {
+	s.clients[socket] = nil
+}
+
+func (s *Server) disconnect(socket Socket) {
+	if t := s.clients[socket]; t != nil {
+		id := t.Id()
+		s.Unhandle("/" + id + "/")
+		s.Unhandle("/ws/" + id + "/")
+		s.Bus.Unhandle(id)
+		socket.SetTag("")
+	}
+	delete(s.clients, socket)
+}
+
+func handle(thinger Thinger) func(*Msg) {
+	return func(msg *Msg) {
+		fmt.Printf("%s\n", msg.String())
+
+		thinger.Lock()
+		defer thinger.Unlock()
+
+		var tmsg ThingMsg
+		msg.Unmarshal(&tmsg)
+
+		subs := thinger.Subscribers()
+		if sub, ok := subs[tmsg.Path]; ok {
+			sub(msg)
+		}
+	}
 }
 
 func (s *Server) BasicAuth(user, passwd string) {
@@ -60,20 +109,6 @@ func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Run() {
 	s.thinger.Run(s.Injector)
-}
-
-func (s *Server) handler(msg *Msg) {
-	fmt.Printf("%s\n", msg.String())
-
-	s.thinger.Lock()
-	defer s.thinger.Unlock()
-
-	var tmsg ThingMsg
-	msg.Unmarshal(&tmsg)
-
-	if sub, ok := s.subs[tmsg.Path]; ok {
-		sub(msg)
-	}
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {

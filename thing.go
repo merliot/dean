@@ -9,7 +9,7 @@ type Subscribers map[string]func(*Msg)
 
 type Thinger interface {
 	Subscribers() Subscribers
-	Serve(http.ResponseWriter, *http.Request)
+	ServeHTTP(http.ResponseWriter, *http.Request)
 	Announce() *Msg
 	Run(*Injector)
 	Id() string
@@ -42,18 +42,18 @@ type Thing struct {
 	id    string
 	model string
 	name  string
-	mu sync.Mutex
+	mu    sync.Mutex
 }
 
 func NewThing(id, model, name string) Thing {
 	return Thing{id: id, model: model, name: name}
 }
 
-func (t *Thing) Id() string { return t.id }
+func (t *Thing) Id() string    { return t.id }
 func (t *Thing) Model() string { return t.model }
-func (t *Thing) Name() string { return t.name }
-func (t *Thing) Lock() { t.mu.Lock() }
-func (t *Thing) Unlock() { t.mu.Unlock() }
+func (t *Thing) Name() string  { return t.name }
+func (t *Thing) Lock()         { t.mu.Lock() }
+func (t *Thing) Unlock()       { t.mu.Unlock() }
 
 func (t *Thing) Announce() *Msg {
 	var msg Msg
@@ -61,4 +61,3 @@ func (t *Thing) Announce() *Msg {
 	msg.Marshal(&ann)
 	return &msg
 }
-

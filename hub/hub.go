@@ -11,40 +11,40 @@ import (
 //go:embed index.html
 var fs embed.FS
 
-type Factory struct {
-	Gen func(id, model, name string) dean.Thinger
-	Ann func(dean.Socket, dean.Thinger)
-}
+type generator func(id, model, name string) dean.Thinger
+type callback func(dean.Socket, dean.Thinger)
 
 type Hub struct {
 	dean.Thing
 	dean.ThingMsg
 	fsHandler http.Handler
-	factories map[string]Factory // keyed by model
-	//things map[string] dean.Thinger // keyed by id
+	gens      map[string]generator // keyed by model
+	cbs       map[string]callback  // keyed by model
 	mu sync.Mutex
 }
 
 func New(id, model, name string) *Hub {
 	return &Hub{
-		Thing: dean.NewThing(id, model, name),
-		ThingMsg: dean.ThingMsg{"state"},
-		//things: make(map[string] dean.Thinger),
+		Thing:     dean.NewThing(id, model, name),
+		ThingMsg:  dean.ThingMsg{"state"},
 		fsHandler: http.FileServer(http.FS(fs)),
-		factories: make(map[string]Factory),
+		gens:      make(map[string]generator),
+		cbs:       make(map[string]callback),
 	}
 }
 
-func (h *Hub) Register(model string, factory Factory) {
+func (h *Hub) Register(model string, gen generator, cb callback) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.factories[model] = factory
+	h.gens[model] = gen
+	h.cbs[model] = cb
 }
 
 func (h *Hub) Unregister(model string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.factories, model)
+	delete(h.gens, model)
+	delete(h.cbs, model)
 }
 
 func (h *Hub) getState(msg *dean.Msg) {
@@ -54,11 +54,11 @@ func (h *Hub) getState(msg *dean.Msg) {
 func (h *Hub) announce(msg *dean.Msg) {
 	var ann dean.ThingMsgAnnounce
 	msg.Unmarshal(&ann)
-	factory, ok := h.factories[ann.Model]
-	if ok {
-		thing := factory.Gen(ann.Id, ann.Model, ann.Name)
-		//h.things[ann.Id] = thing
-		factory.Ann(msg.Src(), thing)
+	if gen, ok := h.gens[ann.Model]; ok {
+		thing := gen(ann.Id, ann.Model, ann.Name)
+		if cb, ok := h.cbs[ann.Model]; ok {
+			cb(msg.Src(), thing)
+		}
 	}
 }
 
@@ -69,7 +69,7 @@ func (h *Hub) Subscribers() dean.Subscribers {
 	}
 }
 
-func (h *Hub) Serve(w http.ResponseWriter, r *http.Request) {
+func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.fsHandler.ServeHTTP(w, r)
 }
 

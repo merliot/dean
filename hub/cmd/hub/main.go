@@ -8,44 +8,15 @@ import (
 	"github.com/merliot/dean/hub"
 )
 
-var server *dean.Server
-var clients = make(map[dean.Socket]dean.Thinger)
-
-func announce(s dean.Socket, t dean.Thinger) {
-	id := t.Id()
-	clients[s] = t
-	s.SetTag(id)
-	server.Bus.Handle(id, t.Subscribers)
-	server.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", t.Serve))
-	server.HandleFunc("/ws/"+id+"/", server.Serve)
-}
-
-func connect(s dean.Socket) {
-	clients[s] = nil
-}
-
-func disconnect(s dean.Socket) {
-	if t := clients[s]; t != nil {
-		id := t.Id()
-		server.Unhandle("/" + id + "/")
-		server.Unhandle("/ws/" + id + "/")
-		server.Bus.Unhandle(id)
-		s.SetTag("")
-	}
-	delete(clients, s)
-}
-
 func main() {
-	h := hub.New("xxxxx", "hub", "hub1")
+	var server *dean.Server
 
-	h.Register("gps", hub.Factory{gps.New, announce})
+	hub := hub.New("xxxxx", "hub", "hub1")
+	hub.Register("gps", gps.New, server.Register)
 
-	server = dean.NewServer(h, connect, disconnect)
+	server = dean.NewServer(hub)
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8081"
-
-	server.HandleFunc("/", h.Serve)
-	server.HandleFunc("/ws/", server.Serve)
 
 	server.ListenAndServe()
 }

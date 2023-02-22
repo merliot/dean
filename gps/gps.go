@@ -20,15 +20,15 @@ type update struct {
 type Gps struct {
 	dean.Thing
 	dean.ThingMsg
-	Foo int
+	Foo       int
 	fsHandler http.Handler
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW GPS")
 	return &Gps{
-		Thing: dean.NewThing(id, model, name),
-		ThingMsg: dean.ThingMsg{"state"},
+		Thing:     dean.NewThing(id, model, name),
+		ThingMsg:  dean.ThingMsg{"state"},
 		fsHandler: http.FileServer(http.FS(fs)),
 	}
 }
@@ -51,7 +51,7 @@ func (g *Gps) Subscribers() dean.Subscribers {
 	}
 }
 
-func (g *Gps) Serve(w http.ResponseWriter, r *http.Request) {
+func (g *Gps) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.fsHandler.ServeHTTP(w, r)
 }
 
