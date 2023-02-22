@@ -1,11 +1,11 @@
 <html>
 <head>
-	<title>GPS</title>
+	<title>{{.Model}}</title>
 </head>
 <body>
-	<center><h1>GPS</h1></center>
+	<center><h1>{{.Model}}</h1></center>
 	<script>
-		conn = new WebSocket("ws://localhost:8080/ws/")
+		conn = new WebSocket("{{.WebSocket}}")
 
 		conn.onopen = function(evt) {
 			console.log("open")

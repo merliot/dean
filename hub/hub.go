@@ -2,6 +2,7 @@ package hub
 
 import (
 	"embed"
+	"html/template"
 	"net/http"
 	"sync"
 
@@ -10,6 +11,9 @@ import (
 
 //go:embed index.html
 var fs embed.FS
+
+var tmpl = template.Must(template.ParseFS(fs, "index.html"))
+var fserv = http.FileServer(http.FS(fs))
 
 type generator func(id, model, name string) dean.Thinger
 type callback func(dean.Socket, dean.Thinger)
@@ -70,7 +74,12 @@ func (h *Hub) Subscribers() dean.Subscribers {
 }
 
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.fsHandler.ServeHTTP(w, r)
+	switch r.URL.Path {
+	case "/", "/index.html":
+		tmpl.Execute(w, h.Vitals(r))
+		return
+	}
+	fserv.ServeHTTP(w, r)
 }
 
 func (h *Hub) Run(i *dean.Injector) {

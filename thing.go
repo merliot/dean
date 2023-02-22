@@ -1,6 +1,7 @@
 package dean
 
 import (
+	"html/template"
 	"net/http"
 	"sync"
 )
@@ -57,7 +58,21 @@ func (t *Thing) Unlock()       { t.mu.Unlock() }
 
 func (t *Thing) Announce() *Msg {
 	var msg Msg
-	var ann = ThingMsgAnnounce{ThingMsg{"announce"}, t.Id(), t.Model(), t.Name()}
+	var ann = ThingMsgAnnounce{ThingMsg{"announce"}, t.id, t.model, t.name}
 	msg.Marshal(&ann)
 	return &msg
+}
+
+func (t *Thing) Vitals(r *http.Request) map[string]any {
+	scheme := "wss://"
+	if r.TLS == nil {
+		scheme = "ws://"
+	}
+
+	return map[string]any {
+		"Id":    t.id,
+		"Model": t.model,
+		"Name":  t.name,
+		"WebSocket": template.JSEscapeString(scheme + r.Host + "/ws/" + t.id + "/"),
+	}
 }

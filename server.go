@@ -39,6 +39,7 @@ func NewServer(thinger Thinger) *Server {
 
 	s.Handle("/", thinger)
 	s.HandleFunc("/ws/", s.Serve)
+	s.HandleFunc("/ws/"+thinger.Id()+"/", s.Serve)
 
 	return &s
 }
@@ -99,9 +100,11 @@ func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
 	println("path", path)
 	parts := strings.Split(path, "/")
 	if len(parts) == 2 {
-		tag := parts[1]
-		println("tag", tag)
-		ws.SetTag(tag)
+		id := parts[1]
+		println("tag", id)
+		if id != s.thinger.Id() {
+			ws.SetTag(id)
+		}
 	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)

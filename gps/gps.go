@@ -2,6 +2,7 @@ package gps
 
 import (
 	"embed"
+	"html/template"
 	"net/http"
 	"time"
 
@@ -11,9 +12,11 @@ import (
 //go:embed index.html
 var fs embed.FS
 
+var tmpl = template.Must(template.ParseFS(fs, "index.html"))
+var fserv = http.FileServer(http.FS(fs))
+
 type update struct {
 	dean.ThingMsg
-	Id  string
 	Foo int
 }
 
@@ -21,7 +24,6 @@ type Gps struct {
 	dean.Thing
 	dean.ThingMsg
 	Foo       int
-	fsHandler http.Handler
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -29,7 +31,6 @@ func New(id, model, name string) dean.Thinger {
 	return &Gps{
 		Thing:     dean.NewThing(id, model, name),
 		ThingMsg:  dean.ThingMsg{"state"},
-		fsHandler: http.FileServer(http.FS(fs)),
 	}
 }
 
@@ -52,15 +53,21 @@ func (g *Gps) Subscribers() dean.Subscribers {
 }
 
 func (g *Gps) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.fsHandler.ServeHTTP(w, r)
+	println("GPS: path:", r.URL.Path)
+	switch r.URL.Path {
+	case "", "/", "/index.html":
+		tmpl.Execute(w, g.Vitals(r))
+		return
+	}
+	fserv.ServeHTTP(w, r)
 }
 
 func (g *Gps) Run(i *dean.Injector) {
 	for {
 		var msg dean.Msg
 		var up update
-		up.Path, up.Id, up.Foo = "update", g.Id(), g.Foo+1
+		up.Path, up.Foo = "update", g.Foo+1
 		i.Inject(msg.Marshal(&up))
-		time.Sleep(10 * time.Second)
+		time.Sleep(120 * time.Second)
 	}
 }
