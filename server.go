@@ -1,11 +1,15 @@
 package dean
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
+	"text/template"
 
 	"golang.org/x/net/websocket"
 )
@@ -38,6 +42,7 @@ func NewServer(thinger Thinger) *Server {
 	s.Handler = mux
 
 	s.Handle("/", thinger)
+	s.HandleFunc("/state", s.state)
 	s.HandleFunc("/ws/", s.Serve)
 	s.HandleFunc("/ws/"+thinger.Id()+"/", s.Serve)
 
@@ -54,6 +59,11 @@ func (s *Server) Register(socket Socket, client Thinger) {
 }
 
 func (s *Server) connect(socket Socket) {
+	println("*** CONNECT ", socket.Name(), socket)
+	_, ok := s.clients[socket]
+	if ok {
+		println("ALREADY CONNECTED")
+	}
 	s.clients[socket] = nil
 }
 
@@ -66,6 +76,7 @@ func (s *Server) disconnect(socket Socket) {
 		socket.SetTag("")
 	}
 	delete(s.clients, socket)
+	println("*** DISCONNECT ", socket.Name())
 }
 
 func handle(thinger Thinger) func(*Msg) {
@@ -96,6 +107,7 @@ func (s *Server) Dial(user, passwd, url string, announce *Msg) {
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
 	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
+	println("---- NewWebSocket --- ", ws)
 	path := r.URL.Path
 	println("path", path)
 	parts := strings.Split(path, "/")
@@ -164,4 +176,59 @@ func (s *Server) Handle(path string, handler http.Handler) {
 
 func (s *Server) Unhandle(path string) {
 	delete(s.handlers, path)
+}
+
+var html = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="2">
+  </head>
+  <body>
+    <pre>
+      <code>
+{{.}}
+      </code>
+    </pre>
+  </body>
+</html>
+`
+
+func (s *Server) state(w http.ResponseWriter, r *http.Request) {
+
+	f := map[string]any{
+		"Id": s.thinger.Id(),
+		"Model": s.thinger.Model(),
+		"Name": s.thinger.Name(),
+		"User": s.user,
+		"Passwd": s.passwd,
+	}
+
+	handlers := make([]string, 0, len(s.handlers))
+	for key := range s.handlers {
+		handlers = append(handlers, key)
+	}
+	sort.Strings(handlers)
+	f["Handlers"] = handlers
+
+	clients := make([]string, 0, len(s.clients))
+	for client, thinger := range s.clients {
+		if thinger != nil {
+			clients = append(clients, client.Name() +
+				" [Id: " + thinger.Id() +
+				", Model: " + thinger.Model() +
+				", Name: " + thinger.Name() + "]")
+		} else {
+			clients = append(clients, client.Name())
+		}
+	}
+	sort.Strings(clients)
+	f["Clients"] = clients
+
+	var out bytes.Buffer
+	b, _ := json.Marshal(f)
+	json.Indent(&out, b, "", "\t")
+
+	t, _ := template.New("foo").Parse(html)
+	t.Execute(w, out.String())
 }
