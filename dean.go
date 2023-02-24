@@ -2,7 +2,6 @@ package dean
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -85,8 +84,12 @@ func NewBus(name string, connect, disconnect func(Socket)) *Bus {
 	}
 }
 
-func (b *Bus) Handle(tag string, handler func(*Msg)) {
-	b.handlers[tag] = handler
+func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
+	if _, ok := b.handlers[tag]; !ok {
+		b.handlers[tag] = handler
+		return true
+	}
+	return false
 }
 
 func (b *Bus) Unhandle(tag string) {
@@ -111,10 +114,12 @@ func (b *Bus) plugin(s Socket) {
 
 func (b *Bus) unplug(s Socket) {
 	b.mu.Lock()
-	b.disconnect(s)
-	delete(b.sockets, s)
-	b.mu.Unlock()
-	<-b.socketQ
+	defer b.mu.Unlock()
+	if _, ok := b.sockets[s]; ok {
+		b.disconnect(s)
+		delete(b.sockets, s)
+		<-b.socketQ
+	}
 }
 
 func (b *Bus) broadcast(msg *Msg) {
@@ -136,6 +141,7 @@ func (b *Bus) receive(msg *Msg) {
 }
 
 type Socket interface {
+	Close()
 	Send(*Msg)
 	Name() string
 	Tag() string
@@ -146,6 +152,9 @@ type socket struct {
 	name string
 	tag  string
 	bus  *Bus
+}
+
+func (s *socket) Close() {
 }
 
 func (s *socket) Send(msg *Msg) {
@@ -192,6 +201,12 @@ func NewWebSocket(name string, bus *Bus) *webSocket {
 	}
 }
 
+func (w *webSocket) Close() {
+	w.conn.Close()
+	w.conn = nil
+	w.bus.unplug(w)
+}
+
 func (w *webSocket) Send(msg *Msg) {
 	if w.conn != nil {
 		println("sending:", msg.src.Name(), msg.String())
@@ -223,17 +238,19 @@ func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 	for {
 		// Dial the websocket
 		conn, err := websocket.DialConfig(config)
-		if err != nil {
+		if err == nil {
+			// Send an announcement msg
+			websocket.Message.Send(conn, string(announce.payload))
+			// Serve websocket until EOF
+			w.serve(conn)
+			// Close websocket
+			conn.Close()
+		} else {
 			println("dial error", err.Error())
-			time.Sleep(time.Second)
-			continue
 		}
-		// Send an announcement msg
-		websocket.Message.Send(conn, string(announce.payload))
-		// Serve websocket until EOF
-		w.serve(conn)
-		// Close websocket
-		conn.Close()
+
+		// try again in a second
+		time.Sleep(time.Second)
 	}
 }
 
@@ -245,13 +262,10 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
-			if err == io.EOF {
-				println("disconnected")
-				w.bus.unplug(w)
-				w.conn = nil
-				break
-			}
-			println("read error", err.Error())
+			println("disconnected", err.Error())
+			w.bus.unplug(w)
+			w.conn = nil
+			return
 		}
 		w.bus.receive(msg)
 	}

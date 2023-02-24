@@ -16,7 +16,7 @@ var tmpl = template.Must(template.ParseFS(fs, "index.html"))
 var fserv = http.FileServer(http.FS(fs))
 
 type generator func(id, model, name string) dean.Thinger
-type callback func(dean.Socket, dean.Thinger)
+type callback func(dean.Socket, dean.Thinger) bool
 
 type Hub struct {
 	dean.Thing
@@ -60,10 +60,15 @@ func (h *Hub) announce(msg *dean.Msg) {
 	msg.Unmarshal(&ann)
 	if gen, ok := h.gens[ann.Model]; ok {
 		thing := gen(ann.Id, ann.Model, ann.Name)
-		if cb, ok := h.cbs[ann.Model]; ok {
-			cb(msg.Src(), thing)
+		if thing != nil {
+			if cb, ok := h.cbs[ann.Model]; ok {
+				if cb(msg.Src(), thing) {
+					return
+				}
+			}
 		}
 	}
+	msg.Src().Close()
 }
 
 func (h *Hub) Subscribers() dean.Subscribers {

@@ -49,20 +49,24 @@ func NewServer(thinger Thinger) *Server {
 	return &s
 }
 
-func (s *Server) Register(socket Socket, client Thinger) {
+func (s *Server) Register(socket Socket, client Thinger) bool {
 	id := client.Id()
+	if !s.Bus.Handle(id, handle(client)) {
+		// id is already registered on bus
+		return false
+	}
 	s.clients[socket] = client
 	socket.SetTag(id)
-	s.Bus.Handle(id, handle(client))
 	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", client))
 	s.HandleFunc("/ws/"+id+"/", s.Serve)
+	return true
 }
 
 func (s *Server) connect(socket Socket) {
 	println("*** CONNECT ", socket.Name(), socket)
 	_, ok := s.clients[socket]
 	if ok {
-		println("ALREADY CONNECTED")
+		panic("ALREADY CONNECTED")
 	}
 	s.clients[socket] = nil
 }
@@ -107,13 +111,10 @@ func (s *Server) Dial(user, passwd, url string, announce *Msg) {
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
 	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
-	println("---- NewWebSocket --- ", ws)
 	path := r.URL.Path
-	println("path", path)
 	parts := strings.Split(path, "/")
-	if len(parts) == 2 {
-		id := parts[1]
-		println("tag", id)
+	if len(parts) == 4 {
+		id := parts[2]
 		if id != s.thinger.Id() {
 			ws.SetTag(id)
 		}
@@ -134,6 +135,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintf(w, "%s not found", path)
 }
 
 func (s *Server) root(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +226,13 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Strings(clients)
 	f["Clients"] = clients
+
+	handlers = make([]string, 0, len(s.Bus.handlers))
+	for key := range s.Bus.handlers {
+		handlers = append(handlers, key)
+	}
+	sort.Strings(handlers)
+	f["Bus Handlers"] = handlers
 
 	var out bytes.Buffer
 	b, _ := json.Marshal(f)
