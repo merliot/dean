@@ -55,10 +55,13 @@ func (s *Server) Register(socket Socket, client Thinger) bool {
 		// id is already registered on bus
 		return false
 	}
+
 	s.clients[socket] = client
+
 	socket.SetTag(id)
 	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", client))
 	s.HandleFunc("/ws/"+id+"/", s.Serve)
+
 	return true
 }
 

@@ -58,16 +58,20 @@ func (h *Hub) getState(msg *dean.Msg) {
 func (h *Hub) announce(msg *dean.Msg) {
 	var ann dean.ThingMsgAnnounce
 	msg.Unmarshal(&ann)
-	if gen, ok := h.gens[ann.Model]; ok {
+
+	gen, genOk := h.gens[ann.Model]
+	cb, cbOk := h.cbs[ann.Model]
+
+	if genOk && cbOk {
 		thing := gen(ann.Id, ann.Model, ann.Name)
 		if thing != nil {
-			if cb, ok := h.cbs[ann.Model]; ok {
-				if cb(msg.Src(), thing) {
-					return
-				}
+			if cb(msg.Src(), thing) {
+				msg.Marshal(&dean.ThingMsg{"attached"}).Reply()
+				return
 			}
 		}
 	}
+
 	msg.Src().Close()
 }
 

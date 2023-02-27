@@ -34,6 +34,10 @@ func New(id, model, name string) dean.Thinger {
 	}
 }
 
+func (g *Gps) saveState(msg *dean.Msg) {
+	msg.Unmarshal(g)
+}
+
 func (g *Gps) getState(msg *dean.Msg) {
 	msg.Marshal(g).Reply()
 }
@@ -47,7 +51,9 @@ func (g *Gps) update(msg *dean.Msg) {
 
 func (g *Gps) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
+		"state":     g.saveState,
 		"get/state": g.getState,
+		"attached":  g.getState,
 		"update":    g.update,
 	}
 }

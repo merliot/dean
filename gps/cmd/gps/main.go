@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	gps := gps.New("yyyyy", "gps", "gps1")
+	gps := gps.New("yyyyz", "gps", "gps1")
 
 	server := dean.NewServer(gps)
 	server.BasicAuth("user", "passwd")
