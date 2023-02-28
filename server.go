@@ -19,6 +19,7 @@ type Server struct {
 	http.Server
 	*Bus
 	*Injector
+	subs     Subscribers
 	handlers map[string]http.HandlerFunc
 	clients  map[Socket]Thinger
 	user     string
@@ -32,6 +33,7 @@ func NewServer(thinger Thinger) *Server {
 	s.clients = make(map[Socket]Thinger)
 
 	s.thinger = thinger
+	s.subs = thinger.Subscribers()
 
 	s.Bus = NewBus("server bus", s.connect, s.disconnect)
 	s.Bus.Handle("", s.busHandle(thinger))
@@ -61,19 +63,24 @@ func (s *Server) connect(socket Socket) {
 func (s *Server) disconnect(socket Socket) {
 	if thing := s.clients[socket]; thing != nil {
 		id := thing.Id()
-		s.Unhandle("/" + id + "/")
-		s.Unhandle("/ws/" + id + "/")
-		s.Bus.Unhandle(id)
-		socket.SetTag("")
-		subs := s.thinger.Subscribers()
-		if sub, ok := subs["disconnected"]; ok {
+		/*
+		if sub, ok := s.subs["disconnected"]; ok {
 			var msg = &Msg{bus: s.Bus, src: socket}
 			msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
 			sub(msg)
 		}
+		*/
+		var msg Msg
+		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
+		s.Injector.Inject(&msg)
+
+		s.Unhandle("/" + id + "/")
+		s.Unhandle("/ws/" + id + "/")
+		s.Bus.Unhandle(id)
+		socket.SetTag("")
 	}
 	delete(s.clients, socket)
-	println("*** DISCONNECT ", socket.Name())
+	println("*** DISCONNECT", socket.Name())
 }
 
 func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
@@ -106,11 +113,15 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
 
-	subs := s.thinger.Subscribers()
-	if sub, ok := subs["connected"]; ok {
+	/*
+	if sub, ok := s.subs["connected"]; ok {
 		msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
 		sub(msg)
 	}
+	*/
+
+	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
+	s.Injector.Inject(msg)
 }
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {

@@ -2,6 +2,7 @@ package hub
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
@@ -67,6 +68,7 @@ func (h *Hub) getState(msg *dean.Msg) {
 }
 
 func (h *Hub) connected(msg *dean.Msg) {
+	fmt.Println("======== conected ==========")
 	var child Child
 	msg.Unmarshal(&child)
 	child.Online = true
@@ -77,8 +79,11 @@ func (h *Hub) connected(msg *dean.Msg) {
 func (h *Hub) disconnected(msg *dean.Msg) {
 	var child Child
 	msg.Unmarshal(&child)
-	child = h.Children[child.Id]
-	child.Online = false
+	if c, ok := h.Children[child.Id]; ok {
+		c.Online = false
+		h.Children[child.Id] = c
+	}
+	fmt.Println("======== disconected ==========")
 	msg.Broadcast()
 }
 

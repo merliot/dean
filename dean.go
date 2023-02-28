@@ -2,6 +2,7 @@ package dean
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -29,7 +30,7 @@ func (m *Msg) Reply() {
 }
 
 func (m *Msg) Broadcast() {
-	println("Broadcast: src", m.src.Name())
+	println("Broadcast: tag", m.src.Tag(), m.String())
 	m.bus.broadcast(m)
 }
 
@@ -97,28 +98,29 @@ func (b *Bus) MaxSockets(maxSockets int) {
 }
 
 func (b *Bus) plugin(s Socket) {
+	fmt.Printf("--- PLUGIN %s ---\n", s.Name())
 	b.socketQ <- true
 	b.mu.Lock()
 	b.sockets[s] = true
-	b.connect(s)
 	b.mu.Unlock()
+	b.connect(s)
 }
 
 func (b *Bus) unplug(s Socket) {
+	fmt.Printf("--- UNPLUG %s ---\n", s.Name())
 	b.mu.Lock()
-	defer b.mu.Unlock()
-	if _, ok := b.sockets[s]; ok {
-		b.disconnect(s)
-		delete(b.sockets, s)
-		<-b.socketQ
-	}
+	delete(b.sockets, s)
+	b.mu.Unlock()
+	b.disconnect(s)
+	<-b.socketQ
 }
 
 func (b *Bus) broadcast(msg *Msg) {
 	b.mu.RLock()
 	for sock := range b.sockets {
-		println("broadcast:", sock.Name())
+		println("  sock tag", sock.Tag(), "name", sock.Name())
 		if msg.src != sock && msg.src.Tag() == sock.Tag() {
+			println("broadcast:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}
 	}
@@ -167,19 +169,32 @@ func (s *socket) SetTag(tag string) {
 
 type Injector struct {
 	socket
+	wire chan *Msg
 }
 
 func NewInjector(name string, bus *Bus) *Injector {
 	i := &Injector{
 		socket: socket{name, "", bus},
+		wire:   make(chan *Msg),
 	}
+
 	bus.plugin(i)
+
+	go func() {
+		for {
+			select {
+			case msg := <- i.wire:
+				i.bus.receive(msg)
+			}
+		}
+	}()
+
 	return i
 }
 
 func (i *Injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
-	i.bus.receive(msg)
+	i.wire <- msg
 }
 
 type webSocket struct {
