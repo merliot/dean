@@ -15,15 +15,19 @@ var fs embed.FS
 var tmpl = template.Must(template.ParseFS(fs, "index.html"))
 var fserv = http.FileServer(http.FS(fs))
 
-type generator func(id, model, name string) dean.Thinger
-type callback func(dean.Socket, dean.Thinger) bool
+type Child struct {
+	Id     string
+	Model  string
+	Name   string
+	Online bool
+}
 
 type Hub struct {
 	dean.Thing
 	dean.ThingMsg
+	Children  map[string]Child           // keyed by id
+	makers    map[string]dean.ThingMaker // keyed by model
 	fsHandler http.Handler
-	gens      map[string]generator // keyed by model
-	cbs       map[string]callback  // keyed by model
 	mu sync.Mutex
 }
 
@@ -31,54 +35,58 @@ func New(id, model, name string) *Hub {
 	return &Hub{
 		Thing:     dean.NewThing(id, model, name),
 		ThingMsg:  dean.ThingMsg{"state"},
+		Children:  make(map[string]Child),
+		makers:    make(map[string]dean.ThingMaker),
 		fsHandler: http.FileServer(http.FS(fs)),
-		gens:      make(map[string]generator),
-		cbs:       make(map[string]callback),
 	}
 }
 
-func (h *Hub) Register(model string, gen generator, cb callback) {
+func (h *Hub) RegisterMaker(model string, maker dean.ThingMaker) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.gens[model] = gen
-	h.cbs[model] = cb
+	h.makers[model] = maker
 }
 
-func (h *Hub) Unregister(model string) {
+func (h *Hub) UnregisterMaker(model string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.gens, model)
-	delete(h.cbs, model)
+	delete(h.makers, model)
+}
+
+func (h *Hub) Make(id, model, name string) dean.Thinger {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if maker, ok := h.makers[model]; ok {
+		return maker(id, model, name)
+	}
+	return nil
 }
 
 func (h *Hub) getState(msg *dean.Msg) {
 	msg.Marshal(h).Reply()
 }
 
-func (h *Hub) announce(msg *dean.Msg) {
-	var ann dean.ThingMsgAnnounce
-	msg.Unmarshal(&ann)
+func (h *Hub) connected(msg *dean.Msg) {
+	var child Child
+	msg.Unmarshal(&child)
+	child.Online = true
+	h.Children[child.Id] = child
+	msg.Broadcast()
+}
 
-	gen, genOk := h.gens[ann.Model]
-	cb, cbOk := h.cbs[ann.Model]
-
-	if genOk && cbOk {
-		thing := gen(ann.Id, ann.Model, ann.Name)
-		if thing != nil {
-			if cb(msg.Src(), thing) {
-				msg.Marshal(&dean.ThingMsg{"attached"}).Reply()
-				return
-			}
-		}
-	}
-
-	msg.Src().Close()
+func (h *Hub) disconnected(msg *dean.Msg) {
+	var child Child
+	msg.Unmarshal(&child)
+	child = h.Children[child.Id]
+	child.Online = false
+	msg.Broadcast()
 }
 
 func (h *Hub) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
-		"get/state": h.getState,
-		"announce":  h.announce,
+		"get/state":    h.getState,
+		"connected":    h.connected,
+		"disconnected": h.disconnected,
 	}
 }
 

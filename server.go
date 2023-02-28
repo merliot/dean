@@ -34,7 +34,7 @@ func NewServer(thinger Thinger) *Server {
 	s.thinger = thinger
 
 	s.Bus = NewBus("server bus", s.connect, s.disconnect)
-	s.Bus.Handle("", handle(thinger))
+	s.Bus.Handle("", s.busHandle(thinger))
 	s.Injector = NewInjector("server injector", s.Bus)
 
 	mux := http.NewServeMux()
@@ -49,22 +49,6 @@ func NewServer(thinger Thinger) *Server {
 	return &s
 }
 
-func (s *Server) Register(socket Socket, client Thinger) bool {
-	id := client.Id()
-	if !s.Bus.Handle(id, handle(client)) {
-		// id is already registered on bus
-		return false
-	}
-
-	s.clients[socket] = client
-
-	socket.SetTag(id)
-	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", client))
-	s.HandleFunc("/ws/"+id+"/", s.Serve)
-
-	return true
-}
-
 func (s *Server) connect(socket Socket) {
 	println("*** CONNECT ", socket.Name(), socket)
 	_, ok := s.clients[socket]
@@ -75,18 +59,61 @@ func (s *Server) connect(socket Socket) {
 }
 
 func (s *Server) disconnect(socket Socket) {
-	if t := s.clients[socket]; t != nil {
-		id := t.Id()
+	if thing := s.clients[socket]; thing != nil {
+		id := thing.Id()
 		s.Unhandle("/" + id + "/")
 		s.Unhandle("/ws/" + id + "/")
 		s.Bus.Unhandle(id)
 		socket.SetTag("")
+		subs := s.thinger.Subscribers()
+		if sub, ok := subs["disconnected"]; ok {
+			var msg = &Msg{bus: s.Bus, src: socket}
+			msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
+			sub(msg)
+		}
 	}
 	delete(s.clients, socket)
 	println("*** DISCONNECT ", socket.Name())
 }
 
-func handle(thinger Thinger) func(*Msg) {
+func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
+	var ann ThingMsgAnnounce
+	msg.Unmarshal(&ann)
+
+	id, model, name  := ann.Id, ann.Model, ann.Name
+
+	maker, ok := thinger.(Maker)
+	if !ok {
+		return
+	}
+
+	thing := maker.Make(id, model, name)
+	if thing == nil {
+		return
+	}
+
+	if !s.Bus.Handle(id, s.busHandle(thing)) {
+		// id is already registered on bus
+		return
+	}
+
+	socket := msg.src
+	s.clients[socket] = thing
+
+	socket.SetTag(id)
+	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", thing))
+	s.HandleFunc("/ws/"+id+"/", s.Serve)
+
+	msg.Marshal(&ThingMsg{"attached"}).Reply()
+
+	subs := s.thinger.Subscribers()
+	if sub, ok := subs["connected"]; ok {
+		msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
+		sub(msg)
+	}
+}
+
+func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("%s\n", msg.String())
 
@@ -95,6 +122,12 @@ func handle(thinger Thinger) func(*Msg) {
 
 		var tmsg ThingMsg
 		msg.Unmarshal(&tmsg)
+
+		switch tmsg.Path {
+		case "announce":
+			s.handleAnnounce(thinger, msg)
+			return
+		}
 
 		subs := thinger.Subscribers()
 		if sub, ok := subs[tmsg.Path]; ok {

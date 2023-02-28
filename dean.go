@@ -15,14 +15,6 @@ type Msg struct {
 	payload []byte
 }
 
-func NewMsg(payload []byte) *Msg {
-	return &Msg{payload: payload}
-}
-
-func (m *Msg) Src() Socket {
-	return m.src
-}
-
 func (m *Msg) Bytes() []byte {
 	return m.payload
 }

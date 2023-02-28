@@ -13,7 +13,7 @@ func main() {
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8081"
 
-	hub.Register("gps", gps.New, server.Register)
+	hub.RegisterMaker("gps", gps.New)
 
 	server.ListenAndServe()
 }

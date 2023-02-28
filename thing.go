@@ -8,6 +8,8 @@ import (
 
 type Subscribers map[string]func(*Msg)
 
+type ThingMaker func(id, model, name string) Thinger
+
 type Thinger interface {
 	Subscribers() Subscribers
 	ServeHTTP(http.ResponseWriter, *http.Request)
@@ -20,15 +22,31 @@ type Thinger interface {
 	Unlock()
 }
 
+type Maker interface {
+	Make(id, model, name string) Thinger
+}
+
 type ThingMsg struct {
 	Path string
 }
 
 type ThingMsgAnnounce struct {
-	ThingMsg
+	Path  string
 	Id    string
 	Model string
 	Name  string
+}
+
+type ThingMsgConnect struct {
+	Path  string
+	Id string
+	Model string
+	Name  string
+}
+
+type ThingMsgDisconnect struct {
+	Path  string
+	Id string
 }
 
 func ThingAnnounce(t Thinger) *Msg {
@@ -58,7 +76,7 @@ func (t *Thing) Unlock()       { t.mu.Unlock() }
 
 func (t *Thing) Announce() *Msg {
 	var msg Msg
-	var ann = ThingMsgAnnounce{ThingMsg{"announce"}, t.id, t.model, t.name}
+	var ann = ThingMsgAnnounce{"announce", t.id, t.model, t.name}
 	msg.Marshal(&ann)
 	return &msg
 }
