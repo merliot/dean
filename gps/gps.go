@@ -13,25 +13,32 @@ import (
 var fs embed.FS
 
 var tmpl = template.Must(template.ParseFS(fs, "index.html"))
-var fserv = http.FileServer(http.FS(fs))
+var hfs = http.FileServer(http.FS(fs))
 
 type update struct {
 	dean.ThingMsg
-	Foo int
+	Lat  float64
+	Long float64
 }
 
 type Gps struct {
 	dean.Thing
 	dean.ThingMsg
-	Foo       int
+	Lat  float64
+	Long float64
 }
 
-func New(id, model, name string) dean.Thinger {
+func NewGps(id, model, name string) Gps {
 	println("NEW GPS")
-	return &Gps{
+	return Gps{
 		Thing:     dean.NewThing(id, model, name),
 		ThingMsg:  dean.ThingMsg{"state"},
 	}
+}
+
+func New(id, model, name string) dean.Thinger {
+	gps := NewGps(id, model, name)
+	return &gps
 }
 
 func (g *Gps) saveState(msg *dean.Msg) {
@@ -45,7 +52,8 @@ func (g *Gps) getState(msg *dean.Msg) {
 func (g *Gps) update(msg *dean.Msg) {
 	var up update
 	msg.Unmarshal(&up)
-	g.Foo = up.Foo
+	g.Lat = up.Lat
+	g.Long = up.Long
 	msg.Broadcast()
 }
 
@@ -65,15 +73,20 @@ func (g *Gps) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, g.Vitals(r))
 		return
 	}
-	fserv.ServeHTTP(w, r)
+	hfs.ServeHTTP(w, r)
 }
 
 func (g *Gps) Run(i *dean.Injector) {
+	select{}
+}
+
+func Run(i *dean.Injector, location func() (float64, float64)) {
 	for {
 		var msg dean.Msg
 		var up update
-		up.Path, up.Foo = "update", g.Foo+1
+		lat, long := location()
+		up.Path, up.Lat, up.Long = "update", lat, long
 		i.Inject(msg.Marshal(&up))
-		time.Sleep(120 * time.Second)
+		time.Sleep(time.Minute)
 	}
 }

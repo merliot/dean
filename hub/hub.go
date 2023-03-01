@@ -14,7 +14,7 @@ import (
 var fs embed.FS
 
 var tmpl = template.Must(template.ParseFS(fs, "index.html"))
-var fserv = http.FileServer(http.FS(fs))
+var hfs = http.FileServer(http.FS(fs))
 
 type Child struct {
 	Id     string
@@ -42,13 +42,13 @@ func New(id, model, name string) *Hub {
 	}
 }
 
-func (h *Hub) RegisterMaker(model string, maker dean.ThingMaker) {
+func (h *Hub) Register(model string, maker dean.ThingMaker) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.makers[model] = maker
 }
 
-func (h *Hub) UnregisterMaker(model string) {
+func (h *Hub) Unregister(model string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	delete(h.makers, model)
@@ -101,7 +101,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, h.Vitals(r))
 		return
 	}
-	fserv.ServeHTTP(w, r)
+	hfs.ServeHTTP(w, r)
 }
 
 func (h *Hub) Run(i *dean.Injector) {

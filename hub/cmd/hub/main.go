@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/gps"
+	"github.com/merliot/dean/gps/usa"
+	"github.com/merliot/dean/gps/world"
 	"github.com/merliot/dean/hub"
 )
 
@@ -13,7 +15,9 @@ func main() {
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8081"
 
-	hub.RegisterMaker("gps", gps.New)
+	hub.Register("gps", gps.New)
+	hub.Register("usa", usa.New)
+	hub.Register("world", world.New)
 
 	server.ListenAndServe()
 }
