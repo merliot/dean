@@ -210,8 +210,6 @@ func NewWebSocket(name string, bus *Bus) *webSocket {
 
 func (w *webSocket) Close() {
 	w.conn.Close()
-	w.conn = nil
-	w.bus.unplug(w)
 }
 
 func (w *webSocket) Send(msg *Msg) {

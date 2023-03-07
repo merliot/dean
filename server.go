@@ -60,6 +60,7 @@ func (s *Server) connect(socket Socket) {
 		panic("ALREADY CONNECTED")
 	}
 	s.sockets[socket] = nil
+	fmt.Printf(">>>> added %p, %+v\n", socket, s.sockets)
 }
 
 func (s *Server) disconnect(socket Socket) {
@@ -71,14 +72,21 @@ func (s *Server) disconnect(socket Socket) {
 		s.Injector.Inject(&msg)
 
 		s.Unhandle("/ws/" + id + "/")
+		s.Bus.Unhandle(id)
+		socket.SetTag("")
 
-		for s, _ := range s.sockets {
-			if s.Tag() == id && s != socket {
-				s.Close()
+		fmt.Printf("BEGIN closing other sockets\n")
+		for sock, _ := range s.sockets {
+			if sock.Tag() == id && sock != socket {
+				fmt.Printf(">>>> closing %p\n", sock)
+				sock.Close()
 			}
 		}
+		fmt.Printf("DONE closing other sockets\n")
 	}
+	fmt.Printf(">>>> before deleted %p, %+v\n", socket, s.sockets)
 	delete(s.sockets, socket)
+	fmt.Printf(">>>> after deleted %p, %+v\n", socket, s.sockets)
 	println("*** DISCONNECT", socket.Name())
 }
 
@@ -103,20 +111,16 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 			println("THINGER COULDN'T MAKE A THING")
 			return
 		}
-		// TODO not sure if this check is necessary
-		if !s.Bus.Handle(id, s.busHandle(thing)) {
-			// id is already registered on bus
-			println("ID IS ALREADY REGISTERED ON BUS")
-			return
-		}
 		s.children[id] = thing
 		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", thing))
 	}
 
 	socket := msg.src
 	s.sockets[socket] = thing
+	fmt.Printf(">>>> updated %p, %+v\n", socket, s.sockets)
 
 	socket.SetTag(id)
+	s.Bus.Handle(id, s.busHandle(thing))
 	s.HandleFunc("/ws/"+id+"/", s.Serve)
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
