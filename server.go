@@ -45,7 +45,7 @@ func NewServer(thinger Thinger) *Server {
 	mux.HandleFunc("/", s.root)
 	s.Handler = mux
 
-	s.Handle("/", thinger)
+	s.Handle("", thinger)
 	s.HandleFunc("/state", s.state)
 	s.HandleFunc("/ws/", s.Serve)
 	s.HandleFunc("/ws/"+thinger.Id()+"/", s.Serve)
@@ -180,6 +180,11 @@ func (s *Server) Run() {
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	handler, ok := s.handlers[path]
+	if ok {
+		handler(w, r)
+		return
+	}
+	handler, ok = s.handlers[""]
 	if ok {
 		handler(w, r)
 		return

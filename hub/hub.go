@@ -10,13 +10,14 @@ import (
 	"github.com/merliot/dean"
 )
 
-//go:embed index.html
+//go:embed *
 var fs embed.FS
 
 var tmpl = template.Must(template.ParseFS(fs, "index.html"))
 var hfs = http.FileServer(http.FS(fs))
 
 type Child struct {
+	Path   string
 	Id     string
 	Model  string
 	Name   string
@@ -68,23 +69,23 @@ func (h *Hub) getState(msg *dean.Msg) {
 }
 
 func (h *Hub) connected(msg *dean.Msg) {
-	fmt.Println("======== conected ==========")
+	fmt.Println("======== connected ==========")
 	var child Child
 	msg.Unmarshal(&child)
 	child.Online = true
 	h.Children[child.Id] = child
+	msg.Marshal(&child)
 	msg.Broadcast()
 }
 
 func (h *Hub) disconnected(msg *dean.Msg) {
 	var child Child
 	msg.Unmarshal(&child)
-	if c, ok := h.Children[child.Id]; ok {
-		c.Online = false
-		h.Children[child.Id] = c
-	}
-	fmt.Println("======== disconected ==========")
+	child.Online = false
+	h.Children[child.Id] = child
+	msg.Marshal(&child)
 	msg.Broadcast()
+	fmt.Println("======== disconnected ==========")
 }
 
 func (h *Hub) Subscribers() dean.Subscribers {
@@ -96,6 +97,7 @@ func (h *Hub) Subscribers() dean.Subscribers {
 }
 
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	println("URL:", r.URL.Path)
 	switch r.URL.Path {
 	case "/", "/index.html":
 		tmpl.Execute(w, h.Vitals(r))

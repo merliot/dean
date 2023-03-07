@@ -1,29 +1,25 @@
-<html>
-<head>
-	<title>{{.Model}}</title>
-</head>
-<body>
-	<center><h1>{{.Model}}</h1></center>
-	<script>
-		conn = new WebSocket("{{.WebSocket}}")
+<html lang="en">
 
-		conn.onopen = function(evt) {
-			console.log("open")
-			conn.send(JSON.stringify({Path: "get/state"}))
-		}
+	<head>
+		<meta name="viewport"
+		      content="width=device-width, initial-scale=1">
 
-		conn.onclose = function(evt) {
-			console.log("close")
-		}
+		<title>{{.Name}}</title>
 
-		conn.onerror = function(err) {
-			console.log("error", err)
-		}
+		<link rel="stylesheet" type="text/css" href="css/hub.css">
 
-		conn.onmessage = function(evt) {
-			msg = JSON.parse(evt.data)
-			console.log('msg', msg)
-		}
-	</script>
-</body>
+	</head>
+
+	<body>
+		
+		<div class="flex-container">
+			<div class="children" id="children"></div>
+			<iframe class="child" id="child"></iframe>
+		</div>
+
+		<script src="js/hub.js"></script>
+		<script>Run({{.WebSocket}})</script>
+
+	</body>
+
 </html>
