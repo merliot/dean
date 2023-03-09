@@ -70,7 +70,6 @@
 				conn = new WebSocket("{{.WebSocket}}")
 
 				conn.onopen = function(evt) {
-					show()
 					console.log("open")
 					conn.send(JSON.stringify({Path: "get/state"}))
 				}
@@ -94,6 +93,7 @@
 					switch(msg.Path) {
 					case "state":
 						online = true
+						// fall-thru
 					case "update":
 						marker.bindPopup(msg.Lat + ", " + msg.Long)
 						marker.setLatLng([msg.Lat, msg.Long])
@@ -104,7 +104,6 @@
 				}
 			}
 
-			show()
 			connect()
 		</script>
 	</body>
