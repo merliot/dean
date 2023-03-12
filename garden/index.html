@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+		<meta name="viewport"
+		      content="width=device-width, initial-scale=1">
+
+		<title>{{.Name}}</title>
+
+		<link rel="stylesheet" type="text/css"
+			href="/{{.AssetsDir}}/css/garden.css">
+
+	</head>
+
+	<body>
+
+		<div id="all">
+			<div class="box" id="currentTimeBox">
+				<p>System Day/Time: <span id='date-time'></span></p>
+			</div>
+
+			<div class="box">
+				<div class="heading">
+					<p>Start Time</p>
+					<input type="time" id="startTime" onchange="changeStartTime()">
+				</div>
+
+				<div class="heading line" id="startDaysHeading">
+					<p>Start Days</p>
+					<div id="weekdays">
+						<div>
+							<input type="checkbox" id="day0" onclick="changeDay(this, 0)">
+							<label for="day0">Sunday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day1" onclick="changeDay(this, 1)">
+							<label for="day1">Monday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day2" onclick="changeDay(this, 2)">
+							<label for="day2">Tuesday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day3" onclick="changeDay(this, 3)">
+							<label for="day3">Wednesday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day4" onclick="changeDay(this, 4)">
+							<label for="day4">Thursday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day5" onclick="changeDay(this, 5)">
+							<label for="day5">Friday</label>
+						</div>
+						<div>
+							<input type="checkbox" id="day6" onclick="changeDay(this, 6)">
+							<label for="day6">Saturday</label>
+						</div>
+					</div>
+				</div>
+
+				<div class="heading line">
+					<p>Goal Gallons</p>
+					<input id="gallonsGoal" onchange="changeGallonsGoal(this)"></input>
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="heading">
+					<p>Progress</p>
+					<div id="progress">
+						<div id="bar"></div>
+					</div>
+				</div>
+
+				<div class="heading line">
+					<p>Manual</p>
+					<div>
+						<button id="start" onclick="start()">Start</button>
+						<button id="stop" onclick="stop()">Stop</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="box">
+				<div class="heading">
+					<p>Gallons</p>
+					<div id="gallons">0</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="/{{.AssetsDir}}/js/garden.js"></script>
+		<script>Run({{.WebSocket}})</script>
+
+	</body>
+</html>
+

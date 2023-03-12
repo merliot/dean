@@ -10,7 +10,7 @@ import (
 	"github.com/merliot/dean"
 )
 
-//go:embed *
+//go:embed css images js index.html
 var fs embed.FS
 
 var tmpl = template.Must(template.ParseFS(fs, "index.html"))

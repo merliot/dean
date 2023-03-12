@@ -28,17 +28,12 @@ type Gps struct {
 	Long float64
 }
 
-func NewGps(id, model, name string) Gps {
+func New(id, model, name string) dean.Thinger {
 	println("NEW GPS")
-	return Gps{
+	return &Gps{
 		Thing:     dean.NewThing(id, model, name),
 		ThingMsg:  dean.ThingMsg{"state"},
 	}
-}
-
-func New(id, model, name string) dean.Thinger {
-	gps := NewGps(id, model, name)
-	return &gps
 }
 
 func (g *Gps) saveState(msg *dean.Msg) {

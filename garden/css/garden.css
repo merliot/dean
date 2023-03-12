@@ -1,0 +1,73 @@
+body {
+	background-color: rgb(32,33,36);
+	color: rgb(232,234,237);
+	font-family: "Roboto", "Roboto", sans-serif;
+	font-size: 16px;
+}
+
+input, button {
+	font-family: "Roboto", "Roboto", sans-serif;
+	font-size: 16px;
+}
+
+#all {
+	display: flex;
+	flex-direction: column;
+	margin: auto;
+	max-width: 600px;
+	min-width: 350px;
+}
+
+.box {
+	display: flex;
+	flex-wrap: nowrap;
+	flex-direction: column;
+	background-color: rgb(41,42,45);
+	border-radius: 8px;
+	margin: 20px;
+}
+
+.heading {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 30px 10px 30px;
+}
+
+.line {
+	border-top-color: rgba(255,255,255,0.1);
+	border-top-style: solid;
+	border-top-width: 1px;
+}
+
+#currentTimeBox {
+	align-items: center;
+}
+
+#startDaysHeading {
+	align-items: flex-start;
+}
+
+#gallonsGoal {
+	width: 100px;
+}
+
+#weekdays {
+	display: flex;
+	flex-direction: column;
+}
+
+#progress {
+	width: 100%;
+	background-color: lightgrey;
+	margin-left: 30px;
+}
+
+#bar {
+	width: 0%;
+	height: 30px;
+	background-color: blue;
+	text-align: center;
+	line-height: 30px;
+	color: white;
+}

@@ -35,6 +35,8 @@ func NewServer(thinger Thinger) *Server {
 	s.children = make(map[string]Thinger)
 
 	s.thinger = thinger
+	thinger.SetReal()
+
 	s.subs = thinger.Subscribers()
 
 	s.Bus = NewBus("server bus", s.connect, s.disconnect)

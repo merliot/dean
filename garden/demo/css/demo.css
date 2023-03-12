@@ -1,0 +1,76 @@
+body {
+	font-family: "Roboto", "Roboto", sans-serif;
+	font-size: 16px;
+}
+
+input, button {
+	font-family: "Roboto", "Roboto", sans-serif;
+	font-size: 16px;
+}
+
+#mainDiv {
+	display: flex;
+	flex-direction: column;
+}
+
+#title {
+	font-size: 24px;
+	text-align: center;
+}
+
+#innerDiv {
+	display: flex;
+	align-items: flex-start;
+}
+
+#uiDiv {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 20px;
+}
+
+#child {
+	width: 400px;
+	height: 800px;
+}
+
+#stateBtn {
+	margin-top: 10px;
+}
+
+#logGardenDiv {
+	display: flex;
+	flex-direction: column;
+	padding: 20px;
+}
+
+#gardenDiv {
+	display: flex;
+	flex-direction: column;
+}
+
+#garden {
+	z-index: 0;
+}
+
+#overlay {
+	z-index: 1;
+	position: absolute;
+	display: none;
+}
+
+#logDiv {
+	display: flex;
+	flex-direction: column;
+}
+
+#log {
+	font-family: 'Courier New', monospace;
+	font-size: 12px;
+	resize: none;
+}
+
+#messageLog {
+	margin-top: 8px;
+}

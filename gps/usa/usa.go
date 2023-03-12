@@ -6,14 +6,14 @@ import (
 )
 
 type Usa struct {
-	gps.Gps
+	*gps.Gps
 	next int
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW USA")
 	return &Usa{
-		Gps: gps.NewGps(id, model, name),
+		Gps: gps.New(id, model, name).(*gps.Gps),
 	}
 }
 
