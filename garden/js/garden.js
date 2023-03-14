@@ -1,5 +1,3 @@
-var conn
-var online = false
 var timeDiff
 
 days = []
@@ -98,7 +96,37 @@ function showNow() {
 	setTimeout('showNow()', (60 - (now.getSeconds())) * 1000)
 }
 
+var state
+var conn
+var online = false
+
+const container = document.getElementById('all');
+
+function showZones() {
+	state.Zones.forEach((zone, i) => {
+		zoneDiv = document.getElementById(`zone-${i}`);
+		zoneP = document.getElementById(`zone-name-${zone.Name}`);
+		if (!zoneDiv) {
+			zoneDiv = document.createElement('div');
+			zoneDiv.setAttribute('class', 'zone');
+			zoneDiv.setAttribute('id', `zone-${i}`);
+			container.appendChild(zoneDiv);
+			zoneP = document.createElement('p');
+			zoneP.setAttribute('id', `zone-name-${zone.Name}`);
+			zoneDiv.appendChild(zoneP);
+		}
+		zoneP.textContent = `Zone ${zone.Name}`;
+	});
+}
+
+function show() {
+	overlay = document.getElementById("overlay")
+	overlay.style.display = online ? "none" : "block"
+	showZones()
+}
+
 function run(ws) {
+
 	conn = new WebSocket(ws)
 
 	conn.onopen = function(evt) {
@@ -109,7 +137,7 @@ function run(ws) {
 	conn.onclose = function(evt) {
 		console.log("close")
 		online = false
-//		show()
+		show()
 		setTimeout(run(ws), 1000)
 	}
 
@@ -127,7 +155,8 @@ function run(ws) {
 			online = true
 			// fall-thru
 		case "update":
-//			show()
+			state = msg
+			show()
 			break
 		}
 
