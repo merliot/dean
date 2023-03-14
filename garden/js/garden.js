@@ -98,32 +98,40 @@ function showNow() {
 	setTimeout('showNow()', (60 - (now.getSeconds())) * 1000)
 }
 
-function Run(ws) {
+function run(ws) {
+	conn = new WebSocket(ws)
 
-	function connect() {
-		conn = new WebSocket(ws)
+	conn.onopen = function(evt) {
+		console.log("open")
+		conn.send(JSON.stringify({Path: "get/state"}))
+	}
 
-		conn.onopen = function(evt) {
-			console.log("open")
-			conn.send(JSON.stringify({Path: "get/state"}))
+	conn.onclose = function(evt) {
+		console.log("close")
+		online = false
+//		show()
+		setTimeout(run(ws), 1000)
+	}
+
+	conn.onerror = function(err) {
+		console.log("error", err)
+		conn.close()
+	}
+
+	conn.onmessage = function(evt) {
+		msg = JSON.parse(evt.data)
+		console.log('garden', msg)
+
+		switch(msg.Path) {
+		case "state":
+			online = true
+			// fall-thru
+		case "update":
+//			show()
+			break
 		}
 
-		conn.onclose = function(evt) {
-			console.log("close")
-			online = false
-			show()
-			setTimeout(connect, 1000)
-		}
-
-		conn.onerror = function(err) {
-			console.log("error", err)
-			conn.close()
-		}
-
-		conn.onmessage = function(evt) {
-			msg = JSON.parse(evt.data)
-			console.log('garden', msg)
-
+//
 //			switch(msg.Msg) {
 //			case "_ReplyIdentity":
 //				online = msg.Online
@@ -149,8 +157,5 @@ function Run(ws) {
 //				saveGallonsGoal(msg)
 //				break
 //			}
-		}
 	}
-
-	connect()
 }

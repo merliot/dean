@@ -49,14 +49,13 @@ type Garden struct {
 	Zones     []Zone
 	timer     *time.Timer
 	currGallons uint
-	injector *dean.Injector
+	*dean.Injector `json:"-"`
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW GARDEN")
 	var g Garden
 	g.Thing = dean.NewThing(id, model, name)
-	g.ThingMsg = dean.ThingMsg{"state"}
 	g.Zones = make([]Zone, 8)
 	for i, _ := range g.Zones {
 		g.Zones[i].Name = fmt.Sprintf("Zone %d", i + 1)
@@ -65,17 +64,22 @@ func New(id, model, name string) dean.Thinger {
 }
 
 func (g *Garden) saveState(msg *dean.Msg) {
-	msg.Unmarshal(g).Broadcast()
+	msg.Unmarshal(g)
 }
 
 func (g *Garden) getState(msg *dean.Msg) {
+	g.Path = "state"
 	msg.Marshal(g).Reply()
 }
 
-func (g *Garden) update() {
+func (g *Garden) update(msg *dean.Msg) {
+	msg.Unmarshal(g).Broadcast()
+}
+
+func (g *Garden) sendUpdate() {
 	var msg dean.Msg
-	msg.Marshal(g)
-	g.injector.Inject(&msg)
+	g.Path = "update"
+	g.Inject(msg.Marshal(g))
 }
 
 func (g *Garden) Subscribers() dean.Subscribers {
@@ -83,6 +87,7 @@ func (g *Garden) Subscribers() dean.Subscribers {
 		"state":     g.saveState,
 		"get/state": g.getState,
 		"attached":  g.getState,
+		"update":    g.update,
 	}
 }
 
@@ -149,7 +154,7 @@ func (g *Garden) runZone(zone int) {
 		soFar := z.GallonsSoFar
 		z.GallonsSoFar = g.CurrentGallons() - startGallons
 		if z.GallonsSoFar != soFar {
-			g.update()
+			g.sendUpdate()
 		}
 		if z.GallonsSoFar >= z.GallonsGoal {
 			break
@@ -159,7 +164,7 @@ func (g *Garden) runZone(zone int) {
 	println("stop zone", zone)
 
 	z.Running = false
-	g.update()
+	g.sendUpdate()
 }
 
 func (g *Garden) runZones() {
@@ -197,14 +202,14 @@ func (g *Garden) Run(i *dean.Injector) {
 
 	dean.ThingRestore(g)
 
-	g.StartTime, _ = time.ParseDuration("21h51m")
+	g.StartTime, _ = time.ParseDuration("18h39m")
 
 	g.Zones[0].GallonsGoal = 10
 	g.Zones[0].RunningTimeMax, _ = time.ParseDuration("5m")
 	g.Zones[1].GallonsGoal = 12
 	g.Zones[1].RunningTimeMax, _ = time.ParseDuration("2m")
 
-	g.injector = i
+	g.Injector = i
 	g.schedule()
 
 	select {}
