@@ -104,16 +104,19 @@ function Run(ws) {
 		conn = new WebSocket(ws)
 
 		conn.onopen = function(evt) {
-			sendDateTime()
-			getIdentity()
+			console.log("open")
+			conn.send(JSON.stringify({Path: "get/state"}))
 		}
 
 		conn.onclose = function(evt) {
+			console.log("close")
 			online = false
+			show()
 			setTimeout(connect, 1000)
 		}
 
 		conn.onerror = function(err) {
+			console.log("error", err)
 			conn.close()
 		}
 
@@ -121,31 +124,31 @@ function Run(ws) {
 			msg = JSON.parse(evt.data)
 			console.log('garden', msg)
 
-			switch(msg.Msg) {
-			case "_ReplyIdentity":
-				online = msg.Online
-				getState()
-				break
-			case "_EventStatus":
-				online = msg.Online
-				break
-			case "_ReplyState":
-				saveState(msg)
-				showNow()
-				break
-			case "Update":
-				update(msg)
-				break
-			case "Day":
-				saveDay(msg)
-				break
-			case "StartTime":
-				saveStartTime(msg)
-				break
-			case "GallonsGoal":
-				saveGallonsGoal(msg)
-				break
-			}
+//			switch(msg.Msg) {
+//			case "_ReplyIdentity":
+//				online = msg.Online
+//				getState()
+//				break
+//			case "_EventStatus":
+//				online = msg.Online
+//				break
+//			case "_ReplyState":
+//				saveState(msg)
+//				showNow()
+//				break
+//			case "Update":
+//				update(msg)
+//				break
+//			case "Day":
+//				saveDay(msg)
+//				break
+//			case "StartTime":
+//				saveStartTime(msg)
+//				break
+//			case "GallonsGoal":
+//				saveGallonsGoal(msg)
+//				break
+//			}
 		}
 	}
 

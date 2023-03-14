@@ -42,25 +42,14 @@ func (z Zone) reset() {
 	z.GallonsSoFar = 0
 }
 
-func (z Zone) run() {
-	z.Running = true
-	z.StartTime = time.Now()
-	for time.Since(z.StartTime) < z.RunningTimeMax {
-		//z.GallonsSoFar = ...
-		if z.GallonsSoFar >= z.GallonsGoal {
-			break
-		}
-		time.Sleep(time.Minute)
-	}
-	z.Running = false
-}
-
 type Garden struct {
 	dean.Thing
 	dean.ThingMsg
 	StartTime time.Duration
 	Zones     []Zone
 	timer     *time.Timer
+	currGallons uint
+	injector *dean.Injector
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -76,19 +65,17 @@ func New(id, model, name string) dean.Thinger {
 }
 
 func (g *Garden) saveState(msg *dean.Msg) {
-	msg.Unmarshal(g)
+	msg.Unmarshal(g).Broadcast()
 }
 
 func (g *Garden) getState(msg *dean.Msg) {
 	msg.Marshal(g).Reply()
 }
 
-func (g *Garden) update(msg *dean.Msg) {
-	//var up update
-	//msg.Unmarshal(&up)
-	//g.Lat = up.Lat
-	//g.Long = up.Long
-	msg.Broadcast()
+func (g *Garden) update() {
+	var msg dean.Msg
+	msg.Marshal(g)
+	g.injector.Inject(&msg)
 }
 
 func (g *Garden) Subscribers() dean.Subscribers {
@@ -96,7 +83,6 @@ func (g *Garden) Subscribers() dean.Subscribers {
 		"state":     g.saveState,
 		"get/state": g.getState,
 		"attached":  g.getState,
-		"update":    g.update,
 	}
 }
 
@@ -146,17 +132,47 @@ func (g *Garden) resetZones() {
 	}
 }
 
+func (g *Garden) CurrentGallons() uint {
+	g.currGallons++
+	return g.currGallons
+}
+
+func (g *Garden) runZone(zone int) {
+	z := &g.Zones[zone]
+
+	z.Running = true
+	z.StartTime = time.Now()
+	startGallons := g.CurrentGallons()
+
+	println("starting zone", zone)
+	for time.Since(z.StartTime) < z.RunningTimeMax {
+		soFar := z.GallonsSoFar
+		z.GallonsSoFar = g.CurrentGallons() - startGallons
+		if z.GallonsSoFar != soFar {
+			g.update()
+		}
+		if z.GallonsSoFar >= z.GallonsGoal {
+			break
+		}
+		time.Sleep(time.Minute)
+	}
+	println("stop zone", zone)
+
+	z.Running = false
+	g.update()
+}
+
 func (g *Garden) runZones() {
 	for i, _ := range g.Zones {
-		g.Zones[i].run()
+		g.runZone(i)
 	}
 }
 
-func (g *Garden) run(i *dean.Injector) {
+func (g *Garden) run() {
 	println("Running")
 	g.resetZones()
 	g.runZones()
-        g.schedule(i)
+        g.schedule()
 }
 
 func getHoursAndMinutes(duration time.Duration) (hours, minutes int) {
@@ -166,7 +182,7 @@ func getHoursAndMinutes(duration time.Duration) (hours, minutes int) {
 	return hours, minutes
 }
 
-func (g *Garden) schedule(i *dean.Injector) {
+func (g *Garden) schedule() {
 	now := time.Now()
 	hours, minutes := getHoursAndMinutes(g.StartTime)
 	then := time.Date(now.Year(), now.Month(), now.Day(), hours, minutes, 0, 0, now.Location())
@@ -174,18 +190,22 @@ func (g *Garden) schedule(i *dean.Injector) {
 		then = then.Add(24 * time.Hour) // add 24 hours to "then" if it's already passed today
 	}
 	fmt.Printf("firing in %s\n", then.Sub(now))
-	g.timer = time.AfterFunc(then.Sub(now), func() {
-		g.run(i)
-	})
+	g.timer = time.AfterFunc(then.Sub(now), g.run)
 }
 
 func (g *Garden) Run(i *dean.Injector) {
 
 	dean.ThingRestore(g)
 
-	g.StartTime, _ = time.ParseDuration("21h47m")
+	g.StartTime, _ = time.ParseDuration("21h51m")
 
-	g.schedule(i)
+	g.Zones[0].GallonsGoal = 10
+	g.Zones[0].RunningTimeMax, _ = time.ParseDuration("5m")
+	g.Zones[1].GallonsGoal = 12
+	g.Zones[1].RunningTimeMax, _ = time.ParseDuration("2m")
+
+	g.injector = i
+	g.schedule()
 
 	select {}
 }
