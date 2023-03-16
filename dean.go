@@ -35,7 +35,10 @@ func (m *Msg) Broadcast() {
 }
 
 func (m *Msg) Unmarshal(v any) *Msg {
-	json.Unmarshal(m.payload, v)
+	err := json.Unmarshal(m.payload, v)
+	if err != nil {
+		panic(err.Error())
+	}
 	return m
 }
 
@@ -169,32 +172,17 @@ func (s *socket) SetTag(tag string) {
 
 type Injector struct {
 	socket
-	wire chan *Msg
 }
 
 func NewInjector(name string, bus *Bus) *Injector {
-	i := &Injector{
-		socket: socket{name, "", bus},
-		wire:   make(chan *Msg),
-	}
-
+	i := &Injector{socket{name, "", bus}}
 	bus.plugin(i)
-
-	go func() {
-		for {
-			select {
-			case msg := <- i.wire:
-				i.bus.receive(msg)
-			}
-		}
-	}()
-
 	return i
 }
 
 func (i *Injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
-	i.wire <- msg
+	i.bus.receive(msg)
 }
 
 type webSocket struct {

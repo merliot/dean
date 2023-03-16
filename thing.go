@@ -54,6 +54,7 @@ type ThingMsgDisconnect struct {
 }
 
 func ThingStore(t Thinger) {
+	println("THINGSTORE", t.IsReal())
 	if t.IsReal() {
 		storeName := t.Model() + "-" + t.Id()
 		bytes, _ := json.Marshal(t)

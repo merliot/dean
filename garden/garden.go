@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/merliot/dean"
@@ -32,20 +34,33 @@ type Zone struct {
 	GallonsGoal    uint
 	GallonsSoFar   uint
 	StartTime      time.Time
-	RunningTimeMax time.Duration
+	RunningTimeMax uint
 	Running        bool
+	cancel         chan bool
 }
 
-func (z Zone) reset() {
+func (z *Zone) reset() {
 	z.Running = false
 	z.StartTime = time.Time{}
 	z.GallonsSoFar = 0
 }
 
+func (z *Zone) stop() {
+	select {
+	case z.cancel <- true:
+	default:
+	}
+}
+
+type zoneMsg struct {
+	Zone uint
+}
+
 type Garden struct {
 	dean.Thing
 	dean.ThingMsg
-	StartTime time.Duration
+	StartTime string
+	StartDays [7]bool
 	Zones     []Zone
 	timer     *time.Timer
 	currGallons uint
@@ -56,9 +71,11 @@ func New(id, model, name string) dean.Thinger {
 	println("NEW GARDEN")
 	var g Garden
 	g.Thing = dean.NewThing(id, model, name)
+	g.StartTime = "00:00"
 	g.Zones = make([]Zone, 8)
 	for i, _ := range g.Zones {
 		g.Zones[i].Name = fmt.Sprintf("Zone %d", i + 1)
+		g.Zones[i].cancel = make(chan bool)
 	}
 	return &g
 }
@@ -73,7 +90,38 @@ func (g *Garden) getState(msg *dean.Msg) {
 }
 
 func (g *Garden) update(msg *dean.Msg) {
-	msg.Unmarshal(g).Broadcast()
+	msg.Unmarshal(g)
+	dean.ThingStore(g)
+	msg.Broadcast()
+}
+
+func (g *Garden) startTime(msg *dean.Msg) {
+	g.update(msg)
+	g.schedule()
+}
+
+func (g *Garden) getZone(msg *dean.Msg) uint {
+	var z zoneMsg
+	msg.Unmarshal(&z)
+	fmt.Printf("%+v\n", z)
+	return z.Zone
+}
+
+func (g *Garden) stopAllZones() {
+	for zone, _ := range g.Zones {
+		g.Zones[zone].stop()
+	}
+}
+
+func (g *Garden) startZone(msg *dean.Msg) {
+	g.stopAllZones()
+	zone := g.getZone(msg)
+	go g.runZone(&g.Zones[zone])
+}
+
+func (g *Garden) stopZone(msg *dean.Msg) {
+	zone := g.getZone(msg)
+	g.Zones[zone].stop()
 }
 
 func (g *Garden) sendUpdate() {
@@ -88,6 +136,9 @@ func (g *Garden) Subscribers() dean.Subscribers {
 		"get/state": g.getState,
 		"attached":  g.getState,
 		"update":    g.update,
+		"starttime": g.startTime,
+		"startzone": g.startZone,
+		"stopzone":  g.stopZone,
 	}
 }
 
@@ -135,6 +186,7 @@ func (g *Garden) resetZones() {
 	for i, _ := range g.Zones {
 		g.Zones[i].reset()
 	}
+	g.sendUpdate()
 }
 
 func (g *Garden) CurrentGallons() uint {
@@ -142,34 +194,67 @@ func (g *Garden) CurrentGallons() uint {
 	return g.currGallons
 }
 
-func (g *Garden) runZone(zone int) {
-	z := &g.Zones[zone]
+func (g *Garden) runZone(z *Zone) bool {
+
+	var stopped = false
+
+	if z.RunningTimeMax == 0 || z.GallonsGoal == 0 {
+		return true
+	}
+
+	println("starting zone", z.Name)
 
 	z.Running = true
 	z.StartTime = time.Now()
+	z.GallonsSoFar = 0
+	g.sendUpdate()
+
 	startGallons := g.CurrentGallons()
 
-	println("starting zone", zone)
-	for time.Since(z.StartTime) < z.RunningTimeMax {
-		soFar := z.GallonsSoFar
-		z.GallonsSoFar = g.CurrentGallons() - startGallons
-		if z.GallonsSoFar != soFar {
-			g.sendUpdate()
+	// start zone pump
+
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	run: for {
+		select {
+		case <-z.cancel:
+			stopped = true
+			break run
+		case <-ticker.C:
+			soFar := z.GallonsSoFar
+			z.GallonsSoFar = g.CurrentGallons() - startGallons
+			if z.GallonsSoFar != soFar {
+				g.sendUpdate()
+			}
+			if z.GallonsSoFar >= z.GallonsGoal {
+				break run
+			}
+			runningTime := time.Since(z.StartTime)
+			if uint(runningTime.Minutes()) >= z.RunningTimeMax {
+				break run
+			}
 		}
-		if z.GallonsSoFar >= z.GallonsGoal {
-			break
-		}
-		time.Sleep(time.Minute)
 	}
-	println("stop zone", zone)
+
+
+	println("stop zone", z.Name)
+
+	// stop zone pump
 
 	z.Running = false
 	g.sendUpdate()
+
+	return !stopped
 }
 
 func (g *Garden) runZones() {
-	for i, _ := range g.Zones {
-		g.runZone(i)
+	if g.StartDays[time.Now().Weekday()] {
+		for i, _ := range g.Zones {
+			if !g.runZone(&g.Zones[i]) {
+				break
+			}
+		}
 	}
 }
 
@@ -180,11 +265,11 @@ func (g *Garden) run() {
         g.schedule()
 }
 
-func getHoursAndMinutes(duration time.Duration) (hours, minutes int) {
-	totalMinutes := int(duration.Minutes())
-	hours = totalMinutes / 60
-	minutes = totalMinutes % 60
-	return hours, minutes
+func getHoursAndMinutes(start string) (hours, minutes int) {
+	parts := strings.Split(start, ":")
+	hours, _ = strconv.Atoi(parts[0])
+	minutes, _ = strconv.Atoi(parts[1])
+	return
 }
 
 func (g *Garden) schedule() {
@@ -194,22 +279,20 @@ func (g *Garden) schedule() {
 	if now.After(then) {
 		then = then.Add(24 * time.Hour) // add 24 hours to "then" if it's already passed today
 	}
-	fmt.Printf("firing in %s\n", then.Sub(now))
-	g.timer = time.AfterFunc(then.Sub(now), g.run)
+	wait := then.Sub(now)
+	fmt.Printf("firing in %s\n", wait)
+	if g.timer == nil {
+		g.timer = time.AfterFunc(wait, g.run)
+	} else {
+		g.timer.Reset(wait)
+	}
 }
 
 func (g *Garden) Run(i *dean.Injector) {
 
-	dean.ThingRestore(g)
-
-	g.StartTime, _ = time.ParseDuration("18h39m")
-
-	g.Zones[0].GallonsGoal = 10
-	g.Zones[0].RunningTimeMax, _ = time.ParseDuration("5m")
-	g.Zones[1].GallonsGoal = 12
-	g.Zones[1].RunningTimeMax, _ = time.ParseDuration("2m")
-
 	g.Injector = i
+	dean.ThingRestore(g)
+	g.resetZones()
 	g.schedule()
 
 	select {}

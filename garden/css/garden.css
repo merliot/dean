@@ -63,34 +63,48 @@ input, button {
 	border-top-width: 1px;
 }
 
-#currentTimeBox {
-	align-items: center;
-}
-
-#startDaysHeading {
-	align-items: flex-start;
-}
-
-#gallonsGoal {
+.gallons-goal {
 	width: 100px;
+	text-align: right;
 }
 
-#weekdays {
-	display: flex;
-	flex-direction: column;
+.running-time-max {
+	width: 100px;
+	text-align: right;
 }
 
-#progress {
-	width: 100%;
+.progress {
+	width: 70%;
 	background-color: lightgrey;
-	margin-left: 30px;
 }
 
-#bar {
+.zone-name {
+	width: 30%;
+}
+
+.progress-bar {
 	width: 0%;
 	height: 30px;
 	background-color: blue;
 	text-align: center;
 	line-height: 30px;
 	color: white;
+}
+
+.buttons {
+	display: flex;
+	justify-content: space-between;
+}
+
+.buttons button {
+	margin-left: 10px;
+}
+
+#start-days {
+	align-items: flex-start;
+}
+
+#weekdays {
+	display: flex;
+	flex-direction: column;
 }
