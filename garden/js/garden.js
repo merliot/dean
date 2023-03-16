@@ -71,7 +71,7 @@ function makeZone(zone, i) {
 	makeP('', '', 'Goal Gallons', zoneGGDiv)
 	makeInput('gallons-goal', `zone-goal-gallons-${i}`, zoneGGDiv,
 		function () {
-			zone.GallonsGoal = parseInt(this.value)
+			state.Zones[i].GallonsGoal = parseInt(this.value)
 			sendUpdate("update")
 		})
 
@@ -79,7 +79,7 @@ function makeZone(zone, i) {
 	makeP('', '', 'Maximum Run Time (minutes)', zoneRTMDiv)
 	makeInput('running-time-max', `zone-running-time-max-${i}`, zoneRTMDiv,
 		function () {
-			zone.RunningTimeMax = parseInt(this.value)
+			state.Zones[i].RunningTimeMax = parseInt(this.value)
 			sendUpdate("update")
 		})
 
