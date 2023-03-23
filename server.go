@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	_ "github.com/merliot/dean/tinynet"
 	"golang.org/x/net/websocket"
 )
 
@@ -132,7 +133,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("%s\n", msg.String())
+		fmt.Printf("Bus handle %s\n", msg.String())
 
 		thinger.Lock()
 		defer thinger.Unlock()

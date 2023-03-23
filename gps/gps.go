@@ -2,7 +2,6 @@ package gps
 
 import (
 	"embed"
-	"html/template"
 	"net/http"
 	"time"
 
@@ -11,9 +10,6 @@ import (
 
 //go:embed index.html
 var fs embed.FS
-
-var tmpl = template.Must(template.ParseFS(fs, "index.html"))
-var hfs = http.FileServer(http.FS(fs))
 
 type update struct {
 	dean.ThingMsg
@@ -45,6 +41,7 @@ func (g *Gps) getState(msg *dean.Msg) {
 }
 
 func (g *Gps) update(msg *dean.Msg) {
+	// TODO i think this can just be msg.Unmarshal(g)
 	var up update
 	msg.Unmarshal(&up)
 	g.Lat = up.Lat
@@ -62,13 +59,7 @@ func (g *Gps) Subscribers() dean.Subscribers {
 }
 
 func (g *Gps) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	println("GPS: path:", r.URL.Path)
-	switch r.URL.Path {
-	case "", "/", "/index.html":
-		tmpl.Execute(w, g.Vitals(r))
-		return
-	}
-	hfs.ServeHTTP(w, r)
+	g.ServeFS(fs, w, r)
 }
 
 func (g *Gps) Run(i *dean.Injector) {

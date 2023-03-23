@@ -1,8 +1,9 @@
 package dean
 
 import (
+	"bytes"
+	"embed"
 	"encoding/json"
-	"html/template"
 	"net/http"
 	"os"
 	"sync"
@@ -104,16 +105,17 @@ func (t *Thing) Announce() *Msg {
 	return &msg
 }
 
-func (t *Thing) Vitals(r *http.Request) map[string]any {
-	scheme := "wss://"
-	if r.TLS == nil {
-		scheme = "ws://"
+func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
+	println("ServeFS:", r.URL.Path)
+	switch r.URL.Path {
+	case "", "/", "/index.html":
+		html, _ := fs.ReadFile("index.html")
+		from := []byte("{{.WebSocket}}")
+		to := []byte("ws://" + r.Host + "/ws/" + t.Id() + "/")
+		html = bytes.ReplaceAll(html, from, to)
+		w.Write(html)
+		return
 	}
-
-	return map[string]any{
-		"Id":        t.id,
-		"Model":     t.model,
-		"Name":      t.name,
-		"WebSocket": template.JSEscapeString(scheme + r.Host + "/ws/" + t.id + "/"),
-	}
+	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
+
