@@ -1,6 +1,8 @@
 package usa
 
 import (
+	"time"
+
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/gps"
 )
@@ -17,13 +19,20 @@ func New(id, model, name string) dean.Thinger {
 	}
 }
 
-func (w *Usa) Run(i *dean.Injector) {
-	gps.Run(i, w.location)
+func (u *Usa) Run(i *dean.Injector) {
+	var msg dean.Msg
+
+	for {
+		u.Lat, u.Long = u.location()
+		u.Path = "update"
+		i.Inject(msg.Marshal(u))
+		time.Sleep(time.Minute)
+	}
 }
 
-func (w *Usa) location() (lat, long float64) {
-	p := places[w.next]
-	w.next = (w.next + 1) % len(places)
+func (u *Usa) location() (lat, long float64) {
+	p := places[u.next]
+	u.next = (u.next + 1) % len(places)
 	return p.lat, p.long
 }
 
