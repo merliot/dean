@@ -3,7 +3,6 @@ package garden
 import (
 	"embed"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -16,9 +15,6 @@ import (
 
 //go:embed css js index.html
 var fs embed.FS
-
-var tmpl = template.Must(template.ParseFS(fs, "index.html"))
-var hfs = http.FileServer(http.FS(fs))
 
 // Sensor reads 450 pulses/Liter
 // 3.78541 Liters/Gallon
@@ -143,15 +139,7 @@ func (g *Garden) Subscribers() dean.Subscribers {
 }
 
 func (g *Garden) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: make this common func?
-	//       ThingServeHTTP(w, r, tmpl, hfs)
-	println("GARDEN: path:", r.URL.Path)
-	switch r.URL.Path {
-	case "", "/", "/index.html":
-		tmpl.Execute(w, g.Vitals(r))
-		return
-	}
-	hfs.ServeHTTP(w, r)
+	g.ServeFS(fs, w, r)
 }
 
 /*

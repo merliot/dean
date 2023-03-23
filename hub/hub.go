@@ -3,7 +3,6 @@ package hub
 import (
 	"embed"
 	"fmt"
-	"html/template"
 	"net/http"
 	"sync"
 
@@ -12,9 +11,6 @@ import (
 
 //go:embed css images js index.html
 var fs embed.FS
-
-var tmpl = template.Must(template.ParseFS(fs, "index.html"))
-var hfs = http.FileServer(http.FS(fs))
 
 type Child struct {
 	Path   string
@@ -36,7 +32,6 @@ type Hub struct {
 func New(id, model, name string) *Hub {
 	return &Hub{
 		Thing:     dean.NewThing(id, model, name),
-		ThingMsg:  dean.ThingMsg{"state"},
 		Children:  make(map[string]Child),
 		makers:    make(map[string]dean.ThingMaker),
 		fsHandler: http.FileServer(http.FS(fs)),
@@ -97,13 +92,7 @@ func (h *Hub) Subscribers() dean.Subscribers {
 }
 
 func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	println("URL:", r.URL.Path)
-	switch r.URL.Path {
-	case "/", "/index.html":
-		tmpl.Execute(w, h.Vitals(r))
-		return
-	}
-	hfs.ServeHTTP(w, r)
+	h.ServeFS(fs, w, r)
 }
 
 func (h *Hub) Run(i *dean.Injector) {
