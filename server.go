@@ -1,15 +1,11 @@
 package dean
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
-	"text/template"
 
 	_ "github.com/merliot/dean/tinynet"
 	"golang.org/x/net/websocket"
@@ -26,6 +22,7 @@ type Server struct {
 	children map[string]Thinger
 	user     string
 	passwd   string
+	msg      ThingMsg
 }
 
 func NewServer(thinger Thinger) *Server {
@@ -138,17 +135,16 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		thinger.Lock()
 		defer thinger.Unlock()
 
-		var tmsg ThingMsg
-		msg.Unmarshal(&tmsg)
+		msg.Unmarshal(&s.msg)
 
-		switch tmsg.Path {
+		switch s.msg.Path {
 		case "announce":
 			s.handleAnnounce(thinger, msg)
 			return
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[tmsg.Path]; ok {
+		if sub, ok := subs[s.msg.Path]; ok {
 			sub(msg)
 		}
 	}
@@ -238,7 +234,7 @@ func (s *Server) Unhandle(path string) {
 	delete(s.handlers, path)
 }
 
-var html = `
+var htmlBegin = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -247,7 +243,8 @@ var html = `
   <body>
     <pre>
       <code>
-{{.}}
+`
+var htmlEnd = `
       </code>
     </pre>
   </body>
@@ -256,6 +253,18 @@ var html = `
 
 func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Fprintln(w, htmlBegin)
+
+	fmt.Fprintln(w, "Id:   ", s.thinger.Id())
+	fmt.Fprintln(w, "Model:", s.thinger.Model())
+	fmt.Fprintln(w, "Name: ", s.thinger.Name())
+	fmt.Fprintln(w, "User: ", s.user)
+
+	// TODO finish this
+
+	fmt.Fprintln(w, htmlEnd)
+
+	/*
 	f := map[string]any{
 		"Id": s.thinger.Id(),
 		"Model": s.thinger.Model(),
@@ -307,4 +316,5 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 
 	t, _ := template.New("foo").Parse(html)
 	t.Execute(w, out.String())
+	*/
 }

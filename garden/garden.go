@@ -4,8 +4,6 @@ import (
 	"embed"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/merliot/dean"
@@ -29,7 +27,7 @@ type Zone struct {
 	Name           string
 	GallonsGoal    uint
 	GallonsSoFar   uint
-	StartTime      time.Time
+	TimeStarted    time.Time
 	RunningTimeMax uint
 	Running        bool
 	cancel         chan bool
@@ -37,7 +35,7 @@ type Zone struct {
 
 func (z *Zone) reset() {
 	z.Running = false
-	z.StartTime = time.Time{}
+	z.TimeStarted = time.Time{}
 	z.GallonsSoFar = 0
 }
 
@@ -193,7 +191,7 @@ func (g *Garden) runZone(z *Zone) bool {
 	println("starting zone", z.Name)
 
 	z.Running = true
-	z.StartTime = time.Now()
+	z.TimeStarted = time.Now()
 	z.GallonsSoFar = 0
 	g.sendUpdate()
 
@@ -218,7 +216,7 @@ func (g *Garden) runZone(z *Zone) bool {
 			if z.GallonsSoFar >= z.GallonsGoal {
 				break run
 			}
-			runningTime := time.Since(z.StartTime)
+			runningTime := time.Since(z.TimeStarted)
 			if uint(runningTime.Minutes()) >= z.RunningTimeMax {
 				break run
 			}
@@ -253,17 +251,11 @@ func (g *Garden) run() {
         g.schedule()
 }
 
-func getHoursAndMinutes(start string) (hours, minutes int) {
-	parts := strings.Split(start, ":")
-	hours, _ = strconv.Atoi(parts[0])
-	minutes, _ = strconv.Atoi(parts[1])
-	return
-}
-
 func (g *Garden) schedule() {
+	hhmm, _ := time.ParseDuration(g.StartTime)
 	now := time.Now()
-	hours, minutes := getHoursAndMinutes(g.StartTime)
-	then := time.Date(now.Year(), now.Month(), now.Day(), hours, minutes, 0, 0, now.Location())
+	then := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	then = then.Add(hhmm)
 	if now.After(then) {
 		then = then.Add(24 * time.Hour) // add 24 hours to "then" if it's already passed today
 	}

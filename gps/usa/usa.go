@@ -21,7 +21,6 @@ func New(id, model, name string) dean.Thinger {
 
 func (u *Usa) Run(i *dean.Injector) {
 	var msg dean.Msg
-
 	for {
 		u.Lat, u.Long = u.location()
 		u.Path = "update"
