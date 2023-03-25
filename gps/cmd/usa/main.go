@@ -11,7 +11,7 @@ func main() {
 	server := dean.NewServer(usa)
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8080"
-	//server.Dial("user", "passwd", "ws://192.168.1.213:8081/ws/", usa.Announce())
+	server.Dial("user", "passwd", "ws://localhost:8081/ws/", usa.Announce())
 
 	go server.ListenAndServe()
 

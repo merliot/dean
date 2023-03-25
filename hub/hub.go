@@ -60,6 +60,7 @@ func (h *Hub) Make(id, model, name string) dean.Thinger {
 }
 
 func (h *Hub) getState(msg *dean.Msg) {
+	h.Path = "state"
 	msg.Marshal(h).Reply()
 }
 

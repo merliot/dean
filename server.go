@@ -69,7 +69,7 @@ func (s *Server) disconnect(socket Socket) {
 
 		var msg Msg
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
-		s.Injector.Inject(&msg)
+		s.Inject(&msg)
 
 		s.Unhandle("/ws/" + id + "/")
 		s.Bus.Unhandle(id)
@@ -125,7 +125,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
-	s.Injector.Inject(msg)
+	go s.Inject(msg)
 }
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
