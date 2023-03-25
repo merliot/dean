@@ -47,8 +47,8 @@ func NewServer(thinger Thinger) *Server {
 
 	s.Handle("", thinger)
 	s.HandleFunc("/state", s.state)
-	s.HandleFunc("/ws/", s.Serve)
-	s.HandleFunc("/ws/"+thinger.Id()+"/", s.Serve)
+	s.HandleFunc("/ws/", s.serve)
+	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serve)
 
 	return &s
 }
@@ -121,7 +121,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	socket.SetTag(id)
 	s.Bus.Handle(id, s.busHandle(thing))
-	s.HandleFunc("/ws/"+id+"/", s.Serve)
+	s.HandleFunc("/ws/"+id+"/", s.serve)
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
@@ -159,7 +159,7 @@ func (s *Server) Dial(user, passwd, url string, announce *Msg) {
 	go ws.Dial(user, passwd, url, announce)
 }
 
-func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
+func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) == 4 {
