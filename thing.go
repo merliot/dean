@@ -21,6 +21,7 @@ type Thinger interface {
 	Id() string
 	Model() string
 	Name() string
+	String() string
 	Lock()
 	Unlock()
 	SetReal()
@@ -98,6 +99,10 @@ func (t *Thing) Unlock()                                      { t.mu.Unlock() }
 func (t *Thing) SetReal()                                     { t.isReal = true }
 func (t *Thing) IsReal() bool                                 { return t.isReal }
 
+func (t *Thing) String() string {
+	return "[Id: " + t.id + ", Model: " + t.model + ", Name: " + t.name + "]"
+}
+
 func (t *Thing) Announce() *Msg {
 	var msg Msg
 	var ann = ThingMsgAnnounce{"announce", t.id, t.model, t.name}
@@ -106,7 +111,7 @@ func (t *Thing) Announce() *Msg {
 }
 
 func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
-	println("ServeFS:", r.URL.Path)
+	println("ServeFS:", r.URL.Path, "Id:", t.id)
 	switch r.URL.Path {
 	case "", "/", "/index.html":
 		html, _ := fs.ReadFile("index.html")

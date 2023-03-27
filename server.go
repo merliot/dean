@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	_ "github.com/merliot/dean/tinynet"
@@ -47,8 +48,8 @@ func NewServer(thinger Thinger) *Server {
 
 	s.Handle("", thinger)
 	s.HandleFunc("/state", s.state)
-	s.HandleFunc("/ws/", s.serve)
-	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serve)
+	s.HandleFunc("/ws/", s.serveWebSocket)
+	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serveWebSocket)
 
 	return &s
 }
@@ -64,8 +65,8 @@ func (s *Server) connect(socket Socket) {
 }
 
 func (s *Server) disconnect(socket Socket) {
-	if thing := s.sockets[socket]; thing != nil {
-		id := thing.Id()
+	if child := s.sockets[socket]; child != nil {
+		id := child.Id()
 
 		var msg Msg
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
@@ -92,36 +93,36 @@ func (s *Server) disconnect(socket Socket) {
 
 func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	var ok bool
-	var thing Thinger
+	var child Thinger
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
 
 	id, model, name  := ann.Id, ann.Model, ann.Name
 
-	if thing, ok = s.children[id]; !ok {
+	if child, ok = s.children[id]; !ok {
 		maker, ok := thinger.(Maker)
 		if !ok {
 			// thinger is not a maker
 			println("THINGER IS NOT A MAKER")
 			return
 		}
-		thing = maker.Make(id, model, name)
-		if thing == nil {
-			// thinger couldn't make a thing
+		child = maker.Make(id, model, name)
+		if child == nil {
+			// thinger couldn't make a child
 			println("THINGER COULDN'T MAKE A THING")
 			return
 		}
-		s.children[id] = thing
-		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", thing))
+		s.children[id] = child
+		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", child))
 	}
 
 	socket := msg.src
-	s.sockets[socket] = thing
+	s.sockets[socket] = child
 	fmt.Printf(">>>> updated %p, %+v\n", socket, s.sockets)
 
 	socket.SetTag(id)
-	s.Bus.Handle(id, s.busHandle(thing))
-	s.HandleFunc("/ws/"+id+"/", s.serve)
+	s.Bus.Handle(id, s.busHandle(child))
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
@@ -159,7 +160,7 @@ func (s *Server) Dial(user, passwd, url string, announce *Msg) {
 	go ws.Dial(user, passwd, url, announce)
 }
 
-func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
+func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) == 4 {
@@ -242,8 +243,8 @@ var htmlBegin = `
   </head>
   <body>
     <pre>
-      <code>
-`
+      <code>`
+
 var htmlEnd = `
       </code>
     </pre>
@@ -255,66 +256,64 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, htmlBegin)
 
-	fmt.Fprintln(w, "Id:   ", s.thinger.Id())
-	fmt.Fprintln(w, "Model:", s.thinger.Model())
-	fmt.Fprintln(w, "Name: ", s.thinger.Name())
-	fmt.Fprintln(w, "User: ", s.user)
-
-	// TODO finish this
-
-	fmt.Fprintln(w, htmlEnd)
-
-	/*
-	f := map[string]any{
-		"Id": s.thinger.Id(),
-		"Model": s.thinger.Model(),
-		"Name": s.thinger.Name(),
-		"User": s.user,
-		"Passwd": s.passwd,
-	}
+	fmt.Fprintln(w, "Thing: ", s.thinger.String())
 
 	handlers := make([]string, 0, len(s.handlers))
 	for key := range s.handlers {
 		handlers = append(handlers, key)
 	}
 	sort.Strings(handlers)
-	f["Handlers"] = handlers
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Handlers")
+	for _, handler := range handlers {
+		fmt.Fprintf(w, "\t\"%s\"\n", handler)
+	}
 
 	sockets := make([]string, 0, len(s.sockets))
 	for socket, thing := range s.sockets {
+		tag := socket.Tag()
+		if tag == "" {
+			tag = "{self}"
+		}
 		if thing != nil {
-			sockets = append(sockets, socket.Tag() +
-				", " + socket.Name() +
-				" [Id: " + thing.Id() +
-				", Model: " + thing.Model() +
-				", Name: " + thing.Name() + "]")
+			sockets = append(sockets, tag + ", " + socket.Name() +
+				" " + thing.String())
 		} else {
-			sockets = append(sockets, socket.Tag() +
-				", " + socket.Name())
+			sockets = append(sockets, tag + ", " + socket.Name())
 		}
 	}
 	sort.Strings(sockets)
-	f["Sockets"] = sockets
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Sockets")
+	for _, socket := range sockets {
+		fmt.Fprintf(w, "\t%s\n", socket)
+	}
 
 	handlers = make([]string, 0, len(s.Bus.handlers))
 	for key := range s.Bus.handlers {
 		handlers = append(handlers, key)
 	}
 	sort.Strings(handlers)
-	f["Bus Handlers"] = handlers
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Bus Handlers")
+	for _, handler := range handlers {
+		fmt.Fprintf(w, "\t%s\n", handler)
+	}
 
 	children := make([]string, 0, len(s.children))
-	for key := range s.children {
-		children = append(children, key)
+	for _, child := range s.children {
+		children = append(children, child.String())
 	}
 	sort.Strings(children)
-	f["Children"] = children
 
-	var out bytes.Buffer
-	b, _ := json.Marshal(f)
-	json.Indent(&out, b, "", "\t")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Children")
+	for _, child := range children {
+		fmt.Fprintf(w, "\t%s\n", child)
+	}
 
-	t, _ := template.New("foo").Parse(html)
-	t.Execute(w, out.String())
-	*/
+	fmt.Fprintln(w, htmlEnd)
 }
