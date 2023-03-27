@@ -179,11 +179,29 @@ func (s *Server) Run() {
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+
+	// try exact match first
 	handler, ok := s.handlers[path]
 	if ok {
 		handler(w, r)
 		return
 	}
+
+	// dispatch /id/* to child
+	parts := strings.Split(path, "/")
+	if len(parts) > 1 {
+		id := parts[1]
+		if child, ok := s.children[id]; ok {
+			path = "/" + child.Id() + "/"
+			handler, ok = s.handlers[path]
+			if ok {
+				handler(w, r)
+				return
+			}
+		}
+	}
+
+	// everything else
 	handler, ok = s.handlers[""]
 	if ok {
 		handler(w, r)
