@@ -12,7 +12,7 @@ func main() {
 
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8082"
-	server.Dial("user", "passwd", "ws://localhost:8081/ws/", garden.Announce())
+	server.Dial("user", "passwd", "ws://35.185.232.122/ws/", garden.Announce())
 
 	go server.ListenAndServe()
 

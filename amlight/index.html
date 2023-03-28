@@ -1,0 +1,110 @@
+<html lang="en">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<!-- Leaflet's CSS -->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+		integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+		crossorigin=""/>
+
+		<!-- Leaflet's JavaScript -->
+		<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+		integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+		crossorigin=""></script>
+
+		<style>
+		#overlay {
+			position: fixed;
+			display: none;
+			width: 100%;
+			height: 100%;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(0,0,0,0.5);
+			z-index: 2000;
+			cursor: wait;
+		}
+		#offline {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			font-size: 50px;
+			color: white;
+			transform: translate(-50%,-50%) rotate(-45deg);
+		}
+		</style>
+	</head>
+	<body style="margin: 0">
+		<div id="map" style="height:100%"></div>
+		<div id="overlay">
+			<div id="offline">Offline</div>
+		</div>
+
+		<script>
+			var conn
+			var online = false
+
+			<!-- Create a Leaflet map using OpenStreetMap -->
+			map = L.map('map').setZoom(13)
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			    maxZoom: 19,
+			    attribution: '© OpenStreetMap'
+			}).addTo(map)
+
+			<!-- Create a map marker with popup that has [Lat, Long] -- !>
+			popup = "0, 0"
+			marker = L.marker([0, 0]).addTo(map).bindPopup(popup);
+
+			function show() {
+				overlay = document.getElementById("overlay")
+				if (online) {
+					overlay.style.display = "none"
+				} else {
+					overlay.style.display = "block"
+				}
+			}
+
+			function connect() {
+				conn = new WebSocket("{{.WebSocket}}")
+
+				conn.onopen = function(evt) {
+					console.log("open")
+					conn.send(JSON.stringify({Path: "get/state"}))
+				}
+
+				conn.onclose = function(evt) {
+					console.log("close")
+					online = false
+					show()
+					setTimeout(connect, 1000)
+				}
+
+				conn.onerror = function(err) {
+					console.log("error", err)
+					conn.close()
+				}
+
+				conn.onmessage = function(evt) {
+					msg = JSON.parse(evt.data)
+					console.log('gps', msg)
+
+					switch(msg.Path) {
+					case "state":
+						online = true
+						// fall-thru
+					case "update":
+						marker.bindPopup(msg.Lat + ", " + msg.Long)
+						marker.setLatLng([msg.Lat, msg.Long])
+						map.panTo([msg.Lat, msg.Long])
+						show()
+						break
+					}
+				}
+			}
+
+			connect()
+		</script>
+	</body>
+</html>
