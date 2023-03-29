@@ -1,6 +1,6 @@
 body {
-	background-color: rgb(32,33,36);
-	color: rgb(232,234,237);
+	background-color: rgb(200,200,200);
+	#color: rgb(232,234,237);
 	font-family: "Roboto", "Roboto", sans-serif;
 	font-size: 16px;
 }
@@ -45,7 +45,8 @@ input, button {
 	display: flex;
 	flex-wrap: nowrap;
 	flex-direction: column;
-	background-color: rgb(41,42,45);
+	border: solid 2px;
+	background-color: rgb(245,245,245);
 	border-radius: 8px;
 	margin: 20px;
 }
@@ -58,7 +59,7 @@ input, button {
 }
 
 .line {
-	border-top-color: rgba(255,255,255,0.1);
+	#border-top-color: rgba(255,255,255,0.1);
 	border-top-style: solid;
 	border-top-width: 1px;
 }

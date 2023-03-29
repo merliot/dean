@@ -62,7 +62,7 @@ const all = document.getElementById('all')
 function makeZone(zone, i) {
 	zoneDiv = makeDiv('box', `zone-${i}`, all)
 
-	zoneHdrDiv = makeDiv('heading line', '', zoneDiv)
+	zoneHdrDiv = makeDiv('heading', '', zoneDiv)
 	makeP('zone-name', `zone-name-${i}`, '', zoneHdrDiv)
 	zoneProgressDiv = makeDiv('progress', '', zoneHdrDiv)
 	makeDiv('progress-bar', `zone-progress-bar-${i}`, zoneProgressDiv)

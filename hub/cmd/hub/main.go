@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/gps/usa"
 	"github.com/merliot/dean/gps/world"
@@ -13,11 +15,11 @@ func main() {
 
 	server := dean.NewServer(hub)
 	server.BasicAuth("user", "passwd")
-	server.Addr = ":8081"
+	server.Addr = ":80"
 
 	hub.Register("usa", usa.New)
 	hub.Register("world", world.New)
 	hub.Register("garden", garden.New)
 
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }

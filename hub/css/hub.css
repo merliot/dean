@@ -3,7 +3,7 @@ body, html {
 	height: 100%;
 	margin: 0;
 	padding: 0;
-	background-color: orange;
+	background-color: rgb(200,200,200);
 }
 
 .flex-container {
@@ -19,7 +19,10 @@ body, html {
 	flex-direction: row;
 	align-content: space-between;
 	height: 175px;
-	background-color: orange;
+	background-color: rgb(200,200,200);
+	border-bottom-style: solid;
+	border-bottom-width: 2px;
+	padding-bottom: 20px;
 }
 
 .children > div {
@@ -37,7 +40,7 @@ body, html {
 
 .children > div > img {
 	width: 80px;
-	border: 2px dashed orange;
+	border: 2px dashed;
 	border-radius: 10px;
 }
 

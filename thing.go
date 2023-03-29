@@ -123,4 +123,3 @@ func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
 	}
 	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
-
