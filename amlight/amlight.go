@@ -3,7 +3,6 @@ package amlight
 import (
 	"embed"
 	"net/http"
-	"time"
 
 	"github.com/merliot/dean"
 )
@@ -50,25 +49,6 @@ func (a *Amlight) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.ServeFS(fs, w, r)
 }
 
-func (a *Amlight) Configure() {
-}
-
-func (a *Amlight) Illuminance() int32 {
-	return 0
-}
-
 func (a *Amlight) Run(i *dean.Injector) {
-	var msg dean.Msg
-
-	a.Configure()
-
-        for {
-                lux := a.Illuminance()
-		if lux != a.Lux {
-			a.Lux = lux
-			a.Path = "update"
-			i.Inject(msg.Marshal(a))
-		}
-                time.Sleep(500 * time.Millisecond)
-        }
+	select {}
 }

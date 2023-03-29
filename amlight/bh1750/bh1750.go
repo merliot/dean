@@ -2,6 +2,7 @@ package bh1750
 
 import (
 	"machine"
+	"time"
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/amlight"
@@ -10,7 +11,6 @@ import (
 
 type Bh1750 struct {
 	*amlight.Amlight
-	sensor machine.Device `json:"-"`
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -20,12 +20,21 @@ func New(id, model, name string) dean.Thinger {
 	}
 }
 
-func (b *Bh1750) Configure() {
-	machine.I2C0.Configure(machine.I2CConfig{})
-        b.sensor = bh1750.New(machine.I2C0)
-        b.sensor.Configure()
-}
+func (b *Bh1750) Run(i *dean.Injector) {
+	var msg dean.Msg
 
-func (b *Bh1750) Illuminance() int32 {
-	return 0
+	machine.I2C0.Configure(machine.I2CConfig{})
+	sensor := bh1750.New(machine.I2C0)
+        sensor.Configure()
+
+        for {
+		println(sensor.Illuminance())
+		lux := sensor.Illuminance()
+		if lux != b.Lux {
+			b.Lux = lux
+			b.Path = "update"
+			i.Inject(msg.Marshal(b))
+		}
+                time.Sleep(500 * time.Millisecond)
+        }
 }
