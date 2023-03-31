@@ -1,4 +1,4 @@
-package usa
+package demo
 
 import (
 	"time"
@@ -7,31 +7,31 @@ import (
 	"github.com/merliot/dean/gps"
 )
 
-type Usa struct {
+type Demo struct {
 	*gps.Gps
 	next int
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW USA")
-	return &Usa{
+	return &Demo{
 		Gps: gps.New(id, model, name).(*gps.Gps),
 	}
 }
 
-func (u *Usa) Run(i *dean.Injector) {
+func (d *Demo) Run(i *dean.Injector) {
 	var msg dean.Msg
 	for {
-		u.Lat, u.Long = u.location()
-		u.Path = "update"
-		i.Inject(msg.Marshal(u))
+		d.Lat, d.Long = d.location()
+		d.Path = "update"
+		i.Inject(msg.Marshal(d))
 		time.Sleep(time.Minute)
 	}
 }
 
-func (u *Usa) location() (lat, long float64) {
-	p := places[u.next]
-	u.next = (u.next + 1) % len(places)
+func (d *Demo) location() (lat, long float64) {
+	p := places[d.next]
+	d.next = (d.next + 1) % len(places)
 	return p.lat, p.long
 }
 
