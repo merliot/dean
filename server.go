@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	_ "github.com/merliot/dean/tinynet"
 	"golang.org/x/net/websocket"
 )
 
@@ -34,7 +33,6 @@ func NewServer(thinger Thinger) *Server {
 	s.children = make(map[string]Thinger)
 
 	s.thinger = thinger
-	thinger.SetReal()
 
 	s.subs = thinger.Subscribers()
 
@@ -155,7 +153,7 @@ func (s *Server) BasicAuth(user, passwd string) {
 	s.user, s.passwd = user, passwd
 }
 
-func (s *Server) Dial(user, passwd, url string, announce *Msg) {
+func (s *Server) DialWebSocket(user, passwd, url string, announce *Msg) {
 	ws := NewWebSocket("websocket:"+url, s.Bus)
 	go ws.Dial(user, passwd, url, announce)
 }
@@ -174,6 +172,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Run() {
+	s.thinger.SetReal()
 	s.thinger.Run(s.Injector)
 }
 

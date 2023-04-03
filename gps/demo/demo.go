@@ -13,7 +13,7 @@ type Demo struct {
 }
 
 func New(id, model, name string) dean.Thinger {
-	println("NEW USA")
+	println("NEW GPS DEMO")
 	return &Demo{
 		Gps: gps.New(id, model, name).(*gps.Gps),
 	}
