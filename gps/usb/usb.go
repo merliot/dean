@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"log"
 
-	"github.com/adrianmo/go-nmea"
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/gps"
+	"github.com/merliot/dean/gps/nmea"
 	"github.com/tarm/serial"
 )
 
@@ -34,18 +34,13 @@ func (u *Usb) Run(i *dean.Injector) {
 
 	scanner := bufio.NewScanner(s)
 	for scanner.Scan() {
-		rec, err := nmea.Parse(scanner.Text())
+		println(scanner.Text())
+		lat, long, err := nmea.ParseGLL(scanner.Text())
 		if err != nil {
+			println(err.Error())
 			continue
 		}
-		if rec.DataType() != nmea.TypeGLL {
-			continue
-		}
-		gll := rec.(nmea.GLL)
-		if gll.Validity != "A" {
-			continue
-		}
-		u.Lat, u.Long = gll.Latitude, gll.Longitude
+		u.Lat, u.Long = lat, long
 		dist := int(gps.Distance(u.Lat, u.Long, u.prevLat, u.prevLong) * 100.0) // cm
 		if dist < 20 {
 			continue
