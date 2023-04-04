@@ -1,4 +1,4 @@
-// tinygo flash -target pico -stack-size 4kB ~/work/dean/gps/pico-lora/
+// tinygo flash -target pico -stack-size 4kB ~/work/dean/gps/pico-lora-tx/
 
 package main
 
