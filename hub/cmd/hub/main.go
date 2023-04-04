@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/merliot/dean"
-	"github.com/merliot/dean/gps/deam"
+	"github.com/merliot/dean/gps/demo"
 	"github.com/merliot/dean/gps/usb"
 	"github.com/merliot/dean/gps/lora"
 	"github.com/merliot/dean/garden"
