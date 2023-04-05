@@ -166,7 +166,9 @@ function showHeader() {
 	}
 
 	startTime = document.getElementById("start-time")
+	console.log("updating startTime", state.StartTime)
 	startTime.value = state.StartTime
+	console.log("updated startTime", startTime.value)
 
 	days.forEach((day, i) => {
 		cb = document.getElementById(`day-${i}`)
@@ -213,8 +215,10 @@ function run(ws) {
 			// fall-thru
 		case "starttime":
 			// fall-thru
+			console.log("starttime", msg.StartTime)
 		case "update":
 			state = msg
+			console.log("update starttime", state.StartTime)
 			show()
 			break
 		}
