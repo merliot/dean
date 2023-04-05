@@ -14,4 +14,3 @@ func (i *Injector) Inject(msg *Msg) {
 	msg.bus, msg.src = i.bus, i
 	i.bus.receive(msg)
 }
-

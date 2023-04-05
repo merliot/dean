@@ -21,7 +21,7 @@ type Gps struct {
 func New(id, model, name string) dean.Thinger {
 	println("NEW GPS")
 	return &Gps{
-		Thing:     dean.NewThing(id, model, name),
+		Thing: dean.NewThing(id, model, name),
 	}
 }
 
@@ -52,7 +52,7 @@ func (g *Gps) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *Gps) Run(i *dean.Injector) {
-	select{}
+	select {}
 }
 
 // haversin(θ) function
@@ -61,9 +61,10 @@ func hsin(theta float64) float64 {
 }
 
 // Distance function returns the distance (in meters) between two points of
-//     a given longitude and latitude relatively accurately (using a spherical
-//     approximation of the Earth) through the Haversin Distance Formula for
-//     great arc distance on a sphere with accuracy for small distances
+//
+//	a given longitude and latitude relatively accurately (using a spherical
+//	approximation of the Earth) through the Haversin Distance Formula for
+//	great arc distance on a sphere with accuracy for small distances
 //
 // point coordinates are supplied in degrees and converted into rad. in the func
 //
@@ -71,7 +72,7 @@ func hsin(theta float64) float64 {
 // http://en.wikipedia.org/wiki/Haversine_formula
 func Distance(lat1, lon1, lat2, lon2 float64) float64 {
 	// convert to radians
-  // must cast radius as float to multiply later
+	// must cast radius as float to multiply later
 	var la1, lo1, la2, lo2, r float64
 	la1 = lat1 * math.Pi / 180
 	lo1 = lon1 * math.Pi / 180

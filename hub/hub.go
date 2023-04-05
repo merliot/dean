@@ -26,7 +26,7 @@ type Hub struct {
 	Children  map[string]Child           // keyed by id
 	makers    map[string]dean.ThingMaker // keyed by model
 	fsHandler http.Handler
-	mu sync.Mutex
+	mu        sync.Mutex
 }
 
 func New(id, model, name string) *Hub {

@@ -11,9 +11,9 @@ import (
 )
 
 type update struct {
-	Path  string
-	Lat   float64
-	Long  float64
+	Path string
+	Lat  float64
+	Long float64
 }
 
 func main() {

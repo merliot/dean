@@ -25,9 +25,9 @@ func (b *Bh1750) Run(i *dean.Injector) {
 
 	machine.I2C0.Configure(machine.I2CConfig{})
 	sensor := bh1750.New(machine.I2C0)
-        sensor.Configure()
+	sensor.Configure()
 
-        for {
+	for {
 		println(sensor.Illuminance())
 		lux := sensor.Illuminance()
 		if lux != b.Lux {
@@ -35,6 +35,6 @@ func (b *Bh1750) Run(i *dean.Injector) {
 			b.Path = "update"
 			i.Inject(msg.Marshal(b))
 		}
-                time.Sleep(500 * time.Millisecond)
-        }
+		time.Sleep(500 * time.Millisecond)
+	}
 }

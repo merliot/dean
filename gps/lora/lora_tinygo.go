@@ -38,7 +38,7 @@ func init() {
 	rand.Reader = &reader{}
 }
 
-type reader struct {}
+type reader struct{}
 
 func (r *reader) Read(b []byte) (n int, err error) {
 	if len(b) == 0 {

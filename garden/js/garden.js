@@ -137,7 +137,11 @@ const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday',
 function makeHeader() {
 	hdrDiv = makeDiv('box', 'header', all)
 
-	startTimeDiv = makeDiv('heading', '', hdrDiv)
+	systemTimeDiv = makeDiv('heading', '', hdrDiv)
+	makeP('', '', 'System Time', systemTimeDiv)
+	makeP('', 'system-time', '', systemTimeDiv)
+
+	startTimeDiv = makeDiv('heading line', '', hdrDiv)
 	makeP('', '', 'Start Time', startTimeDiv)
 	makeInputTime('', 'start-time', startTimeDiv,
 		function () {
@@ -159,16 +163,27 @@ function makeHeader() {
 	})
 }
 
+function showNow() {
+	now = new Date()
+	systemTime = document.getElementById("system-time")
+	systemTime.innerText = now.toLocaleString('en-US', {
+		weekday: 'long',
+		hour: '2-digit',
+		minute: '2-digit',
+		timeZoneName: "short",
+	});
+	setTimeout('showNow()', (60 - (now.getSeconds())) * 1000)
+}
+
 function showHeader() {
 	header = document.getElementById("header")
 	if (!header) {
 		makeHeader()
+		showNow()
 	}
 
 	startTime = document.getElementById("start-time")
-	console.log("updating startTime", state.StartTime)
 	startTime.value = state.StartTime
-	console.log("updated startTime", startTime.value)
 
 	days.forEach((day, i) => {
 		cb = document.getElementById(`day-${i}`)
@@ -215,10 +230,8 @@ function run(ws) {
 			// fall-thru
 		case "starttime":
 			// fall-thru
-			console.log("starttime", msg.StartTime)
 		case "update":
 			state = msg
-			console.log("update starttime", state.StartTime)
 			show()
 			break
 		}

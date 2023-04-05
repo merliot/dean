@@ -38,7 +38,7 @@ func exec(cmd, expect string, wait int) {
 	uart1.Write([]byte(cmd))
 	uart1.Write([]byte("\r\n"))
 	i := 0
-	for j := 0; j < wait / 100; j++ {
+	for j := 0; j < wait/100; j++ {
 		for uart1.Buffered() > 0 {
 			buf[i], _ = uart1.ReadByte()
 			uart.WriteByte(buf[i])
@@ -77,9 +77,9 @@ func main() {
 			case 13:
 				// return key
 				uart.Write([]byte("\r\n"))
-//				uart.Write([]byte("You typed: "))
-//				uart.Write(input[:i])
-//				uart.Write([]byte("\r\n"))
+				//				uart.Write([]byte("You typed: "))
+				//				uart.Write(input[:i])
+				//				uart.Write([]byte("\r\n"))
 				handle(input[:i])
 				i = 0
 			default:

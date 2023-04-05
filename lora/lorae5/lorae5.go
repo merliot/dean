@@ -11,7 +11,7 @@ import (
 
 type LoraE5 struct {
 	uart *machine.UART
-	buf [1024]byte
+	buf  [1024]byte
 }
 
 func New(uart *machine.UART, tx, rx machine.Pin, baudrate uint32) *LoraE5 {
@@ -22,10 +22,10 @@ func New(uart *machine.UART, tx, rx machine.Pin, baudrate uint32) *LoraE5 {
 
 func (l *LoraE5) response(wait int) []byte {
 	i := 0
-	for j := 0; j < wait / 100; j++ {
+	for j := 0; j < wait/100; j++ {
 		for l.uart.Buffered() > 0 {
 			l.buf[i], _ = l.uart.ReadByte()
-//			print(string(buf[i]))
+			//			print(string(buf[i]))
 			i++
 		}
 		time.Sleep(100 * time.Millisecond)
@@ -76,7 +76,7 @@ func (l *LoraE5) Rx(wait int) ([]byte, error) {
 		//println("SCAN", scanner.Text())
 		scan := scanner.Bytes()
 		if bytes.HasPrefix(scan, expect) {
-			pktHex := scan[len(expect)+1:len(scan)-1]
+			pktHex := scan[len(expect)+1 : len(scan)-1]
 			pkt := make([]byte, hex.DecodedLen(len(pktHex)))
 			hex.Decode(pkt, pktHex)
 			return pkt, nil
@@ -92,22 +92,22 @@ type command struct {
 }
 
 var cmds = map[string]command{
-	"reset": command{
+	"reset": {
 		cmd:    []byte("AT+FDEFAULT=Seeed"),
 		expect: []byte("+FDEFAULT: OK"),
 		wait:   1000,
 	},
-	"debug": command{
+	"debug": {
 		cmd:    []byte("AT+LOG=DEBUG"),
 		expect: []byte("+LOG: DEBUG"),
 		wait:   1000,
 	},
-	"test": command{
+	"test": {
 		cmd:    []byte("AT+MODE=TEST"),
 		expect: []byte("+MODE: TEST"),
 		wait:   1000,
 	},
-	"rfcfg": command{
+	"rfcfg": {
 		cmd:    []byte("AT+TEST=RFCFG,902.3,SF7,125,12,15,14,ON,OFF,OFF"),
 		expect: []byte("+TEST: RFCFG F:902300000, SF7, BW125K, TXPR:12, RXPR:15, POW:14dBm, CRC:ON, IQ:OFF, NET:OFF"),
 		wait:   1000,

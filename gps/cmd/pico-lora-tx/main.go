@@ -7,10 +7,10 @@ import (
 	"machine"
 	"time"
 
-	"github.com/merliot/dean/lora/lorae5"
 	"github.com/merliot/dean/gps"
 	"github.com/merliot/dean/gps/air350"
 	"github.com/merliot/dean/gps/nmea"
+	"github.com/merliot/dean/lora/lorae5"
 )
 
 type update struct {
@@ -36,7 +36,7 @@ func main() {
 
 	for {
 		select {
-		case text := <- out:
+		case text := <-out:
 			lat, long, err := nmea.ParseGLL(text)
 			if err != nil {
 				break
@@ -46,7 +46,7 @@ func main() {
 				break
 			}
 			up.Lat, up.Long, up.ready = lat, long, true
-		case <- ticker.C:
+		case <-ticker.C:
 			// {"Path":"update","Lat":41.629822,"Long":-72.414941}
 			if !up.ready {
 				break

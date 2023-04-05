@@ -75,7 +75,7 @@ func (s *Server) disconnect(socket Socket) {
 		socket.SetTag("")
 
 		fmt.Printf("BEGIN closing other sockets\r\n")
-		for sock, _ := range s.sockets {
+		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				fmt.Printf(">>>> closing %p\r\n", sock)
 				sock.Close()
@@ -95,7 +95,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
 
-	id, model, name  := ann.Id, ann.Model, ann.Name
+	id, model, name := ann.Id, ann.Model, ann.Name
 
 	if child, ok = s.children[id]; !ok {
 		maker, ok := thinger.(Maker)
@@ -294,10 +294,10 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 			tag = "{self}"
 		}
 		if thing != nil {
-			sockets = append(sockets, tag + ", " + socket.Name() +
-				" " + thing.String())
+			sockets = append(sockets, tag+", "+socket.Name()+
+				" "+thing.String())
 		} else {
-			sockets = append(sockets, tag + ", " + socket.Name())
+			sockets = append(sockets, tag+", "+socket.Name())
 		}
 	}
 	sort.Strings(sockets)

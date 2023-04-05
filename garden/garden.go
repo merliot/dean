@@ -56,11 +56,12 @@ type zoneMsg struct {
 type Garden struct {
 	dean.Thing
 	dean.ThingMsg
-	StartTime string
-	StartDays [7]bool
-	Zones     []Zone
-	timer     *time.Timer
-	currGallons uint
+	SystemTime     time.Time
+	StartTime      string
+	StartDays      [7]bool
+	Zones          []Zone
+	timer          *time.Timer
+	currGallons    uint
 	*dean.Injector `json:"-"`
 }
 
@@ -70,8 +71,8 @@ func New(id, model, name string) dean.Thinger {
 	g.Thing = dean.NewThing(id, model, name)
 	g.StartTime = "00:00"
 	g.Zones = make([]Zone, nZones)
-	for i, _ := range g.Zones {
-		g.Zones[i].Name = fmt.Sprintf("Zone %d", i + 1)
+	for i := range g.Zones {
+		g.Zones[i].Name = fmt.Sprintf("Zone %d", i+1)
 		g.Zones[i].cancel = make(chan bool)
 	}
 	return &g
@@ -83,6 +84,7 @@ func (g *Garden) saveState(msg *dean.Msg) {
 
 func (g *Garden) getState(msg *dean.Msg) {
 	g.Path = "state"
+	g.SystemTime = time.Now()
 	msg.Marshal(g).Reply()
 }
 
@@ -107,7 +109,7 @@ func (g *Garden) getZone(msg *dean.Msg) uint {
 }
 
 func (g *Garden) stopAllZones() {
-	for zone, _ := range g.Zones {
+	for zone := range g.Zones {
 		g.Zones[zone].stop()
 	}
 }
@@ -180,7 +182,7 @@ func (g *Garden) init() {
 */
 
 func (g *Garden) resetZones() {
-	for i, _ := range g.Zones {
+	for i := range g.Zones {
 		g.Zones[i].reset()
 	}
 	g.sendUpdate()
@@ -213,7 +215,8 @@ func (g *Garden) runZone(z *Zone) bool {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
-	run: for {
+run:
+	for {
 		select {
 		case <-z.cancel:
 			stopped = true
@@ -234,7 +237,6 @@ func (g *Garden) runZone(z *Zone) bool {
 		}
 	}
 
-
 	println("stop zone", z.Name)
 
 	// stop zone pump
@@ -247,7 +249,7 @@ func (g *Garden) runZone(z *Zone) bool {
 
 func (g *Garden) runZones() {
 	if g.StartDays[time.Now().Weekday()] {
-		for i, _ := range g.Zones {
+		for i := range g.Zones {
 			if !g.runZone(&g.Zones[i]) {
 				break
 			}
@@ -259,7 +261,7 @@ func (g *Garden) run() {
 	println("Running")
 	g.resetZones()
 	g.runZones()
-        g.schedule()
+	g.schedule()
 }
 
 func (g *Garden) schedule() {

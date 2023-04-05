@@ -19,7 +19,7 @@ type Amlight struct {
 func New(id, model, name string) dean.Thinger {
 	println("NEW AMLIGHT")
 	return &Amlight{
-		Thing:     dean.NewThing(id, model, name),
+		Thing: dean.NewThing(id, model, name),
 	}
 }
 
