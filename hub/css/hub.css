@@ -40,7 +40,6 @@ body, html {
 
 .children > div > img {
 	width: 80px;
-	border: 2px dashed;
 	border-radius: 10px;
 }
 

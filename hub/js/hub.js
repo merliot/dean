@@ -10,7 +10,7 @@ function showChild(id) {
 	img.style.border = "2px dashed blue"
 	if (typeof lastImg !== 'undefined') {
 		if (lastImg != img) {
-			lastImg.style.border = "2px dashed orange"
+			lastImg.style.border = "none"
 		}
 	}
 
