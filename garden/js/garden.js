@@ -35,6 +35,7 @@ function makeInput(cls, id, parent, f) {
 function makeInputTime(cls, id, parent, f) {
 	input = makeInput(cls, id, parent, f)
 	input.type = "time"
+	input.onchange = f
 	return input
 }
 
@@ -209,6 +210,8 @@ function run(ws) {
 		switch(msg.Path) {
 		case "state":
 			online = true
+			// fall-thru
+		case "starttime":
 			// fall-thru
 		case "update":
 			state = msg

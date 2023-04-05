@@ -11,8 +11,8 @@ func main() {
 	server := dean.NewServer(garden)
 
 	server.BasicAuth("user", "passwd")
-	server.Addr = ":8082"
-	server.Dial("user", "passwd", "ws://hub.merliot.net/ws/", garden.Announce())
+	server.Addr = ":8084"
+	server.DialWebSocket("user", "passwd", "ws://hub.merliot.net/ws/", garden.Announce())
 
 	go server.ListenAndServe()
 

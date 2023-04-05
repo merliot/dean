@@ -14,9 +14,12 @@ import (
 //go:embed css js index.html
 var fs embed.FS
 
-// Sensor reads 450 pulses/Liter
-// 3.78541 Liters/Gallon
-var pulsesPerGallon float64 = 450.0 * 3.78541
+const (
+	nZones int = 4
+	// Sensor reads 450 pulses/Liter
+	// 3.78541 Liters/Gallon
+	pulsesPerGallon float64 = 450.0 * 3.78541
+)
 
 const (
 	cmdStart int = iota
@@ -66,7 +69,7 @@ func New(id, model, name string) dean.Thinger {
 	var g Garden
 	g.Thing = dean.NewThing(id, model, name)
 	g.StartTime = "00:00"
-	g.Zones = make([]Zone, 8)
+	g.Zones = make([]Zone, nZones)
 	for i, _ := range g.Zones {
 		g.Zones[i].Name = fmt.Sprintf("Zone %d", i + 1)
 		g.Zones[i].cancel = make(chan bool)
@@ -90,11 +93,10 @@ func (g *Garden) update(msg *dean.Msg) {
 }
 
 func (g *Garden) startTime(msg *dean.Msg) {
+	g.update(msg)
 	if g.IsReal() {
-		g.update(msg)
 		g.schedule()
 	}
-	msg.Broadcast()
 }
 
 func (g *Garden) getZone(msg *dean.Msg) uint {

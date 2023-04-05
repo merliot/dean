@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var defaultMaxSockets = 10
+var defaultMaxSockets = 20
 
 type Bus struct {
 	mu         sync.RWMutex
