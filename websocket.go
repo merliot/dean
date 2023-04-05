@@ -85,4 +85,3 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 		w.bus.receive(msg)
 	}
 }
-

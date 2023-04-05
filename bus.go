@@ -55,7 +55,7 @@ func (b *Bus) MaxSockets(maxSockets int) {
 }
 
 func (b *Bus) plugin(s Socket) {
-	fmt.Printf("--- PLUGIN %s ---\n", s.Name())
+	fmt.Printf("--- PLUGIN %s ---\r\n", s.Name())
 	b.socketQ <- true
 	b.mu.Lock()
 	b.sockets[s] = true
@@ -64,7 +64,7 @@ func (b *Bus) plugin(s Socket) {
 }
 
 func (b *Bus) unplug(s Socket) {
-	fmt.Printf("--- UNPLUG %s ---\n", s.Name())
+	fmt.Printf("--- UNPLUG %s ---\r\n", s.Name())
 	b.mu.Lock()
 	delete(b.sockets, s)
 	b.mu.Unlock()

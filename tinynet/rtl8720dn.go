@@ -1,7 +1,5 @@
 //go:build wioterminal
 
-// +build: wioterminal
-
 package tinynet
 
 import (

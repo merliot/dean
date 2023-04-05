@@ -29,7 +29,7 @@ func (m *Msg) Broadcast() {
 func (m *Msg) Unmarshal(v any) *Msg {
 	err := json.Unmarshal(m.payload, v)
 	if err != nil {
-		panic(err.Error())
+		println("JSON unmarshal error", err.Error())
 	}
 	return m
 }
@@ -38,7 +38,7 @@ func (m *Msg) Marshal(v any) *Msg {
 	var err error
 	m.payload, err = json.Marshal(v)
 	if err != nil {
-		panic(err.Error())
+		println("JSON marshal error", err.Error())
 	}
 	return m
 }

@@ -59,7 +59,7 @@ func (s *Server) connect(socket Socket) {
 		panic("ALREADY CONNECTED")
 	}
 	s.sockets[socket] = nil
-	fmt.Printf(">>>> added %p, %+v\n", socket, s.sockets)
+	fmt.Printf(">>>> added %p, %+v\r\n", socket, s.sockets)
 }
 
 func (s *Server) disconnect(socket Socket) {
@@ -74,18 +74,18 @@ func (s *Server) disconnect(socket Socket) {
 		s.Bus.Unhandle(id)
 		socket.SetTag("")
 
-		fmt.Printf("BEGIN closing other sockets\n")
+		fmt.Printf("BEGIN closing other sockets\r\n")
 		for sock, _ := range s.sockets {
 			if sock.Tag() == id && sock != socket {
-				fmt.Printf(">>>> closing %p\n", sock)
+				fmt.Printf(">>>> closing %p\r\n", sock)
 				sock.Close()
 			}
 		}
-		fmt.Printf("DONE closing other sockets\n")
+		fmt.Printf("DONE closing other sockets\r\n")
 	}
-	fmt.Printf(">>>> before deleted %p, %+v\n", socket, s.sockets)
+	fmt.Printf(">>>> before deleted %p, %+v\r\n", socket, s.sockets)
 	delete(s.sockets, socket)
-	fmt.Printf(">>>> after deleted %p, %+v\n", socket, s.sockets)
+	fmt.Printf(">>>> after deleted %p, %+v\r\n", socket, s.sockets)
 	println("*** DISCONNECT", socket.Name())
 }
 
@@ -116,7 +116,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	socket := msg.src
 	s.sockets[socket] = child
-	fmt.Printf(">>>> updated %p, %+v\n", socket, s.sockets)
+	fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
 
 	socket.SetTag(id)
 	s.Bus.Handle(id, s.busHandle(child))
@@ -129,7 +129,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("Bus handle %s\n", msg.String())
+		fmt.Printf("Bus handle %s\r\n", msg.String())
 
 		thinger.Lock()
 		defer thinger.Unlock()
@@ -186,7 +186,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// dispatch /id/* to child
+	// redirect /id/* to child
 	parts := strings.Split(path, "/")
 	if len(parts) > 1 {
 		id := parts[1]

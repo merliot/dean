@@ -66,14 +66,14 @@ func (l *LoraE5) Tx(msg []byte, wait int) error {
 func (l *LoraE5) Rx(wait int) ([]byte, error) {
 	var cmd = []byte("AT+TEST=RXLRPKT\r\n")
 	var expect = []byte("+TEST: RX ")
-	println(string(cmd))
+	//println(string(cmd))
 	l.uart.Write(cmd)
 	resp := l.response(wait)
-	println(string(resp))
+	//println(string(resp))
 	reader := bytes.NewReader(resp)
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		println("SCAN", scanner.Text())
+		//println("SCAN", scanner.Text())
 		scan := scanner.Bytes()
 		if bytes.HasPrefix(scan, expect) {
 			pktHex := scan[len(expect)+1:len(scan)-1]

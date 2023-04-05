@@ -1,7 +1,5 @@
 //go:build pyportal || nano_rp2040 || metro_m4_airlift || arduino_mkrwifi1010 || matrixportal_m4
 
-// +build: pyportal nano_rp2040 metro_m4_airlift arduino_mkrwifi1010 matrixportal_m4
-
 package tinynet
 
 import (
