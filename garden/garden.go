@@ -26,6 +26,7 @@ const (
 
 type Zone struct {
 	Name           string
+	Index          int
 	GallonsGoal    uint
 	GallonsSoFar   uint
 	TimeStarted    time.Time
@@ -73,10 +74,11 @@ func New(id, model, name string) dean.Thinger {
 	g.Zones = make([]Zone, nZones)
 	for i := range g.Zones {
 		g.Zones[i].Name = fmt.Sprintf("Zone %d", i+1)
+		g.Zones[i].Index = i
 		g.Zones[i].cancel = make(chan bool)
 	}
-	g.PumpOn  = func(z *Zone) { fmt.Println("%s pump ON", z.Name) }
-	g.PumpOff = func(z *Zone) { fmt.Println("%s pump OFF", z.Name) }
+	g.PumpOn  = func(z *Zone) { fmt.Println(z.Name, "pump ON") }
+	g.PumpOff = func(z *Zone) { fmt.Println(z.Name, "pump OFF") }
 	return &g
 }
 
