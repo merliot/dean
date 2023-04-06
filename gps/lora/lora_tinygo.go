@@ -21,7 +21,7 @@ func (l *Lora) Run(i *dean.Injector) {
 	}
 
 	for {
-		pkt, err := e5.Rx(2000)
+		pkt, err := e5.Rx(4000)
 		if err == nil {
 			err = json.Unmarshal(pkt, l)
 			if err == nil {
@@ -32,7 +32,7 @@ func (l *Lora) Run(i *dean.Injector) {
 	}
 }
 
-// TODOL: remove below when RNG is working on rp2040
+// TODO: remove below when RNG is working on rp2040
 
 func init() {
 	rand.Reader = &reader{}

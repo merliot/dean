@@ -22,11 +22,15 @@ func New(uart *machine.UART, tx, rx machine.Pin, baudrate uint32) *LoraE5 {
 
 func (l *LoraE5) response(wait int) []byte {
 	i := 0
+	// TODO: use bufio buffer to WriteByte to
 	for j := 0; j < wait/100; j++ {
 		for l.uart.Buffered() > 0 {
-			l.buf[i], _ = l.uart.ReadByte()
-			//			print(string(buf[i]))
-			i++
+			b, _ := l.uart.ReadByte()
+			if i < len(l.buf) {
+				l.buf[i] = b
+				//print(string(l.buf[i]))
+				i++
+			}
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -34,7 +38,7 @@ func (l *LoraE5) response(wait int) []byte {
 }
 
 func (l *LoraE5) exec(cmd, expect []byte, wait int) error {
-	println(string(cmd))
+	//println(string(cmd))
 	l.uart.Write(cmd)
 	l.uart.Write([]byte("\r\n"))
 	resp := l.response(wait)
@@ -75,10 +79,11 @@ func (l *LoraE5) Rx(wait int) ([]byte, error) {
 	for scanner.Scan() {
 		//println("SCAN", scanner.Text())
 		scan := scanner.Bytes()
+		pktHex := scan[len(expect)+1 : len(scan)-1]
+		pkt := make([]byte, hex.DecodedLen(len(pktHex)))
+		hex.Decode(pkt, pktHex)
+		//println(string(pkt))
 		if bytes.HasPrefix(scan, expect) {
-			pktHex := scan[len(expect)+1 : len(scan)-1]
-			pkt := make([]byte, hex.DecodedLen(len(pktHex)))
-			hex.Decode(pkt, pktHex)
 			return pkt, nil
 		}
 	}
@@ -115,7 +120,7 @@ var cmds = map[string]command{
 }
 
 func (l *LoraE5) Init() error {
-	for _, cmd := range []string{"reset", "debug", "test", "rfcfg"} {
+	for _, cmd := range []string{"reset", /* "debug",*/ "test", "rfcfg"} {
 		command := cmds[cmd]
 		err := l.exec(command.cmd, command.expect, command.wait)
 		if err != nil {
