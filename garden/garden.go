@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/merliot/dean"
-	//"gobot.io/x/gobot/drivers/gpio"
-	//"gobot.io/x/gobot/platforms/raspi"
 )
 
 //go:embed css js index.html
@@ -63,6 +61,8 @@ type Garden struct {
 	timer          *time.Timer
 	currGallons    uint
 	*dean.Injector `json:"-"`
+	PumpOn         func(*Zone) `json:"-"`
+	PumpOff        func(*Zone) `json:"-"`
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -75,6 +75,8 @@ func New(id, model, name string) dean.Thinger {
 		g.Zones[i].Name = fmt.Sprintf("Zone %d", i+1)
 		g.Zones[i].cancel = make(chan bool)
 	}
+	g.PumpOn  = func(z *Zone) { fmt.Println("%s pump ON", z.Name) }
+	g.PumpOff = func(z *Zone) { fmt.Println("%s pump OFF", z.Name) }
 	return &g
 }
 
@@ -210,7 +212,7 @@ func (g *Garden) runZone(z *Zone) bool {
 
 	startGallons := g.CurrentGallons()
 
-	// start zone pump
+	g.PumpOn(z)
 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
@@ -239,7 +241,7 @@ run:
 
 	println("stop zone", z.Name)
 
-	// stop zone pump
+	g.PumpOff(z)
 
 	z.Running = false
 	g.sendUpdate()
