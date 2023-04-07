@@ -111,12 +111,17 @@ func (t *Thing) Announce() *Msg {
 }
 
 func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
+	scheme := "wss://"
+	if r.TLS == nil {
+		scheme = "ws://"
+	}
+
 	println("ServeFS:", r.URL.Path, "Id:", t.id)
 	switch r.URL.Path {
 	case "", "/", "/index.html":
 		html, _ := fs.ReadFile("index.html")
 		from := []byte("{{.WebSocket}}")
-		to := []byte("ws://" + r.Host + "/ws/" + t.Id() + "/")
+		to := []byte(scheme + r.Host + "/ws/" + t.Id() + "/")
 		html = bytes.ReplaceAll(html, from, to)
 		w.Write(html)
 		return
