@@ -255,7 +255,7 @@ func (s *Server) Unhandle(path string) {
 }
 
 func (s *Server) ServeTLS(host string) error {
-	certsDir := "/tmp/dean/" + s.thinger.Id()
+	certsDir := "certs" + s.thinger.Id()
 
 	autocertManager := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
