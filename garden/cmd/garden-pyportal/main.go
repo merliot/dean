@@ -8,6 +8,6 @@ import (
 func main() {
 	garden := garden.New("garden-pyportal", "garden", "name")
 	server := dean.NewServer(garden)
-	server.DialWebSocket("user", "passwd", "ws://hub.merliot.net/ws/", garden.Announce())
+	server.DialWebSocket("user", "passwd", "wss://hub.merliot.net/ws/", garden.Announce())
 	server.Run()
 }

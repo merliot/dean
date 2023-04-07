@@ -11,7 +11,7 @@ func main() {
 	server := dean.NewServer(light)
 	server.BasicAuth("user", "passwd")
 	server.Addr = ":8080"
-	//server.Dial("user", "passwd", "ws://35.185.232.122/ws/", usa.Announce())
+	//server.Dial("user", "passwd", "wss://hub.merliot.net/ws/", usa.Announce())
 
 	go server.ListenAndServe()
 
