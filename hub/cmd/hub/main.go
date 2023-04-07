@@ -16,12 +16,11 @@ func main() {
 
 	server := dean.NewServer(hub)
 	server.BasicAuth("user", "passwd")
-	server.Addr = ":80"
 
 	hub.Register("gps-demo", demo.New)
 	hub.Register("gps-usb", usb.New)
 	hub.Register("gps-lora", lora.New)
 	hub.Register("garden", garden.New)
 
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(server.ServeTLS("hub.merliot.net"))
 }

@@ -3,11 +3,13 @@ package dean
 import (
 	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 
+	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/websocket"
 )
 
@@ -250,6 +252,25 @@ func (s *Server) Handle(path string, handler http.Handler) {
 
 func (s *Server) Unhandle(path string) {
 	delete(s.handlers, path)
+}
+
+func (s *Server) ServeTLS(host string) error {
+	certsDir := "/tmp/dean/" + s.thinger.Id()
+
+	autocertManager := &autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(host),
+		Cache:      autocert.DirCache(certsDir),
+	}
+
+	s.TLSConfig = &tls.Config{
+		GetCertificate: autocertManager.GetCertificate,
+	}
+
+	go http.ListenAndServe(":http", autocertManager.HTTPHandler(nil))
+
+	s.Addr = ":https"
+	return(s.ListenAndServeTLS("", ""))
 }
 
 var htmlBegin = `
