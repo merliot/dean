@@ -1,4 +1,4 @@
-package grid
+package demo
 
 import (
 	"embed"
@@ -11,17 +11,17 @@ import (
 //go:embed css js index.html
 var fs embed.FS
 
-type Grid struct {
+type Demo struct {
 	*hub.Hub
 }
 
 func New(id, model, name string) dean.Thinger {
-	println("NEW HUB GRID")
-	return &Grid{
+	println("NEW DEMO")
+	return &Demo{
 		Hub: hub.New(id, model, name).(*hub.Hub),
 	}
 }
 
-func (g *Grid) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.ServeFS(fs, w, r)
+func (d *Demo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	d.ServeFS(fs, w, r)
 }

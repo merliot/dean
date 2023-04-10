@@ -4,12 +4,12 @@ import (
 	"log"
 
 	"github.com/merliot/dean"
-	"github.com/merliot/dean/demo/grid"
+	"github.com/merliot/dean/demo/demo"
 	"github.com/merliot/dean/demo/wioterminal"
 )
 
 func main() {
-	demo := grid.New("grid01", "grid", "grid1").(*grid.Grid)
+	demo := demo.New("demo01", "demo", "demo1").(*demo.Demo)
 
 	server := dean.NewServer(demo)
 
