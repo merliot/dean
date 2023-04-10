@@ -14,7 +14,6 @@ type Wio struct {
 	dean.Thing
 	dean.ThingMsg
 	CPUFreq uint32
-	TempC int32
 }
 
 func New(id, model, name string) dean.Thinger {
