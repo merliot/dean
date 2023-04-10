@@ -25,16 +25,15 @@ type Hub struct {
 	dean.ThingMsg
 	Children  map[string]Child           // keyed by id
 	makers    map[string]dean.ThingMaker // keyed by model
-	fsHandler http.Handler
 	mu        sync.Mutex
 }
 
-func New(id, model, name string) *Hub {
+func New(id, model, name string) dean.Thinger {
+	println("NEW HUB")
 	return &Hub{
 		Thing:     dean.NewThing(id, model, name),
 		Children:  make(map[string]Child),
 		makers:    make(map[string]dean.ThingMaker),
-		fsHandler: http.FileServer(http.FS(fs)),
 	}
 }
 
