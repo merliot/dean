@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Server) ServeTLS(host string) error {
-	certsDir := "certs" + s.thinger.Id()
+	certsDir := "certs-" + s.thinger.Id()
 
 	autocertManager := &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,

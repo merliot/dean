@@ -1,0 +1,5 @@
+#!/bin/bash
+
+go install ./...
+sudo setcap CAP_NET_BIND_SERVICE=+eip ~/go/bin/demo
+sudo systemctl restart demo
