@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/merliot/dean"
-	"github.com/merliot/dean/demo/demo"
+	"github.com/merliot/dean/demo"
 	"github.com/merliot/dean/demo/wioterminal"
 )
 
