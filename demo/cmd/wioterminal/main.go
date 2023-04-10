@@ -9,6 +9,6 @@ func main() {
 	wio := wioterminal.New("demo-wio-01", "demo-wio", "wioterminal")
 
 	server := dean.NewServer(wio)
-	server.DialWebSocket("", "", "ws://localhost:8080/ws/", wio.Announce())
+	server.DialWebSocket("", "", "wss://demo.merliot.net/ws/", wio.Announce())
 	server.Run()
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/merliot/dean"
+	_ "github.com/merliot/dean/tinynet"
 )
 
 func (w *Wio) Run(i *dean.Injector) {
@@ -18,14 +19,9 @@ func (w *Wio) Run(i *dean.Injector) {
 
 		select {
 		case <- ticker.C:
-			freq = machine.CPUFrequency()
-			temp = machine.ReadTempurature()
+			freq := machine.CPUFrequency()
 			if freq != w.CPUFreq {
 				w.CPUFreq = freq
-				change = true
-			}
-			if temp != w.TempC {
-				w.TempC = temp
 				changed = true
 			}
 		}
