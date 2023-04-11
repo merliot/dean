@@ -17,6 +17,7 @@ type Connect struct {
 	CPUFreq float64
 	Mac string
 	Ip net.IP
+	TempC int32
 }
 
 func New(id, model, name string) dean.Thinger {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/demo"
+	"github.com/merliot/dean/demo/connect"
 	"github.com/merliot/dean/demo/pyportal"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	server := dean.NewServer(demo)
 
 	demo.Register("demo-pyportal", pyportal.New)
+	demo.Register("demo-connect", connect.New)
 
 	log.Fatal(server.ServeTLS("demo.merliot.net"))
 }
