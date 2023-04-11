@@ -30,11 +30,9 @@ function showNeo() {
 	let neoR = document.getElementById("neoR")
 	let neoG = document.getElementById("neoG")
 	let neoB = document.getElementById("neoB")
-	let neoA = document.getElementById("neoA")
 	neoR.value = state.NeoColor["R"]
 	neoG.value = state.NeoColor["G"]
 	neoB.value = state.NeoColor["B"]
-	neoA.value = state.NeoColor["A"]
 	showNeoPixel()
 }
 

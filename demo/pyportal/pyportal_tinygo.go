@@ -44,6 +44,7 @@ func (p *Pyportal) Run(i *dean.Injector) {
 				changed = true
 			}
 		case <- p.neoChan:
+			// Alpha channel is not supported by WS2812
 			ws.WriteColors([]color.RGBA{p.NeoColor})
 			changed = true
 		}

@@ -27,6 +27,7 @@ func New(id, model, name string) dean.Thinger {
 	println("NEW PYPORTAL")
 	return &Pyportal{
 		Thing: dean.NewThing(id, model, name),
+		NeoColor: color.RGBA{0, 0, 0, 255),
 		neoChan: make(chan bool),
 	}
 }
