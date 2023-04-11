@@ -18,6 +18,17 @@
 
 		<textarea id="system" readonly rows="5" cols="35"></textarea>
 
+		<div>
+			<label for="neoR">R:</label>
+			<input type="range" id="neoR" min="0" max="255" value="0">
+			<label for="neoG">G:</label>
+			<input type="range" id="neoG" min="0" max="255" value="0">
+			<label for="neoB">B:</label>
+			<input type="range" id="neoB" min="0" max="255" value="0">
+			<label for="neoA">A:</label>
+			<input type="range" id="neoA" min="0" max="255" value="0">
+		</div>
+
 		<script src="js/demo.js"></script>
 		<script>run("{{.WebSocket}}")</script>
 

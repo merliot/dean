@@ -2,6 +2,7 @@ package pyportal
 
 import (
 	"embed"
+	"image/color"
 	"net"
 	"net/http"
 
@@ -18,6 +19,7 @@ type Pyportal struct {
 	Mac string
 	Ip net.IP
 	Light uint16
+	NeoColor color.RGBA
 }
 
 func New(id, model, name string) dean.Thinger {
