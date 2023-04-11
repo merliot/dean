@@ -23,13 +23,18 @@ func (c *Connect) Run(i *dean.Injector) {
 	}
 	c.Mac = mac.String()
 	c.Ip, _ = tinynet.GetIPAddr()
-	c.TempC, _ = machine.ReadTemperature() / 1000
+	c.TempC = machine.ReadTemperature() / 1000
 
 	for {
 		changed := false
 
 		select {
 		case <- ticker.C:
+			temp := machine.ReadTemperature() / 1000
+			if temp != c.TempC {
+				c.TempC = temp
+				changed = true
+			}
 		}
 
 		if changed {
