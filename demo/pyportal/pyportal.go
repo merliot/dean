@@ -17,6 +17,7 @@ type Pyportal struct {
 	CPUFreq float64
 	Mac string
 	Ip net.IP
+	Light uint16
 }
 
 func New(id, model, name string) dean.Thinger {

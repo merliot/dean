@@ -23,11 +23,19 @@ func (p *Pyportal) Run(i *dean.Injector) {
 	p.Mac = mac.String()
 	p.Ip, _ = tinynet.GetIPAddr()
 
+	lightSensor := machine.ADC{machine.A2}
+	lightSensor.Configure(machine.ADCConfig{})
+
 	for {
 		changed := false
 
 		select {
 		case <- ticker.C:
+			val := lightSensor.Get()
+			if val != p.Light {
+				p.Light = val
+				changed = true
+			}
 		}
 
 		if changed {

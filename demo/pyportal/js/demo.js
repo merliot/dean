@@ -8,6 +8,7 @@ function showSystem() {
 	system.value += "CPU Frequency: " + state.CPUFreq + "\r\n"
 	system.value += "MAC Address: " + state.Mac + "\r\n"
 	system.value += "IP Address: " + state.Ip + "\r\n"
+	system.value += "Light Intensity: " + state.Light + "\r\n"
 }
 
 function show() {
