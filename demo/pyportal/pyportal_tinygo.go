@@ -45,6 +45,7 @@ func (p *Pyportal) Run(i *dean.Injector) {
 			}
 		case <- p.neoChan:
 			ws.WriteColors([]color.RGBA{p.NeoColor})
+			changed = true
 		}
 
 		if changed {

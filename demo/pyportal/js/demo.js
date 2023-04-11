@@ -3,11 +3,12 @@ var conn
 var online = false
 
 function neo(letter, value) {
-	conn.send(JSON.stringify({Path: "neo", NeoColor: {R: 10, G: 20, B: 50, A: 35}}))
+	state.NeoColor[letter] = parseInt(value)
+	conn.send(JSON.stringify({Path: "neo", NeoColor: state.NeoColor}))
 }
 
 function showSystem() {
-	var system = document.getElementById("system")
+	let system = document.getElementById("system")
 	system.value = ""
 	system.value += "CPU Frequency: " + state.CPUFreq + "\r\n"
 	system.value += "MAC Address: " + state.Mac + "\r\n"
@@ -15,10 +16,33 @@ function showSystem() {
 	system.value += "Light Intensity: " + state.Light + "\r\n"
 }
 
+function showNeoPixel() {
+	let circle = document.getElementById("neopixel");
+	let r = state.NeoColor["R"]
+	let g = state.NeoColor["G"]
+	let b = state.NeoColor["B"]
+	let a = state.NeoColor["A"] / 255.0
+	let colorString = "rgba(" + r + "," + g + "," + b + "," + a + ")";
+	circle.setAttribute("fill", colorString);
+}
+
+function showNeo() {
+	let neoR = document.getElementById("neoR")
+	let neoG = document.getElementById("neoG")
+	let neoB = document.getElementById("neoB")
+	let neoA = document.getElementById("neoA")
+	neoR.value = state.NeoColor["R"]
+	neoG.value = state.NeoColor["G"]
+	neoB.value = state.NeoColor["B"]
+	neoA.value = state.NeoColor["A"]
+	showNeoPixel()
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showNeo()
 }
 
 function run(ws) {
