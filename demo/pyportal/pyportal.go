@@ -14,7 +14,7 @@ var fs embed.FS
 type Pyportal struct {
 	dean.Thing
 	dean.ThingMsg
-	CPUFreq uint32
+	CPUFreq float64
 	Mac string
 	Ip net.IP
 }

@@ -14,7 +14,7 @@ func (p *Pyportal) Run(i *dean.Injector) {
 	var msg dean.Msg
 	ticker := time.NewTicker(time.Second)
 
-	p.CPUFreq = machine.CPUFrequency()
+	p.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
 	mac, err := tinynet.GetHardwareAddr()
 	if err != nil {
 		println("Can't get hardware MAC address")
