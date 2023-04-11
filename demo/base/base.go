@@ -17,24 +17,15 @@ func New(id, model, name string) dean.Thinger {
 	}
 }
 
-func (b *Base) saveState(msg *dean.Msg) {
+func (b *Base) SaveState(msg *dean.Msg) {
 	msg.Unmarshal(b)
 }
 
-func (b *Base) getState(msg *dean.Msg) {
+func (b *Base) GetState(msg *dean.Msg) {
 	b.Path = "state"
 	msg.Marshal(b).Reply()
 }
 
-func (b *Base) update(msg *dean.Msg) {
+func (b *Base) Update(msg *dean.Msg) {
 	msg.Unmarshal(b).Broadcast()
-}
-
-func (b *Base) Subscribers() dean.Subscribers {
-	return dean.Subscribers{
-		"state":     b.saveState,
-		"get/state": b.getState,
-		"attached":  b.getState,
-		"update":    b.update,
-	}
 }

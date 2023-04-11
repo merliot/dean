@@ -14,7 +14,6 @@ var fs embed.FS
 
 type Pyportal struct {
 	*base.Base
-	TempC int32
 	Mac net.HardwareAddr
 	Ip net.IP
 }
@@ -23,6 +22,15 @@ func New(id, model, name string) dean.Thinger {
 	println("NEW PYPORTAL")
 	return &Pyportal{
 		Base: base.New(id, model, name).(*base.Base),
+	}
+}
+
+func (p *Pyportal) Subscribers() dean.Subscribers {
+	return dean.Subscribers{
+		"state":     p.SaveState,
+		"get/state": p.GetState,
+		"attached":  p.GetState,
+		"update":    p.Update,
 	}
 }
 
