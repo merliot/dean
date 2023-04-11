@@ -5,9 +5,9 @@ var online = false
 function showSystem() {
 	var system = document.getElementById("system")
 	system.value = ""
-	system.value += "CPU Frequency: " + state.Freq
-	system.value += "MAC Address: " + state.Mac
-	system.value += "IP Address: " + state.Ip
+	system.value += "CPU Frequency: " + state.CPUFreq + "\r\n"
+	system.value += "MAC Address: " + state.Mac + "\r\n"
+	system.value += "IP Address: " + state.Ip + "\r\n"
 }
 
 function show() {
