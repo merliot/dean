@@ -1,6 +1,6 @@
 //go:build tinygo
 
-package wioterminal
+package pyportal
 
 import (
 	"machine"
@@ -10,7 +10,7 @@ import (
 	_ "github.com/merliot/dean/tinynet"
 )
 
-func (w *Wio) Run(i *dean.Injector) {
+func (p *Pyportal) Run(i *dean.Injector) {
 	var msg dean.Msg
 	ticker := time.NewTicker(time.Second)
 
@@ -20,15 +20,16 @@ func (w *Wio) Run(i *dean.Injector) {
 		select {
 		case <- ticker.C:
 			freq := machine.CPUFrequency()
-			if freq != w.CPUFreq {
-				w.CPUFreq = freq
+			if freq != p.CPUFreq {
+				p.CPUFreq = freq
 				changed = true
 			}
 		}
 
 		if changed {
-			w.Path = "update"
-			msg.Marshal(w).Broadcast()
+			changed = false
+			p.Path = "update"
+			i.Inject(msg.Marshal(p))
 		}
 	}
 }

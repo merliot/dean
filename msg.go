@@ -17,11 +17,19 @@ func (m *Msg) String() string {
 }
 
 func (m *Msg) Reply() {
+	if m.src == nil {
+		println("Can't reply to message: source is nil")
+		return
+	}
 	println("Reply: src", m.src.Name())
 	m.src.Send(m)
 }
 
 func (m *Msg) Broadcast() {
+	if m.bus == nil {
+		println("Can't broadcast message: bus is nil")
+		return
+	}
 	println("Broadcast: tag", m.src.Tag(), m.String())
 	m.bus.broadcast(m)
 }
