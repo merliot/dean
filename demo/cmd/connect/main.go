@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/merliot/dean"
-	"github.com/merliot/dean/demo/pyportal"
+	"github.com/merliot/dean/demo/connect"
 )
 
 func main() {
-	thing := pyportal.New("demo-pyportal-01", "demo-pyportal", "pyportal")
+	thing := connect.New("demo-connect-01", "demo-connect", "connect")
 	server := dean.NewServer(thing)
 	server.DialWebSocket("", "", "wss://demo.merliot.net/ws/", thing.Announce())
 	server.Run()
