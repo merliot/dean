@@ -5,7 +5,7 @@ import (
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/demo"
-	"github.com/merliot/dean/demo/wioterminal"
+	"github.com/merliot/dean/demo/pyportal"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 
 	server := dean.NewServer(demo)
 
-	demo.Register("demo-wio", wioterminal.New)
+	demo.Register("demo-pyportal", pyportal.New)
 
 	log.Fatal(server.ServeTLS("demo.merliot.net"))
 }
