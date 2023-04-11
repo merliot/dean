@@ -7,23 +7,22 @@ import (
 	"time"
 
 	"github.com/merliot/dean"
-	_ "github.com/merliot/dean/tinynet"
+	"github.com/merliot/dean/tinynet"
 )
 
 func (p *Pyportal) Run(i *dean.Injector) {
 	var msg dean.Msg
 	ticker := time.NewTicker(time.Second)
 
+	p.CPUFreq = machine.CPUFrequency()
+	p.Mac, _ = tinynet.GetHardwareAddr()
+	p.Ip, _ = tinynet.GetIPAddr()
+
 	for {
 		changed := false
 
 		select {
 		case <- ticker.C:
-			freq := machine.CPUFrequency()
-			if freq != p.CPUFreq {
-				p.CPUFreq = freq
-				changed = true
-			}
 		}
 
 		if changed {

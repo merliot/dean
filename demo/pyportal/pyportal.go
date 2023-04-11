@@ -2,6 +2,7 @@ package pyportal
 
 import (
 	"embed"
+	"net"
 	"net/http"
 
 	"github.com/merliot/dean"
@@ -13,6 +14,9 @@ var fs embed.FS
 
 type Pyportal struct {
 	*base.Base
+	TempC int32
+	Mac net.HardwareAddr
+	Ip net.IP
 }
 
 func New(id, model, name string) dean.Thinger {
