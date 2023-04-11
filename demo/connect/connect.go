@@ -2,7 +2,6 @@ package connect
 
 import (
 	"embed"
-	"image/color"
 	"net"
 	"net/http"
 
