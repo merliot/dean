@@ -2,6 +2,10 @@ var state
 var conn
 var online = false
 
+function neo(letter, value) {
+	conn.send(JSON.stringify({Path: "neo", NeoColor: {R: 10, G: 20, B: 50, A: 35}}))
+}
+
 function showSystem() {
 	var system = document.getElementById("system")
 	system.value = ""

@@ -20,12 +20,14 @@ type Pyportal struct {
 	Ip net.IP
 	Light uint16
 	NeoColor color.RGBA
+	neoChan chan bool
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW PYPORTAL")
 	return &Pyportal{
 		Thing: dean.NewThing(id, model, name),
+		neoChan: make(chan bool),
 	}
 }
 
@@ -42,12 +44,20 @@ func (p *Pyportal) update(msg *dean.Msg) {
 	msg.Unmarshal(p).Broadcast()
 }
 
+func (p *Pyportal) neo(msg *dean.Msg) {
+	msg.Unmarshal(p).Broadcast()
+	if p.IsReal() {
+		p.neoChan <- true
+	}
+}
+
 func (p *Pyportal) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     p.saveState,
 		"get/state": p.getState,
 		"attached":  p.getState,
 		"update":    p.update,
+		"neo":       p.neo,
 	}
 }
 

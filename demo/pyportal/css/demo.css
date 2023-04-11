@@ -24,3 +24,23 @@
 #system {
 	resize: none;
 }
+
+#neo {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+}
+
+#neoSliders {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.neoRow {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	height: 24px;
+}

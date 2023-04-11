@@ -16,17 +16,30 @@
 			<div id="offline">Offline</div>
 		</div>
 
-		<textarea id="system" readonly rows="5" cols="35"></textarea>
+		<textarea id="system" readonly rows="5" cols="30"></textarea>
 
-		<div>
-			<label for="neoR">R:</label>
-			<input type="range" id="neoR" min="0" max="255" value="0">
-			<label for="neoG">G:</label>
-			<input type="range" id="neoG" min="0" max="255" value="0">
-			<label for="neoB">B:</label>
-			<input type="range" id="neoB" min="0" max="255" value="0">
-			<label for="neoA">A:</label>
-			<input type="range" id="neoA" min="0" max="255" value="0">
+		<div id="neo">
+			<div id="neoSliders">
+				<div class="neoRow">
+					<p>R:</p>
+					<input type="range" id="neoR" max="255" oninput="neo('R', this.value)">
+				</div>
+				<div class="neoRow">
+					<p>G:</p>
+					<input type="range" id="neoG" max="255" oninput="neo('G', this.value)">
+				</div>
+				<div class="neoRow">
+					<p>B:</p>
+					<input type="range" id="neoB" max="255" oninput="neo('B', this.value)">
+				</div>
+				<div class="neoRow">
+					<p>A:</p>
+					<input type="range" id="neoA" max="255" oninput="neo('A', this.value)">
+				</div>
+			</div>
+			<svg width="100" height="100">
+				<circle id="neopixel" cx="50" cy="50" r="10" fill="rgba(0, 0, 0, 0)" />
+			</svg>
 		</div>
 
 		<script src="js/demo.js"></script>
