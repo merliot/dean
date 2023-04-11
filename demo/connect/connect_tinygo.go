@@ -9,6 +9,7 @@ import (
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/tinynet"
+	"tinygo.org/x/drivers/bh1750"
 )
 
 func (c *Connect) Run(i *dean.Injector) {
@@ -25,6 +26,10 @@ func (c *Connect) Run(i *dean.Injector) {
 	c.Ip, _ = tinynet.GetIPAddr()
 	c.TempC = machine.ReadTemperature() / 1000
 
+	machine.I2C0.Configure(machine.I2CConfig{})
+	sensor := bh1750.New(machine.I2C0)
+	sensor.Configure()
+
 	for {
 		changed := false
 
@@ -33,6 +38,11 @@ func (c *Connect) Run(i *dean.Injector) {
 			temp := machine.ReadTemperature() / 1000
 			if temp != c.TempC {
 				c.TempC = temp
+				changed = true
+			}
+			lux := sensor.Illuminance()
+			if lux != c.Lux {
+				c.Lux = lux
 				changed = true
 			}
 		}

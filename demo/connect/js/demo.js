@@ -11,10 +11,17 @@ function showSystem() {
 	system.value += "Temperature:     " + state.TempC + "(C)\r\n"
 }
 
+fucntion showBH1750() {
+	let bh1750 = document.getElementById("bh1750")
+	bh1750.value = ""
+	bh1750.value += "Lux:   " + state.Lux + "\r\n"
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showBH1750()
 }
 
 function run(ws) {

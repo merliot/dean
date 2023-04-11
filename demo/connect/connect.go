@@ -18,6 +18,7 @@ type Connect struct {
 	Mac string
 	Ip net.IP
 	TempC int32
+	Lux int32 // mlx (milliLux)
 }
 
 func New(id, model, name string) dean.Thinger {
