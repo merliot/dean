@@ -10,9 +10,9 @@ function neo(letter, value) {
 function showSystem() {
 	let system = document.getElementById("system")
 	system.value = ""
-	system.value += "CPU Frequency: " + state.CPUFreq + "\r\n"
-	system.value += "MAC Address: " + state.Mac + "\r\n"
-	system.value += "IP Address: " + state.Ip + "\r\n"
+	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
+	system.value += "MAC Address:     " + state.Mac + "\r\n"
+	system.value += "IP Address:      " + state.Ip + "\r\n"
 	system.value += "Light Intensity: " + state.Light + "\r\n"
 }
 
