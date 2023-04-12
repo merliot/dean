@@ -34,6 +34,9 @@ func (c *Connect) Run(i *dean.Injector) {
 	c.Path = "update"
 	i.Inject(msg.Marshal(c))
 
+	relay := machine.D2
+	relay.Configure(machine.PinConfig{Mode: machine.PinOutput})
+
 	for {
 		changed := false
 
@@ -47,6 +50,11 @@ func (c *Connect) Run(i *dean.Injector) {
 			lux := sensor.Illuminance()
 			if lux != c.Lux {
 				c.Lux = lux
+				if 650000 <= lux && lux <= 750000 {
+					relay.High()
+				} else {
+					relay.Low()
+				}
 				changed = true
 			}
 		}
