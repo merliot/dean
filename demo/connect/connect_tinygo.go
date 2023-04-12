@@ -14,14 +14,11 @@ import (
 
 func (c *Connect) Run(i *dean.Injector) {
 	var msg dean.Msg
+
 	ticker := time.NewTicker(time.Second)
 
 	c.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
-	mac, err := tinynet.GetHardwareAddr()
-	if err != nil {
-		println("Can't get hardware MAC address")
-		return
-	}
+	mac, _ := tinynet.GetHardwareAddr()
 	c.Mac = mac.String()
 	c.Ip, _ = tinynet.GetIPAddr()
 	c.TempC = machine.ReadTemperature() / 1000
