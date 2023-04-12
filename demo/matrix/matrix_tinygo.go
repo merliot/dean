@@ -1,6 +1,6 @@
 //go:build tinygo
 
-package wio
+package matrix
 
 import (
 	"machine"
@@ -10,18 +10,18 @@ import (
 	"github.com/merliot/dean/tinynet"
 )
 
-func (w *Wio) Run(i *dean.Injector) {
+func (m *Matrix) Run(i *dean.Injector) {
 	var msg dean.Msg
 
 	ticker := time.NewTicker(time.Second)
 
-	w.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
+	m.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
 	mac, _ := tinynet.GetHardwareAddr()
-	w.Mac = mac.String()
-	w.Ip, _ = tinynet.GetIPAddr()
+	m.Mac = mac.String()
+	m.Ip, _ = tinynet.GetIPAddr()
 
-	w.Path = "update"
-	i.Inject(msg.Marshal(w))
+	m.Path = "update"
+	i.Inject(msg.Marshal(m))
 
 	for {
 		changed := false
@@ -32,8 +32,8 @@ func (w *Wio) Run(i *dean.Injector) {
 
 		if changed {
 			changed = false
-			w.Path = "update"
-			i.Inject(msg.Marshal(w))
+			m.Path = "update"
+			i.Inject(msg.Marshal(m))
 		}
 	}
 }

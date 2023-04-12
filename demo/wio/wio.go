@@ -27,27 +27,27 @@ func New(id, model, name string) dean.Thinger {
 }
 
 func (w *Wio) saveState(msg *dean.Msg) {
-	msg.Unmarshal(c)
+	msg.Unmarshal(w)
 }
 
 func (w *Wio) getState(msg *dean.Msg) {
-	c.Path = "state"
-	msg.Marshal(c).Reply()
+	w.Path = "state"
+	msg.Marshal(w).Reply()
 }
 
 func (w *Wio) update(msg *dean.Msg) {
-	msg.Unmarshal(c).Broadcast()
+	msg.Unmarshal(w).Broadcast()
 }
 
 func (w *Wio) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
-		"state":     c.saveState,
-		"get/state": c.getState,
-		"attached":  c.getState,
-		"update":    c.update,
+		"state":     w.saveState,
+		"get/state": w.getState,
+		"attached":  w.getState,
+		"update":    w.update,
 	}
 }
 
 func (w *Wio) ServeHTTP(wr http.ResponseWriter, r *http.Request) {
-	c.ServeFS(fs, wr, r)
+	w.ServeFS(fs, wr, r)
 }
