@@ -29,6 +29,10 @@ func (c *Connect) Run(i *dean.Injector) {
 	machine.I2C0.Configure(machine.I2CConfig{})
 	sensor := bh1750.New(machine.I2C0)
 	sensor.Configure()
+	c.Lux := sensor.Illuminance()
+
+	c.Path = "update"
+	i.Inject(msg.Marshal(c))
 
 	for {
 		changed := false

@@ -24,10 +24,11 @@
 			</fieldset>
 			<fieldset>
 				<legend>BH1750 Light Intensity</legend>
-				<textarea id="bh1750" readonly rows="5"></textarea>
+				<canvas id="bh1750"></canvas>
 			</fieldset>
 		</fieldset>
 
+		<script src="js/gauge.min.js"></script>
 		<script src="js/demo.js"></script>
 		<script>run("{{.WebSocket}}")</script>
 

@@ -2,6 +2,32 @@ var state
 var conn
 var online = false
 
+var opts = {
+	angle: -0.2, // The span of the gauge arc
+	lineWidth: 0.2, // The line thickness
+	radiusScale: 1, // Relative radius
+	pointer: {
+		length: 0.6, // // Relative to gauge radius
+		strokeWidth: 0.035, // The thickness
+		color: '#000000' // Fill color
+	},
+	limitMax: true,      // If false, max value increases automatically if value > maxValue
+	limitMin: false,     // If true, the min value of the gauge will be fixed
+	highDpiSupport: true,     // High resolution support
+	staticZones: [
+		{strokeStyle: "#30B32D", min:      0, max:  650000}, // Green
+		{strokeStyle: "#FFDD00", min: 650000, max:  700000}, // Yellow
+		{strokeStyle: "#F03E3E", min: 700000, max: 1000000}  // Red
+	],
+}
+var bh1750= document.getElementById('bh1750')
+var gauge = new Gauge(bh1750).setOptions(opts)
+
+gauge.maxValue = 1000000
+gauge.setMinValue(0)
+gauge.animationSpeed = 32
+gauge.set(0)
+
 function showSystem() {
 	let system = document.getElementById("system")
 	system.value = ""
@@ -12,9 +38,7 @@ function showSystem() {
 }
 
 function showBH1750() {
-	let bh1750 = document.getElementById("bh1750")
-	bh1750.value = ""
-	bh1750.value += "Lux:   " + state.Lux + "\r\n"
+	gauge.set(state.Lux)
 }
 
 function show() {

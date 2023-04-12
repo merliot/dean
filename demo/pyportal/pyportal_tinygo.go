@@ -14,24 +14,25 @@ import (
 
 func (p *Pyportal) Run(i *dean.Injector) {
 	var msg dean.Msg
+
 	ticker := time.NewTicker(time.Second)
 
 	p.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
-	mac, err := tinynet.GetHardwareAddr()
-	if err != nil {
-		println("Can't get hardware MAC address")
-		return
-	}
+	mac, _ := tinynet.GetHardwareAddr()
 	p.Mac = mac.String()
 	p.Ip, _ = tinynet.GetIPAddr()
 
 	lightSensor := machine.ADC{machine.A2}
 	lightSensor.Configure(machine.ADCConfig{})
+	p.Light = lightSensor.Get()
 
 	neo := machine.WS2812
 	neo.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	ws := ws2812.New(neo)
 	ws.WriteColors([]color.RGBA{p.NeoColor})
+
+	p.Path = "update"
+	i.Inject(msg.Marshal(p))
 
 	for {
 		changed := false
