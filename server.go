@@ -159,7 +159,8 @@ func (s *Server) DialWebSocket(user, passwd, url string, announce *Msg) {
 }
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	ws := NewWebSocket("websocket:"+r.Host, s.Bus)
+	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.Bus)
+	println(r.URL.Path)
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) == 4 {
 		id := parts[2]

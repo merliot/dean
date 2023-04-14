@@ -40,7 +40,7 @@ function run(ws) {
 
 	conn.onmessage = function(evt) {
 		msg = JSON.parse(evt.data)
-		console.log('connect', msg)
+		console.log('matrix', msg)
 
 		switch(msg.Path) {
 		case "state":
