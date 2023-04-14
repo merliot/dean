@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/websocket"
@@ -158,16 +159,43 @@ func (s *Server) DialWebSocket(user, passwd, url string, announce *Msg) {
 	go ws.Dial(user, passwd, url, announce)
 }
 
+const minPingMs = int(500) // 1/2 sec
+
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
+	var pingMs string
+
 	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.Bus)
-	println(r.URL.Path)
 	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) == 4 {
+
+	// TODO use URL params for options like ping ms
+
+	switch len(parts) {
+	case 3:
+		/* /ws/ */
+		/* /ws/[ping ms] */
+		pingMs = parts[2]
+	case 4:
+		/* /ws/[id]/ */
+		/* /ws/[id]/[ping ms] */
 		id := parts[2]
 		if id != s.thinger.Id() {
 			ws.SetTag(id)
 		}
+		pingMs = parts[3]
 	}
+
+	if pingMs != "" {
+		ping, err := strconv.Atoi(pingMs)
+		if err != nil {
+			http.Error(w, "Invalid ping ms", http.StatusNotAcceptable)
+			return
+		}
+		if ping < minPingMs {
+			ping = minPingMs
+		}
+		ws.ping = ping
+	}
+
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
 }

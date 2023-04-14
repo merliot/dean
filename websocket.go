@@ -10,6 +10,7 @@ import (
 type webSocket struct {
 	socket
 	conn *websocket.Conn
+	ping int
 }
 
 func NewWebSocket(name string, bus *Bus) *webSocket {
@@ -69,11 +70,32 @@ func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 	}
 }
 
+func (w *webSocket) servePing(conn *websocket.Conn) {
+	println("PING MS", w.ping)
+
+	for {
+		var msg = &Msg{bus: w.bus, src: w}
+		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
+			println("disconnected", err.Error())
+			w.bus.unplug(w)
+			w.conn = nil
+			return
+		}
+		w.bus.receive(msg)
+	}
+}
+
 func (w *webSocket) serve(conn *websocket.Conn) {
 	println("connected")
 
 	w.conn = conn
 	w.bus.plugin(w)
+
+	if w.ping > 0 {
+		w.servePing(conn)
+		return
+	}
+
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
