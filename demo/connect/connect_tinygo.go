@@ -23,16 +23,25 @@ func (c *Connect) Run(i *dean.Injector) {
 	c.Ip, _ = tinynet.GetIPAddr()
 	c.TempC = machine.ReadTemperature() / 1000
 
+	relay := machine.D2
+	relay.Configure(machine.PinConfig{Mode: machine.PinOutput})
+
 	machine.I2C0.Configure(machine.I2CConfig{})
 	sensor := bh1750.New(machine.I2C0)
 	sensor.Configure()
 	c.Lux = sensor.Illuminance()
 
+	setRelay := func() {
+		if 650000 <= c.Lux && c.Lux <= 700000 {
+			relay.High()
+		} else {
+			relay.Low()
+		}
+	}
+	setRelay()
+
 	c.Path = "update"
 	i.Inject(msg.Marshal(c))
-
-	relay := machine.D2
-	relay.Configure(machine.PinConfig{Mode: machine.PinOutput})
 
 	for {
 		changed := false
@@ -47,12 +56,8 @@ func (c *Connect) Run(i *dean.Injector) {
 			lux := sensor.Illuminance()
 			if lux != c.Lux {
 				c.Lux = lux
-				if 650000 <= lux && lux <= 700000 {
-					relay.High()
-				} else {
-					relay.Low()
-				}
 				changed = true
+				setRelay()
 			}
 		}
 

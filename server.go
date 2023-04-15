@@ -5,8 +5,8 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"path"
 	"sort"
-	"strconv"
 	"strings"
 
 	"golang.org/x/net/websocket"
@@ -154,48 +154,20 @@ func (s *Server) BasicAuth(user, passwd string) {
 	s.user, s.passwd = user, passwd
 }
 
-func (s *Server) DialWebSocket(user, passwd, url string, announce *Msg) {
-	ws := NewWebSocket("websocket:"+url, s.Bus)
-	go ws.Dial(user, passwd, url, announce)
+func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
+	ws := NewWebSocket("websocket:"+rawURL, s.Bus)
+	go ws.Dial(user, passwd, rawURL, announce)
 }
 
 const minPingMs = int(500) // 1/2 sec
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	var pingMs string
-
+	var id string
 	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.Bus)
-	parts := strings.Split(r.URL.Path, "/")
-
-	// TODO use URL params for options like ping ms
-
-	switch len(parts) {
-	case 3:
-		/* /ws/ */
-		/* /ws/[ping ms] */
-		pingMs = parts[2]
-	case 4:
-		/* /ws/[id]/ */
-		/* /ws/[id]/[ping ms] */
-		id := parts[2]
-		if id != s.thinger.Id() {
-			ws.SetTag(id)
-		}
-		pingMs = parts[3]
+	id, ws.ping = ws.parsePath(r.URL.Path)
+	if id != s.thinger.Id() {
+		ws.SetTag(id)
 	}
-
-	if pingMs != "" {
-		ping, err := strconv.Atoi(pingMs)
-		if err != nil {
-			http.Error(w, "Invalid ping ms", http.StatusNotAcceptable)
-			return
-		}
-		if ping < minPingMs {
-			ping = minPingMs
-		}
-		ws.ping = ping
-	}
-
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
 }
@@ -206,22 +178,30 @@ func (s *Server) Run() {
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
+	_path := r.URL.Path
 
 	// try exact match first
-	handler, ok := s.handlers[path]
+	handler, ok := s.handlers[_path]
+	if ok {
+		handler(w, r)
+		return
+	}
+
+	// Try with removing last element from path
+	dir, _ := path.Split(_path)
+	handler, ok = s.handlers[dir]
 	if ok {
 		handler(w, r)
 		return
 	}
 
 	// redirect /id/* to child
-	parts := strings.Split(path, "/")
+	parts := strings.Split(_path, "/")
 	if len(parts) > 1 {
 		id := parts[1]
-		if child, ok := s.children[id]; ok {
-			path = "/" + child.Id() + "/"
-			handler, ok = s.handlers[path]
+		if _, ok := s.children[id]; ok {
+			newpath := "/" + id + "/"
+			handler, ok = s.handlers[newpath]
 			if ok {
 				handler(w, r)
 				return
@@ -236,7 +216,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(w, "%s not found", path)
+	fmt.Fprintf(w, "%s not found", _path)
 }
 
 func (s *Server) root(w http.ResponseWriter, r *http.Request) {
