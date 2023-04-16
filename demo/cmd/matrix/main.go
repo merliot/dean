@@ -8,6 +8,6 @@ import (
 func main() {
 	thing := matrix.New("demo-matrix-01", "demo-matrix", "matrix")
 	server := dean.NewServer(thing)
-	server.DialWebSocket("", "", "ws://demo.merliot.net/ws/1000", thing.Announce())
+	server.DialWebSocket("", "", "wss://demo.merliot.net/ws/1000", thing.Announce())
 	server.Run()
 }
