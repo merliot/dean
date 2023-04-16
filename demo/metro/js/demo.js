@@ -16,6 +16,10 @@ function show() {
 	showSystem()
 }
 
+function reset() {
+	conn.send(JSON.stringify({Path: "reset"}))
+}
+
 function run(ws) {
 
 	console.log('connecting...')

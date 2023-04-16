@@ -4,7 +4,6 @@ package metro
 
 import (
 	"machine"
-	"time"
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/tinynet"
@@ -12,8 +11,6 @@ import (
 
 func (m *Metro) Run(i *dean.Injector) {
 	var msg dean.Msg
-
-	ticker := time.NewTicker(time.Second)
 
 	m.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
 	mac, _ := tinynet.GetHardwareAddr()
@@ -24,16 +21,9 @@ func (m *Metro) Run(i *dean.Injector) {
 	i.Inject(msg.Marshal(m))
 
 	for {
-		changed := false
-
 		select {
-		case <-ticker.C:
-		}
-
-		if changed {
-			changed = false
-			m.Path = "update"
-			i.Inject(msg.Marshal(m))
+		case <-m.runChan:
+			machine.CPUReset()
 		}
 	}
 }
