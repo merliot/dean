@@ -8,6 +8,6 @@ import (
 func main() {
 	thing := connect.New("demo-connect-01", "demo-connect", "connect")
 	server := dean.NewServer(thing)
-	server.DialWebSocket("", "", "ws://10.0.0.100/ws/", thing.Announce())
+	server.DialWebSocket("", "", "ws://demo.merliot.net/ws/1000", thing.Announce())
 	server.Run()
 }
