@@ -19,12 +19,14 @@ type Connect struct {
 	Ip      net.IP
 	TempC   int32
 	Lux     int32 // mlx (milliLux)
+	runChan chan *dean.Msg
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW CONNECT")
 	return &Connect{
 		Thing: dean.NewThing(id, model, name),
+		runChan: make(chan *dean.Msg),
 	}
 }
 
@@ -49,6 +51,13 @@ func (c *Connect) tempc(msg *dean.Msg) {
 	msg.Unmarshal(c).Broadcast()
 }
 
+func (c *Connect) reset(msg *dean.Msg) {
+	msg.Unmarshal(c).Broadcast()
+	if c.IsReal() {
+		c.runChan <- msg
+	}
+}
+
 func (c *Connect) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     c.saveState,
@@ -57,6 +66,7 @@ func (c *Connect) Subscribers() dean.Subscribers {
 		"update":    c.update,
 		"lux":       c.lux,
 		"tempc":     c.tempc,
+		"reset":     c.reset,
 	}
 }
 

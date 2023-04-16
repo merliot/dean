@@ -21,7 +21,7 @@ type Pyportal struct {
 	Light    uint16
 	TempC    float32
 	NeoColor color.RGBA
-	neoChan  chan bool
+	runChan  chan *dean.Msg
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -29,7 +29,7 @@ func New(id, model, name string) dean.Thinger {
 	return &Pyportal{
 		Thing:    dean.NewThing(id, model, name),
 		NeoColor: color.RGBA{0, 0, 0, 255},
-		neoChan:  make(chan bool),
+		runChan:  make(chan *dean.Msg),
 	}
 }
 
@@ -49,7 +49,7 @@ func (p *Pyportal) update(msg *dean.Msg) {
 func (p *Pyportal) neo(msg *dean.Msg) {
 	msg.Unmarshal(p).Broadcast()
 	if p.IsReal() {
-		p.neoChan <- true
+		p.runChan <- msg
 	}
 }
 func (p *Pyportal) light(msg *dean.Msg) {

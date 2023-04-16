@@ -69,6 +69,8 @@ func (c *Connect) Run(i *dean.Injector) {
 				lmsg := luxMsg{Path: "lux", Lux: lux}
 				i.Inject(msg.Marshal(&lmsg))
 			}
+		case <-c.runChan:
+			machine.CPUReset()
 		}
 	}
 }
