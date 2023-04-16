@@ -8,7 +8,7 @@ import (
 	"github.com/merliot/dean"
 )
 
-//go:embed css js index.html
+//go:embed css js images index.html
 var fs embed.FS
 
 type Connect struct {

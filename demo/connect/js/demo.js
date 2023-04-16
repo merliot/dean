@@ -46,12 +46,22 @@ function showBH1750() {
 	gauge.set(state.Lux)
 }
 
+function showRelay() {
+	let relay = document.getElementById("relay")
+	if (650000 <= state.Lux && state.Lux <= 700000) {
+		relay.src = "images/relay-on.svg"
+	} else {
+		relay.src = "images/relay-off.svg"
+	}
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
 	showTemp()
 	showBH1750()
+	showRelay()
 }
 
 function reset() {
@@ -95,6 +105,7 @@ function run(ws) {
 		case "lux":
 			state.Lux = msg.Lux
 			showBH1750()
+			showRelay()
 			break
 		case "tempc":
 			state.TempC = msg.TempC
