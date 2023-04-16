@@ -122,12 +122,12 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 	}
 }
 
-const quietDelay = 2 * time.Second
+const extraDelay = time.Second
 
 func (w *webSocket) servePing(conn *websocket.Conn) {
 	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
-	var quietPeriod = pingPeriod + quietDelay
+	var quietPeriod = 2 * pingPeriod + extraDelay
 	var pingSent = time.Now()
 	var lastRecv = pingSent
 

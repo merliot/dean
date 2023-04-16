@@ -54,6 +54,10 @@ function show() {
 	showBH1750()
 }
 
+function reset() {
+	conn.send(JSON.stringify({Path: "reset"}))
+}
+
 function run(ws) {
 
 	console.log('connecting...')

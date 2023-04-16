@@ -75,7 +75,7 @@ func (b *Bus) unplug(s Socket) {
 func (b *Bus) broadcast(msg *Msg) {
 	b.mu.RLock()
 	for sock := range b.sockets {
-		println("  sock tag", sock.Tag(), "name", sock.Name())
+		//println("  sock tag", sock.Tag(), "name", sock.Name())
 		if msg.src != sock && msg.src.Tag() == sock.Tag() {
 			println("broadcast:", sock.Name(), msg.String())
 			sock.Send(msg)
