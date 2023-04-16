@@ -17,6 +17,7 @@ type Matrix struct {
 	CPUFreq float64
 	Mac     string
 	Ip      net.IP
+	runChan chan *dean.Msg
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -39,12 +40,20 @@ func (m *Matrix) update(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
 }
 
+func (m *Matrix) reset(msg *dean.Msg) {
+	msg.Unmarshal(m).Broadcast()
+	if m.IsReal() {
+		m.runChan <- msg
+	}
+}
+
 func (m *Matrix) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     m.saveState,
 		"get/state": m.getState,
 		"attached":  m.getState,
 		"update":    m.update,
+		"reset":     m.reset,
 	}
 }
 
