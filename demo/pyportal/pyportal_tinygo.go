@@ -68,9 +68,16 @@ func (p *Pyportal) Run(i *dean.Injector) {
 				tmsg := tempMsg{Path: "tempc", TempC: tempC}
 				i.Inject(msg.Marshal(&tmsg))
 			}
-		case <-p.runChan:
-			// Alpha channel is not supported by WS2812
-			ws.WriteColors([]color.RGBA{p.NeoColor})
+		case msg := <-p.runChan:
+			var Path string
+			msg.Unmarshal(&Path)
+			switch Path {
+			case "neo":
+				// Alpha channel is not supported by WS2812
+				ws.WriteColors([]color.RGBA{p.NeoColor})
+			case "reset":
+				machine.CPUReset()
+			}
 		}
 	}
 }

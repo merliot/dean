@@ -49,6 +49,10 @@ function showNeo() {
 	showNeoPixel()
 }
 
+function reset() {
+	conn.send(JSON.stringify({Path: "reset"}))
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"

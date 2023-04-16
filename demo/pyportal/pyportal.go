@@ -60,6 +60,13 @@ func (p *Pyportal) tempc(msg *dean.Msg) {
 	msg.Unmarshal(p).Broadcast()
 }
 
+func (p *Pyportal) reset(msg *dean.Msg) {
+	msg.Unmarshal(p).Broadcast()
+	if p.IsReal() {
+		p.runChan <- msg
+	}
+}
+
 func (p *Pyportal) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     p.saveState,
@@ -69,6 +76,7 @@ func (p *Pyportal) Subscribers() dean.Subscribers {
 		"neo":       p.neo,
 		"light":     p.light,
 		"tempc":     p.tempc,
+		"reset":     p.reset,
 	}
 }
 
