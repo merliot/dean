@@ -18,7 +18,7 @@ function showLight() {
 function showTemp() {
 	let tempc = document.getElementById("tempc")
 	tempc.value = ""
-	tempc.value = "Temperature:     " + state.TempC.toFixed(2) + "C\r\n"
+	tempc.value = "Temperature:     " + state.TempC.toFixed(2) + "(C)\r\n"
 }
 
 function showSystem() {

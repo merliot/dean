@@ -41,12 +41,22 @@ func (c *Connect) update(msg *dean.Msg) {
 	msg.Unmarshal(c).Broadcast()
 }
 
+func (c *Connect) lux(msg *dean.Msg) {
+	msg.Unmarshal(c).Broadcast()
+}
+
+func (c *Connect) tempc(msg *dean.Msg) {
+	msg.Unmarshal(c).Broadcast()
+}
+
 func (c *Connect) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     c.saveState,
 		"get/state": c.getState,
 		"attached":  c.getState,
 		"update":    c.update,
+		"lux":       c.lux,
+		"tempc":     c.tempc,
 	}
 }
 

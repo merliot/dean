@@ -122,23 +122,25 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 	}
 }
 
+const quietDelay = 2 * time.Second
+
 func (w *webSocket) servePing(conn *websocket.Conn) {
 	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
-	var period = time.Duration(w.ping) * time.Millisecond
-	var period2 = 2 * period
+	var pingPeriod = time.Duration(w.ping) * time.Millisecond
+	var quietPeriod = pingPeriod + quietDelay
 	var pingSent = time.Now()
 	var lastRecv = pingSent
 
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
-		if time.Now().Sub(pingSent) > period {
+		if time.Now().Sub(pingSent) > pingPeriod {
 			msg.payload = pingMsg
 			websocket.Message.Send(conn, msg.payload)
 			pingSent = time.Now()
 		}
 
-		conn.SetReadDeadline(time.Now().Add(period))
+		conn.SetReadDeadline(time.Now().Add(pingPeriod))
 		err := websocket.Message.Receive(conn, &msg.payload)
 		if err == nil {
 			lastRecv = time.Now()
@@ -150,7 +152,7 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 
 		if netErr, ok := err.(*net.OpError); ok {
 			if netErr.Timeout() {
-				if time.Now().Sub(lastRecv) < period2 {
+				if time.Now().Sub(lastRecv) < quietPeriod {
 					continue
 				}
 			}

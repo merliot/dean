@@ -21,7 +21,7 @@
 	transform: translate(-50%,-50%) rotate(-45deg);
 }
 
-#system {
+textarea {
 	resize: none;
 	border: none;
 	width: 100%;

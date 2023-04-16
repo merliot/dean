@@ -28,13 +28,18 @@ gauge.setMinValue(0)
 gauge.animationSpeed = 32
 gauge.set(0)
 
+function showTemp() {
+	let tempc = document.getElementById("tempc")
+	tempc.value = ""
+	tempc.value = "Temperature:     " + state.TempC + "(C)\r\n"
+}
+
 function showSystem() {
 	let system = document.getElementById("system")
 	system.value = ""
 	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
 	system.value += "MAC Address:     " + state.Mac + "\r\n"
 	system.value += "IP Address:      " + state.Ip + "\r\n"
-	system.value += "Temperature:     " + state.TempC + "(C)\r\n"
 }
 
 function showBH1750() {
@@ -45,6 +50,7 @@ function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showTemp()
 	showBH1750()
 }
 
@@ -81,6 +87,14 @@ function run(ws) {
 		case "update":
 			state = msg
 			show()
+			break
+		case "lux":
+			state.Lux = msg.Lux
+			showBH1750()
+			break
+		case "tempc":
+			state.TempC = msg.TempC
+			showTemp()
 			break
 		}
 	}

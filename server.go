@@ -8,6 +8,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/websocket"
 )
@@ -17,6 +18,7 @@ type Server struct {
 	http.Server
 	*Bus
 	*Injector
+	sync.Mutex
 	subs     Subscribers
 	handlers map[string]http.HandlerFunc
 	sockets  map[Socket]Thinger
@@ -55,6 +57,10 @@ func NewServer(thinger Thinger) *Server {
 
 func (s *Server) connect(socket Socket) {
 	println("*** CONNECT ", socket.Name(), socket)
+
+	s.Lock()
+	defer s.Unlock()
+
 	_, ok := s.sockets[socket]
 	if ok {
 		panic("ALREADY CONNECTED")
@@ -64,6 +70,10 @@ func (s *Server) connect(socket Socket) {
 }
 
 func (s *Server) disconnect(socket Socket) {
+
+	s.Lock()
+	defer s.Unlock()
+
 	if child := s.sockets[socket]; child != nil {
 		id := child.Id()
 
@@ -84,6 +94,7 @@ func (s *Server) disconnect(socket Socket) {
 		}
 		fmt.Printf("DONE closing other sockets\r\n")
 	}
+
 	fmt.Printf(">>>> before deleted %p, %+v\r\n", socket, s.sockets)
 	delete(s.sockets, socket)
 	fmt.Printf(">>>> after deleted %p, %+v\r\n", socket, s.sockets)
@@ -95,6 +106,9 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	var child Thinger
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
+
+	s.Lock()
+	defer s.Unlock()
 
 	id, model, name := ann.Id, ann.Model, ann.Name
 
@@ -187,7 +201,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Try with removing last element from path
+	// try with removing last element from path
 	dir, _ := path.Split(_path)
 	handler, ok = s.handlers[dir]
 	if ok {
@@ -215,6 +229,8 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		handler(w, r)
 		return
 	}
+
+	// failed to find a match
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(w, "%s not found", _path)
 }

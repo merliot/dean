@@ -21,19 +21,7 @@
 	transform: translate(-50%,-50%) rotate(-45deg);
 }
 
-#system {
-	resize: none;
-	border: none;
-	width: 100%;
-}
-
-#light {
-	resize: none;
-	border: none;
-	width: 100%;
-}
-
-#tempc {
+textarea {
 	resize: none;
 	border: none;
 	width: 100%;

@@ -12,10 +12,18 @@ import (
 	"tinygo.org/x/drivers/bh1750"
 )
 
+type luxMsg struct {
+	Path string
+	Lux  int32
+}
+
+type tempMsg struct {
+	Path  string
+	TempC int32
+}
+
 func (c *Connect) Run(i *dean.Injector) {
 	var msg dean.Msg
-
-	ticker := time.NewTicker(time.Second)
 
 	c.CPUFreq = float64(machine.CPUFrequency()) / 1000000.0
 	mac, _ := tinynet.GetHardwareAddr()
@@ -43,28 +51,24 @@ func (c *Connect) Run(i *dean.Injector) {
 	c.Path = "update"
 	i.Inject(msg.Marshal(c))
 
-	for {
-		changed := false
+	ticker := time.NewTicker(time.Second)
 
+	for {
 		select {
 		case <-ticker.C:
 			temp := machine.ReadTemperature() / 1000
 			if temp != c.TempC {
 				c.TempC = temp
-				changed = true
+				tmsg := tempMsg{Path: "tempc", TempC: temp}
+				i.Inject(msg.Marshal(&tmsg))
 			}
 			lux := sensor.Illuminance()
 			if lux != c.Lux {
 				c.Lux = lux
-				changed = true
 				setRelay()
+				lmsg := luxMsg{Path: "lux", Lux: lux}
+				i.Inject(msg.Marshal(&lmsg))
 			}
-		}
-
-		if changed {
-			changed = false
-			c.Path = "update"
-			i.Inject(msg.Marshal(c))
 		}
 	}
 }
