@@ -27,7 +27,7 @@ func (w *Wio) Run(i *dean.Injector) {
 		changed := false
 
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 		}
 
 		if changed {

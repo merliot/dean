@@ -15,20 +15,21 @@ var fs embed.FS
 type Pyportal struct {
 	dean.Thing
 	dean.ThingMsg
-	CPUFreq float64
-	Mac string
-	Ip net.IP
-	Light uint16
+	CPUFreq  float64
+	Mac      string
+	Ip       net.IP
+	Light    uint16
+	TempC    float32
 	NeoColor color.RGBA
-	neoChan chan bool
+	neoChan  chan bool
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW PYPORTAL")
 	return &Pyportal{
-		Thing: dean.NewThing(id, model, name),
+		Thing:    dean.NewThing(id, model, name),
 		NeoColor: color.RGBA{0, 0, 0, 255},
-		neoChan: make(chan bool),
+		neoChan:  make(chan bool),
 	}
 }
 
@@ -51,6 +52,13 @@ func (p *Pyportal) neo(msg *dean.Msg) {
 		p.neoChan <- true
 	}
 }
+func (p *Pyportal) light(msg *dean.Msg) {
+	msg.Unmarshal(p).Broadcast()
+}
+
+func (p *Pyportal) tempc(msg *dean.Msg) {
+	msg.Unmarshal(p).Broadcast()
+}
 
 func (p *Pyportal) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
@@ -59,6 +67,8 @@ func (p *Pyportal) Subscribers() dean.Subscribers {
 		"attached":  p.getState,
 		"update":    p.update,
 		"neo":       p.neo,
+		"light":     p.light,
+		"tempc":     p.tempc,
 	}
 }
 

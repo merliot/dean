@@ -23,17 +23,17 @@ type Child struct {
 type Hub struct {
 	dean.Thing
 	dean.ThingMsg
-	Children  map[string]Child           // keyed by id
-	makers    map[string]dean.ThingMaker // keyed by model
-	mu        sync.Mutex
+	Children map[string]Child           // keyed by id
+	makers   map[string]dean.ThingMaker // keyed by model
+	mu       sync.Mutex
 }
 
 func New(id, model, name string) dean.Thinger {
 	println("NEW HUB")
 	return &Hub{
-		Thing:     dean.NewThing(id, model, name),
-		Children:  make(map[string]Child),
-		makers:    make(map[string]dean.ThingMaker),
+		Thing:    dean.NewThing(id, model, name),
+		Children: make(map[string]Child),
+		makers:   make(map[string]dean.ThingMaker),
 	}
 }
 

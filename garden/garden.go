@@ -77,7 +77,7 @@ func New(id, model, name string) dean.Thinger {
 		g.Zones[i].Index = i
 		g.Zones[i].cancel = make(chan bool)
 	}
-	g.PumpOn  = func(z *Zone) { fmt.Println(z.Name, "pump ON") }
+	g.PumpOn = func(z *Zone) { fmt.Println(z.Name, "pump ON") }
 	g.PumpOff = func(z *Zone) { fmt.Println(z.Name, "pump OFF") }
 	return &g
 }

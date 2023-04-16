@@ -120,7 +120,7 @@ var cmds = map[string]command{
 }
 
 func (l *LoraE5) Init() error {
-	for _, cmd := range []string{"reset", /* "debug",*/ "test", "rfcfg"} {
+	for _, cmd := range []string{"reset" /* "debug",*/, "test", "rfcfg"} {
 		command := cmds[cmd]
 		err := l.exec(command.cmd, command.expect, command.wait)
 		if err != nil {

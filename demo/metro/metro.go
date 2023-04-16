@@ -15,8 +15,8 @@ type Metro struct {
 	dean.Thing
 	dean.ThingMsg
 	CPUFreq float64
-	Mac string
-	Ip net.IP
+	Mac     string
+	Ip      net.IP
 }
 
 func New(id, model, name string) dean.Thinger {

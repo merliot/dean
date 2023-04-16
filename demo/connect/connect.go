@@ -15,10 +15,10 @@ type Connect struct {
 	dean.Thing
 	dean.ThingMsg
 	CPUFreq float64
-	Mac string
-	Ip net.IP
-	TempC int32
-	Lux int32 // mlx (milliLux)
+	Mac     string
+	Ip      net.IP
+	TempC   int32
+	Lux     int32 // mlx (milliLux)
 }
 
 func New(id, model, name string) dean.Thinger {

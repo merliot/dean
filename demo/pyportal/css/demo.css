@@ -27,6 +27,18 @@
 	width: 100%;
 }
 
+#light {
+	resize: none;
+	border: none;
+	width: 100%;
+}
+
+#tempc {
+	resize: none;
+	border: none;
+	width: 100%;
+}
+
 #neo {
 	display: flex;
 	flex-direction: row;

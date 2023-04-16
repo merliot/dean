@@ -47,7 +47,7 @@ func (c *Connect) Run(i *dean.Injector) {
 		changed := false
 
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			temp := machine.ReadTemperature() / 1000
 			if temp != c.TempC {
 				c.TempC = temp

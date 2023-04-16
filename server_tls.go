@@ -25,5 +25,5 @@ func (s *Server) ServeTLS(host string) error {
 	go http.ListenAndServe(":http", autocertManager.HTTPHandler(nil))
 
 	s.Addr = ":https"
-	return(s.ListenAndServeTLS("", ""))
+	return (s.ListenAndServeTLS("", ""))
 }

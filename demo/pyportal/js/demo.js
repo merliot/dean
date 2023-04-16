@@ -5,6 +5,20 @@ var online = false
 function neo(letter, value) {
 	state.NeoColor[letter] = parseInt(value)
 	conn.send(JSON.stringify({Path: "neo", NeoColor: state.NeoColor}))
+	showNeoPixel()
+}
+
+function showLight() {
+	let light = document.getElementById("light")
+	light.value = ""
+	percent = state.Light * 100 / 65535
+	light.value = "Light Intensity: " + percent.toFixed(3) + "%\r\n"
+}
+
+function showTemp() {
+	let tempc = document.getElementById("tempc")
+	tempc.value = ""
+	tempc.value = "Temperature:     " + state.TempC.toFixed(2) + "C\r\n"
 }
 
 function showSystem() {
@@ -13,7 +27,6 @@ function showSystem() {
 	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
 	system.value += "MAC Address:     " + state.Mac + "\r\n"
 	system.value += "IP Address:      " + state.Ip + "\r\n"
-	system.value += "Light Intensity: " + state.Light + "\r\n"
 }
 
 function showNeoPixel() {
@@ -40,6 +53,8 @@ function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showLight()
+	showTemp()
 	showNeo()
 }
 
@@ -76,6 +91,18 @@ function run(ws) {
 		case "update":
 			state = msg
 			show()
+			break
+		case "light":
+			state.Light = msg.Light
+			showLight()
+			break
+		case "tempc":
+			state.TempC = msg.TempC
+			showTemp()
+			break
+		case "neo":
+			state.NeoColor = msg.NeoColor
+			showNeo()
 			break
 		}
 	}
