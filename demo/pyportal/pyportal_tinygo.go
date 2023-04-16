@@ -23,6 +23,10 @@ type tempMsg struct {
 	TempC float32
 }
 
+type runMsg struct {
+	Path string
+}
+
 func (p *Pyportal) Run(i *dean.Injector) {
 	var msg dean.Msg
 
@@ -69,9 +73,9 @@ func (p *Pyportal) Run(i *dean.Injector) {
 				i.Inject(msg.Marshal(&tmsg))
 			}
 		case msg := <-p.runChan:
-			var Path string
-			msg.Unmarshal(&Path)
-			switch Path {
+			var rMsg runMsg
+			msg.Unmarshal(&rMsg)
+			switch rMsg.Path {
 			case "neo":
 				// Alpha channel is not supported by WS2812
 				ws.WriteColors([]color.RGBA{p.NeoColor})
