@@ -21,9 +21,10 @@ type Metro struct {
 }
 
 func New(id, model, name string) dean.Thinger {
-	println("NEW WIO")
+	println("NEW METRO")
 	return &Metro{
-		Thing: dean.NewThing(id, model, name),
+		Thing:   dean.NewThing(id, model, name),
+		runChan: make(chan *dean.Msg),
 	}
 }
 
