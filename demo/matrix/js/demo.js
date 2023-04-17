@@ -60,9 +60,10 @@ function run(ws) {
 			show()
 			break
 		case "loc":
-			state.Lat, state.Long = msg.Lat, msg.Long
+			state.Lat = msg.Lat
+			state.Long = msg.Long
 			showLoc()
-			break()
+			break
 		}
 	}
 }
