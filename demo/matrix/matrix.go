@@ -17,6 +17,9 @@ type Matrix struct {
 	CPUFreq float64
 	Mac     string
 	Ip      net.IP
+	Lat     float64
+	Long    float64
+	ready   bool
 	runChan chan *dean.Msg
 }
 
@@ -37,7 +40,7 @@ func (m *Matrix) getState(msg *dean.Msg) {
 	msg.Marshal(m).Reply()
 }
 
-func (m *Matrix) update(msg *dean.Msg) {
+func (m *Matrix) loc(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
 }
 
@@ -53,7 +56,7 @@ func (m *Matrix) Subscribers() dean.Subscribers {
 		"state":     m.saveState,
 		"get/state": m.getState,
 		"attached":  m.getState,
-		"update":    m.update,
+		"loc":       m.loc,
 		"reset":     m.reset,
 	}
 }

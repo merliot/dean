@@ -10,10 +10,17 @@ function showSystem() {
 	system.value += "IP Address:      " + state.Ip
 }
 
+function showLoc() {
+	let loc = document.getElementById("loc")
+	loc.value = ""
+	loc.value += "Location:          " + state.Lat.toFixed(4) + ", " + state.Long.toFixed(4)
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showLoc()
 }
 
 function reset() {
@@ -49,11 +56,13 @@ function run(ws) {
 		switch(msg.Path) {
 		case "state":
 			online = true
-			// fall-thru
-		case "update":
 			state = msg
 			show()
 			break
+		case "loc":
+			state.Lat, state.Long = msg.Lat, msg.Long
+			showLoc()
+			break()
 		}
 	}
 }
