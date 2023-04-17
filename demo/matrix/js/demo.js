@@ -60,7 +60,7 @@ function run(ws) {
 			show()
 			break
 		case "rx":
-			state.Packet = msg.Packet
+			state.Rx = msg.Rx
 			showRx()
 			break
 		}
