@@ -73,9 +73,9 @@ func (p *Pyportal) Run(i *dean.Injector) {
 				i.Inject(msg.Marshal(&tmsg))
 			}
 		case msg := <-p.runChan:
-			var rMsg runMsg
-			msg.Unmarshal(&rMsg)
-			switch rMsg.Path {
+			var rmsg runMsg
+			msg.Unmarshal(&rmsg)
+			switch rmsg.Path {
 			case "neo":
 				// Alpha channel is not supported by WS2812
 				ws.WriteColors([]color.RGBA{p.NeoColor})

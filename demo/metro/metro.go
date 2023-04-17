@@ -37,11 +37,7 @@ func (m *Metro) getState(msg *dean.Msg) {
 	msg.Marshal(m).Reply()
 }
 
-func (m *Metro) update(msg *dean.Msg) {
-	msg.Unmarshal(m).Broadcast()
-}
-
-func (m *Metro) reset(msg *dean.Msg) {
+func (m *Metro) run(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
 	if m.IsReal() {
 		m.runChan <- msg
@@ -53,8 +49,8 @@ func (m *Metro) Subscribers() dean.Subscribers {
 		"state":     m.saveState,
 		"get/state": m.getState,
 		"attached":  m.getState,
-		"update":    m.update,
-		"reset":     m.reset,
+		"tx":        m.run,
+		"reset":     m.run,
 	}
 }
 

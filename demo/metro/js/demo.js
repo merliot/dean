@@ -2,6 +2,10 @@ var state
 var conn
 var online = false
 
+function tx(msg) {
+	conn.send(JSON.stringify({Path: "tx", Tx: msg}))
+}
+
 function showSystem() {
 	let system = document.getElementById("system")
 	system.value = ""
@@ -49,8 +53,6 @@ function run(ws) {
 		switch(msg.Path) {
 		case "state":
 			online = true
-			// fall-thru
-		case "update":
 			state = msg
 			show()
 			break
