@@ -1,5 +1,5 @@
 function clearScreen() {
-	const container = document.querySelector('.flex-container')
+	const container = document.querySelector('.flex-row')
 	const iframes = container.querySelectorAll('iframe')
 
 	for (let i = 0; i < iframes.length; i++) {

@@ -7,7 +7,7 @@ function showSystem() {
 	system.value = ""
 	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
 	system.value += "MAC Address:     " + state.Mac + "\r\n"
-	system.value += "IP Address:      " + state.Ip + "\r\n"
+	system.value += "IP Address:      " + state.Ip
 }
 
 function show() {

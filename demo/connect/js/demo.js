@@ -31,7 +31,7 @@ gauge.set(0)
 function showTemp() {
 	let tempc = document.getElementById("tempc")
 	tempc.value = ""
-	tempc.value = "Temperature:     " + state.TempC + "(C)\r\n"
+	tempc.value = "Temperature:     " + state.TempC + "(C)"
 }
 
 function showSystem() {
@@ -39,7 +39,7 @@ function showSystem() {
 	system.value = ""
 	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
 	system.value += "MAC Address:     " + state.Mac + "\r\n"
-	system.value += "IP Address:      " + state.Ip + "\r\n"
+	system.value += "IP Address:      " + state.Ip
 }
 
 function showBH1750() {

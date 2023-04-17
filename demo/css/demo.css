@@ -1,12 +1,37 @@
-.flex-container {
+.flex-row {
 	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-evenly;
+	flex-direction: row;
+	flex-wrap: nowrap;
+}
+
+.flex-column {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
 }
 
 iframe {
-	flex-basis: calc(50% - 10px);
 	margin-bottom: 10px;
 	border: none;
-	height: 500px;
+	width: 380px;
+}
+
+#demo-pyportal {
+	height: 420px;
+}
+
+#demo-connect {
+	height: 580px;
+}
+
+#demo-metro {
+	height: 560px;
+}
+
+#demo-matrix {
+	height: 560px;
+}
+
+#demo-wio {
+	height: 560px;
 }

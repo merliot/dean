@@ -23,6 +23,7 @@ func (m *Metro) Run(i *dean.Injector) {
 	for {
 		select {
 		case <-m.runChan:
+			println("resetting")
 			machine.CPUReset()
 		}
 	}

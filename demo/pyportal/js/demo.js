@@ -12,13 +12,13 @@ function showLight() {
 	let light = document.getElementById("light")
 	light.value = ""
 	percent = state.Light * 100 / 65535
-	light.value = "Light Intensity: " + percent.toFixed(3) + "%\r\n"
+	light.value = "Light Intensity: " + percent.toFixed(3)
 }
 
 function showTemp() {
 	let tempc = document.getElementById("tempc")
 	tempc.value = ""
-	tempc.value = "Temperature:     " + state.TempC.toFixed(2) + "(C)\r\n"
+	tempc.value = "Temperature:     " + state.TempC.toFixed(2) + "(C)"
 }
 
 function showSystem() {
@@ -26,7 +26,7 @@ function showSystem() {
 	system.value = ""
 	system.value += "CPU Frequency:   " + state.CPUFreq + "Mhz\r\n"
 	system.value += "MAC Address:     " + state.Mac + "\r\n"
-	system.value += "IP Address:      " + state.Ip + "\r\n"
+	system.value += "IP Address:      " + state.Ip
 }
 
 function showNeoPixel() {
