@@ -92,7 +92,7 @@ func (l *LoraE5) Rx(wait int) ([]byte, error) {
 
 func (l *LoraE5) RxPoll(out chan []byte, wait int) {
 	for {
-		pkt, err := lora.Rx(wait)
+		pkt, err := l.Rx(wait)
 		if err == nil {
 			out <- pkt
 		}
