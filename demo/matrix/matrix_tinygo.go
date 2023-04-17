@@ -15,13 +15,8 @@ type loraMsg struct {
 	Rx     string
 }
 
-func (m *Matrix) poll(lora *lorae5.LoraE5, out chan []byte) {
-	for {
-		pkt, err := lora.Rx(2000)
-		if err == nil {
-			out <- pkt
-		}
-	}
+type runMsg struct {
+	Path string
 }
 
 func (m *Matrix) Run(i *dean.Injector) {
@@ -36,17 +31,31 @@ func (m *Matrix) Run(i *dean.Injector) {
 	m.Path = "update"
 	i.Inject(msg.Marshal(m))
 
+	relay := machine.A3
+	relay.Configure(machine.PinConfig{Mode: machine.PinOutput})
+
 	lora := lorae5.New(machine.UART1, machine.UART1_TX_PIN, machine.UART1_RX_PIN, 9600)
 	lora.Init()
-	go m.poll(lora, loraOut)
+	go lora.RxPoll(loraOut, 2000)
 
 	for {
 		select {
 		case pkt := <-loraOut:
 			lmsg := loraMsg{Path: "rx", Rx: string(pkt)}
 			i.Inject(msg.Marshal(&lmsg))
-		case <-m.runChan:
-			machine.CPUReset()
+		case msg := <-m.runChan:
+			var rmsg runMsg
+			msg.Unmarshal(&rmsg)
+			switch rmsg.Path {
+			case "great":
+				var gMsg greatMsg
+				msg.Unmarshal(&gMsg)
+				m.Relay = gMsg.Relay
+				relay.Set(m.Relay)
+				msg.Broadcast()
+			case "reset":
+				machine.CPUReset()
+			}
 		}
 	}
 }

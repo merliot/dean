@@ -16,11 +16,21 @@ function showRx() {
 	rx.value += "Last Received:      " + state.Rx
 }
 
+function showRelay() {
+	let relay = document.getElementById("relay")
+	if (state.Relay)
+		relay.src = "images/relay-on.svg"
+	} else {
+		relay.src = "images/relay-off.svg"
+	}
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
 	showRx()
+	showRelay()
 }
 
 function reset() {
@@ -62,6 +72,10 @@ function run(ws) {
 		case "rx":
 			state.Rx = msg.Rx
 			showRx()
+			break
+		case "great":
+			state.Relay = msg.Relay
+			showRelay()
 			break
 		}
 	}

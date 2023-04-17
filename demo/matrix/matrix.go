@@ -8,7 +8,7 @@ import (
 	"github.com/merliot/dean"
 )
 
-//go:embed css js index.html
+//go:embed css js images index.html
 var fs embed.FS
 
 type Matrix struct {
@@ -18,8 +18,15 @@ type Matrix struct {
 	Mac     string
 	Ip      net.IP
 	Rx      string
+	Relay   bool
+	lastRx  string
 	ready   bool
 	runChan chan *dean.Msg
+}
+
+type greatMsg struct {
+	Path  string
+	Relay bool
 }
 
 func New(id, model, name string) dean.Thinger {
@@ -39,7 +46,26 @@ func (m *Matrix) getState(msg *dean.Msg) {
 	msg.Marshal(m).Reply()
 }
 
+func (m *Matrix) tinyGoIsGreat(msg *dean.Msg) {
+	if m.Rx == "TinyGo" {
+		m.lastRx = ""
+	}
+	m.lastRx += m.Rx
+	relay := (m.lastRx == "TinyGoIsGreat!")
+	if relay != m.Relay {
+		var gMsg = greatMsg{Path: "great", Relay: relay}
+		m.runChan <- msg.Marshal(&gMsg)
+	}
+}
+
 func (m *Matrix) rx(msg *dean.Msg) {
+	msg.Unmarshal(m).Broadcast()
+	if m.IsReal() {
+		m.tinyGoIsGreat(msg)
+	}
+}
+
+func (m *Matrix) great(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
 }
 
@@ -56,6 +82,7 @@ func (m *Matrix) Subscribers() dean.Subscribers {
 		"get/state": m.getState,
 		"attached":  m.getState,
 		"rx":        m.rx,
+		"great":     m.great,
 		"reset":     m.reset,
 	}
 }

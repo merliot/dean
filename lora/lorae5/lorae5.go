@@ -90,6 +90,15 @@ func (l *LoraE5) Rx(wait int) ([]byte, error) {
 	return nil, errors.New("No Rx packet")
 }
 
+func (l *LoraE5) RxPoll(out chan []byte, wait int) {
+	for {
+		pkt, err := lora.Rx(wait)
+		if err == nil {
+			out <- pkt
+		}
+	}
+}
+
 type command struct {
 	cmd    []byte
 	expect []byte
