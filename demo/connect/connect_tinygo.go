@@ -31,9 +31,11 @@ func (c *Connect) Run(i *dean.Injector) {
 	c.Ip, _ = tinynet.GetIPAddr()
 	c.TempC = machine.ReadTemperature() / 1000
 
+	// Relay on GPIO D2
 	relay := machine.D2
 	relay.Configure(machine.PinConfig{Mode: machine.PinOutput})
 
+	// BH1750 Light Intensity
 	machine.I2C0.Configure(machine.I2CConfig{})
 	sensor := bh1750.New(machine.I2C0)
 	sensor.Configure()

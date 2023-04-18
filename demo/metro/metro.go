@@ -17,6 +17,7 @@ type Metro struct {
 	CPUFreq float64
 	Mac     string
 	Ip      net.IP
+	Input   bool
 	runChan chan *dean.Msg
 }
 
@@ -37,6 +38,10 @@ func (m *Metro) getState(msg *dean.Msg) {
 	msg.Marshal(m).Reply()
 }
 
+func (m *Metro) broadcast(msg *dean.Msg) {
+	msg.Unmarshal(m).Broadcast()
+}
+
 func (m *Metro) run(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
 	if m.IsReal() {
@@ -50,6 +55,7 @@ func (m *Metro) Subscribers() dean.Subscribers {
 		"get/state": m.getState,
 		"attached":  m.getState,
 		"tx":        m.run,
+		"input":     m.broadcast,
 		"reset":     m.run,
 	}
 }

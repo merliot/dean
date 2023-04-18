@@ -4,6 +4,7 @@ package metro
 
 import (
 	"machine"
+	"time"
 
 	"github.com/merliot/dean"
 	"github.com/merliot/dean/tinynet"
@@ -19,6 +20,11 @@ type txMsg struct {
 	Tx   string
 }
 
+type inputMsg struct {
+	Path  string
+	Input bool
+}
+
 func (m *Metro) Run(i *dean.Injector) {
 	var msg dean.Msg
 
@@ -27,14 +33,27 @@ func (m *Metro) Run(i *dean.Injector) {
 	m.Mac = mac.String()
 	m.Ip, _ = tinynet.GetIPAddr()
 
+	// Input on GPIO D2
+	d2 := machine.D2
+	d2.Configure(machine.PinConfig{Mode: machine.PinInputPullup})
+	m.Input = d2.Get()
+
 	m.Path = "update"
 	i.Inject(msg.Marshal(m))
 
 	lora := lorae5.New(machine.UART1, machine.UART_TX_PIN, machine.UART_RX_PIN, 9600)
 	lora.Init()
 
+	ticker := time.NewTicker(time.Second)
+
 	for {
 		select {
+		case <-ticker.C:
+			input := d2.Get()
+			if input != m.Input {
+				var imsg = inputMsg{Path: "input", Input: input}
+				i.Inject(msg.Marshal(&imsg))
+			}
 		case msg := <-m.runChan:
 			var rmsg runMsg
 			msg.Unmarshal(&rmsg)
