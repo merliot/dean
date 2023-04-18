@@ -18,7 +18,7 @@ function showRx() {
 
 function showRelay() {
 	let relay = document.getElementById("relay")
-	if (state.Relay)
+	if (state.Relay) {
 		relay.src = "images/relay-on.svg"
 	} else {
 		relay.src = "images/relay-off.svg"
@@ -73,7 +73,7 @@ function run(ws) {
 			state.Rx = msg.Rx
 			showRx()
 			break
-		case "great":
+		case "relay":
 			state.Relay = msg.Relay
 			showRelay()
 			break
