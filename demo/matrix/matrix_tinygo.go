@@ -10,13 +10,27 @@ import (
 	"github.com/merliot/dean/lora/lorae5"
 )
 
-type loraMsg struct {
+type rxMsg struct {
 	Path   string
 	Rx     string
 }
 
-type runMsg struct {
-	Path string
+type relayMsg struct {
+	Path  string
+	Relay bool
+}
+
+func (m *Matrix) tinyGoIsGreat() bool {
+	if m.Rx == "TinyGo" {
+		m.lastRx = ""
+	}
+	m.lastRx += m.Rx
+	relay := (m.lastRx == "TinyGoIsGreat!")
+	if relay != m.Relay {
+		m.Relay = relay
+		return true
+	}
+	return false
 }
 
 func (m *Matrix) Run(i *dean.Injector) {
@@ -41,21 +55,16 @@ func (m *Matrix) Run(i *dean.Injector) {
 	for {
 		select {
 		case pkt := <-loraOut:
-			lmsg := loraMsg{Path: "rx", Rx: string(pkt)}
-			i.Inject(msg.Marshal(&lmsg))
-		case msg := <-m.runChan:
-			var rmsg runMsg
-			msg.Unmarshal(&rmsg)
-			switch rmsg.Path {
-			case "great":
-				var gMsg greatMsg
-				msg.Unmarshal(&gMsg)
-				m.Relay = gMsg.Relay
+			m.Rx = string(pkt)
+			rmsg := rxMsg{Path: "rx", Rx: m.Rx}
+			i.Inject(msg.Marshal(&rmsg))
+			if m.tinyGoIsGreat() {
 				relay.Set(m.Relay)
-				msg.Broadcast()
-			case "reset":
-				machine.CPUReset()
+				rmsg := relayMsg{Path: "relay", Relay: m.Relay}
+				i.Inject(msg.Marshal(&rmsg))
 			}
+		case <-m.runChan:
+			machine.CPUReset()
 		}
 	}
 }
