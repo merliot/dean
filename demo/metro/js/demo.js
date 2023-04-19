@@ -28,8 +28,9 @@ function show() {
 }
 
 function reset() {
-	gopher = document.getElementById("gopher")
-	gopher.style.visibility = 'hidden'
+	state.Input = false
+	showGopher()
+	conn.send(JSON.stringify({Path: "input", Input: false}))
 	conn.send(JSON.stringify({Path: "reset"}))
 }
 

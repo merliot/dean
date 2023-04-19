@@ -65,6 +65,10 @@ function show() {
 }
 
 function reset() {
+	state.Lux = 0
+	showBH1750()
+	showRelay()
+	conn.send(JSON.stringify({Path: "lux", Lux: 0}))
 	conn.send(JSON.stringify({Path: "reset"}))
 }
 

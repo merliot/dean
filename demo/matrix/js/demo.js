@@ -34,6 +34,9 @@ function show() {
 }
 
 function reset() {
+	state.Relay = false
+	showRelay()
+	conn.send(JSON.stringify({Path: "relay", Relay: false}))
 	conn.send(JSON.stringify({Path: "reset"}))
 }
 

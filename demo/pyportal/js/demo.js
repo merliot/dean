@@ -50,6 +50,11 @@ function showNeo() {
 }
 
 function reset() {
+	state.NeoColor["R"] = 0
+	state.NeoColor["G"] = 0
+	state.NeoColor["B"] = 0
+	showNeo()
+	conn.send(JSON.stringify({Path: "neo", NeoColor: state.NeoColor}))
 	conn.send(JSON.stringify({Path: "reset"}))
 }
 
