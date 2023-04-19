@@ -25,7 +25,7 @@ func New(id, model, name string) dean.Thinger {
 	println("NEW METRO")
 	return &Metro{
 		Thing:   dean.NewThing(id, model, name),
-		runChan: make(chan *dean.Msg),
+		runChan: make(chan *dean.Msg, 10),
 	}
 }
 
