@@ -27,6 +27,10 @@ textarea {
 	width: 100%;
 }
 
+#gopher {
+	height: 100px;
+}
+
 button {
 	margin-top: 10px;
 	margin-left: 10px;

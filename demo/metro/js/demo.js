@@ -14,13 +14,22 @@ function showSystem() {
 	system.value += "IP Address:      " + state.Ip
 }
 
+function showGopher() {
+	gopher = document.getElementById("gopher")
+	gopher.style.visibility = (state.Input ? 'hidden' : 'visible')
+	gopher.src = "images/gopher-workout.gif"
+}
+
 function show() {
 	overlay = document.getElementById("overlay")
 	overlay.style.display = online ? "none" : "block"
 	showSystem()
+	showGopher()
 }
 
 function reset() {
+	gopher = document.getElementById("gopher")
+	gopher.style.visibility = 'hidden'
 	conn.send(JSON.stringify({Path: "reset"}))
 }
 
@@ -55,6 +64,10 @@ function run(ws) {
 			online = true
 			state = msg
 			show()
+			break
+		case "input":
+			state.Input = msg.Input
+			showGopher()
 			break
 		}
 	}
