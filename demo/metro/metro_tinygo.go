@@ -49,7 +49,7 @@ func (m *Metro) Run(i *dean.Injector) {
 	for {
 		select {
 		case <-ticker.C:
-			input := d2.Get()
+			input := !d2.Get()
 			if input != m.Input {
 				var imsg = inputMsg{Path: "input", Input: input}
 				i.Inject(msg.Marshal(&imsg))
