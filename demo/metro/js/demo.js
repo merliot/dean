@@ -16,7 +16,7 @@ function showSystem() {
 
 function showGopher() {
 	gopher = document.getElementById("gopher")
-	gopher.style.visibility = (state.Input ? 'hidden' : 'visible')
+	gopher.style.visibility = (state.Input ? 'visible' : 'hidden')
 	gopher.src = "images/gopher-workout.gif"
 }
 

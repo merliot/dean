@@ -17,21 +17,17 @@ iframe {
 }
 
 #demo-pyportal {
-	height: 420px;
+	height: 410px;
 }
 
 #demo-connect {
-	height: 580px;
+	height: 570px;
 }
 
 #demo-metro {
-	height: 560px;
+	height: 400px;
 }
 
 #demo-matrix {
-	height: 560px;
-}
-
-#demo-wio {
-	height: 560px;
+	height: 380px;
 }
