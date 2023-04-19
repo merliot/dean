@@ -79,11 +79,11 @@ func (l *LoraE5) Rx(wait int) ([]byte, error) {
 	for scanner.Scan() {
 		//println("SCAN", scanner.Text())
 		scan := scanner.Bytes()
-		pktHex := scan[len(expect)+1 : len(scan)-1]
-		pkt := make([]byte, hex.DecodedLen(len(pktHex)))
-		hex.Decode(pkt, pktHex)
-		//println(string(pkt))
 		if bytes.HasPrefix(scan, expect) {
+			pktHex := scan[len(expect)+1 : len(scan)-1]
+			pkt := make([]byte, hex.DecodedLen(len(pktHex)))
+			hex.Decode(pkt, pktHex)
+			//println(string(pkt))
 			return pkt, nil
 		}
 	}
