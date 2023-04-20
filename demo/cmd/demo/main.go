@@ -16,6 +16,7 @@ func main() {
 	demo := demo.New("demo01", "demo", "demo1").(*demo.Demo)
 
 	server := dean.NewServer(demo)
+	server.MaxSockets(100)
 
 	demo.Register("demo-connect", connect.New)
 	demo.Register("demo-matrix", matrix.New)
