@@ -25,7 +25,7 @@ type Thinger interface {
 	Lock()
 	Unlock()
 	SetReal()
-	IsReal() bool
+	IsMetal() bool
 }
 
 type Maker interface {
@@ -56,8 +56,8 @@ type ThingMsgDisconnect struct {
 }
 
 func ThingStore(t Thinger) {
-	println("THINGSTORE", t.IsReal())
-	if t.IsReal() {
+	println("THINGSTORE", t.IsMetal())
+	if t.IsMetal() {
 		storeName := t.Model() + "-" + t.Id()
 		bytes, _ := json.Marshal(t)
 		os.WriteFile(storeName, bytes, 0600)
@@ -65,7 +65,7 @@ func ThingStore(t Thinger) {
 }
 
 func ThingRestore(t Thinger) {
-	if t.IsReal() {
+	if t.IsMetal() {
 		storeName := t.Model() + "-" + t.Id()
 		bytes, err := os.ReadFile(storeName)
 		if err == nil {
@@ -81,7 +81,7 @@ type Thing struct {
 	model  string
 	name   string
 	mu     sync.Mutex
-	isReal bool
+	isMetal bool
 }
 
 func NewThing(id, model, name string) Thing {
@@ -96,8 +96,8 @@ func (t *Thing) Model() string                                { return t.model }
 func (t *Thing) Name() string                                 { return t.name }
 func (t *Thing) Lock()                                        { t.mu.Lock() }
 func (t *Thing) Unlock()                                      { t.mu.Unlock() }
-func (t *Thing) SetReal()                                     { t.isReal = true }
-func (t *Thing) IsReal() bool                                 { return t.isReal }
+func (t *Thing) SetReal()                                     { t.isMetal = true }
+func (t *Thing) IsMetal() bool                                 { return t.isMetal }
 
 func (t *Thing) String() string {
 	return "[Id: " + t.id + ", Model: " + t.model + ", Name: " + t.name + "]"

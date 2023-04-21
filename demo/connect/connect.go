@@ -53,7 +53,7 @@ func (c *Connect) tempc(msg *dean.Msg) {
 
 func (c *Connect) reset(msg *dean.Msg) {
 	msg.Unmarshal(c).Broadcast()
-	if c.IsReal() {
+	if c.IsMetal() {
 		c.runChan <- msg
 	}
 }

@@ -44,7 +44,7 @@ func (m *Metro) broadcast(msg *dean.Msg) {
 
 func (m *Metro) run(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
-	if m.IsReal() {
+	if m.IsMetal() {
 		m.runChan <- msg
 	}
 }

@@ -48,7 +48,7 @@ func (p *Pyportal) update(msg *dean.Msg) {
 
 func (p *Pyportal) neo(msg *dean.Msg) {
 	msg.Unmarshal(p).Broadcast()
-	if p.IsReal() {
+	if p.IsMetal() {
 		p.runChan <- msg
 	}
 }
@@ -62,7 +62,7 @@ func (p *Pyportal) tempc(msg *dean.Msg) {
 
 func (p *Pyportal) reset(msg *dean.Msg) {
 	msg.Unmarshal(p).Broadcast()
-	if p.IsReal() {
+	if p.IsMetal() {
 		p.runChan <- msg
 	}
 }

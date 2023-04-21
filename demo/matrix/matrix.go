@@ -47,7 +47,7 @@ func (m *Matrix) broadcast(msg *dean.Msg) {
 
 func (m *Matrix) reset(msg *dean.Msg) {
 	msg.Unmarshal(m).Broadcast()
-	if m.IsReal() {
+	if m.IsMetal() {
 		m.runChan <- msg
 	}
 }

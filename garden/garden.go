@@ -100,7 +100,7 @@ func (g *Garden) update(msg *dean.Msg) {
 
 func (g *Garden) startTime(msg *dean.Msg) {
 	g.update(msg)
-	if g.IsReal() {
+	if g.IsMetal() {
 		g.schedule()
 	}
 }
@@ -119,7 +119,7 @@ func (g *Garden) stopAllZones() {
 }
 
 func (g *Garden) startZone(msg *dean.Msg) {
-	if g.IsReal() {
+	if g.IsMetal() {
 		g.stopAllZones()
 		zone := g.getZone(msg)
 		go g.runZone(&g.Zones[zone])
@@ -128,7 +128,7 @@ func (g *Garden) startZone(msg *dean.Msg) {
 }
 
 func (g *Garden) stopZone(msg *dean.Msg) {
-	if g.IsReal() {
+	if g.IsMetal() {
 		zone := g.getZone(msg)
 		g.Zones[zone].stop()
 	}
