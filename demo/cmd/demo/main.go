@@ -9,7 +9,6 @@ import (
 	"github.com/merliot/dean/demo/matrix"
 	"github.com/merliot/dean/demo/metro"
 	"github.com/merliot/dean/demo/pyportal"
-	"github.com/merliot/dean/demo/wio"
 )
 
 func main() {
@@ -22,7 +21,6 @@ func main() {
 	demo.Register("demo-matrix", matrix.New)
 	demo.Register("demo-metro", metro.New)
 	demo.Register("demo-pyportal", pyportal.New)
-	demo.Register("demo-wio", wio.New)
 
 	log.Fatal(server.ServeTLS("demo.merliot.net"))
 }

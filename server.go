@@ -25,7 +25,6 @@ type Server struct {
 	children map[string]Thinger
 	user     string
 	passwd   string
-	msg      ThingMsg
 }
 
 func NewServer(thinger Thinger) *Server {
@@ -139,26 +138,27 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	msg.Marshal(&ThingMsg{"attached"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
-	go s.Inject(msg)
+	s.Inject(msg)
 }
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle %s\r\n", msg.String())
+		var rmsg ThingMsg
+
+		msg.Unmarshal(&rmsg)
+
+		switch rmsg.Path {
+		case "announce":
+			go s.handleAnnounce(thinger, msg)
+			return
+		}
 
 		thinger.Lock()
 		defer thinger.Unlock()
 
-		msg.Unmarshal(&s.msg)
-
-		switch s.msg.Path {
-		case "announce":
-			s.handleAnnounce(thinger, msg)
-			return
-		}
-
 		subs := thinger.Subscribers()
-		if sub, ok := subs[s.msg.Path]; ok {
+		if sub, ok := subs[rmsg.Path]; ok {
 			sub(msg)
 		}
 	}

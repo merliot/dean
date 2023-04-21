@@ -8,11 +8,12 @@ import (
 var defaultMaxSockets = 20
 
 type Bus struct {
-	mu         sync.RWMutex
 	name       string
 	sockets    map[Socket]bool
+	socketsMu  sync.RWMutex
 	socketQ    chan bool
 	handlers   map[string]func(*Msg)
+	handlersMu sync.RWMutex
 	connect    func(Socket)
 	disconnect func(Socket)
 }
@@ -35,6 +36,8 @@ func NewBus(name string, connect, disconnect func(Socket)) *Bus {
 }
 
 func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
+	b.handlersMu.Lock()
+	defer b.handlersMu.Unlock()
 	if _, ok := b.handlers[tag]; !ok {
 		b.handlers[tag] = handler
 		return true
@@ -43,6 +46,8 @@ func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
 }
 
 func (b *Bus) Unhandle(tag string) {
+	b.handlersMu.Lock()
+	defer b.handlersMu.Unlock()
 	delete(b.handlers, tag)
 }
 
@@ -57,23 +62,24 @@ func (b *Bus) MaxSockets(maxSockets int) {
 func (b *Bus) plugin(s Socket) {
 	fmt.Printf("--- PLUGIN %s ---\r\n", s.Name())
 	b.socketQ <- true
-	b.mu.Lock()
+	b.socketsMu.Lock()
 	b.sockets[s] = true
-	b.mu.Unlock()
+	b.socketsMu.Unlock()
 	b.connect(s)
 }
 
 func (b *Bus) unplug(s Socket) {
 	fmt.Printf("--- UNPLUG %s ---\r\n", s.Name())
-	b.mu.Lock()
+	b.socketsMu.Lock()
 	delete(b.sockets, s)
-	b.mu.Unlock()
+	b.socketsMu.Unlock()
 	b.disconnect(s)
 	<-b.socketQ
 }
 
 func (b *Bus) broadcast(msg *Msg) {
-	b.mu.RLock()
+	b.socketsMu.RLock()
+	defer b.socketsMu.RUnlock()
 	for sock := range b.sockets {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
 		if msg.src != sock && msg.src.Tag() == sock.Tag() {
@@ -81,10 +87,11 @@ func (b *Bus) broadcast(msg *Msg) {
 			sock.Send(msg)
 		}
 	}
-	b.mu.RUnlock()
 }
 
 func (b *Bus) receive(msg *Msg) {
+	b.handlersMu.RLock()
+	defer b.handlersMu.RUnlock()
 	tag := msg.src.Tag()
 	if handler, ok := b.handlers[tag]; ok {
 		handler(msg)
