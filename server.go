@@ -18,13 +18,14 @@ type Server struct {
 	http.Server
 	*Bus
 	*Injector
-	sync.Mutex
-	subs     Subscribers
-	handlers map[string]http.HandlerFunc
-	sockets  map[Socket]Thinger
-	children map[string]Thinger
-	user     string
-	passwd   string
+	subs       Subscribers
+	handlers   map[string]http.HandlerFunc
+	handlersMu sync.RWMutex
+	sockets    map[Socket]Thinger
+	socketsMu  sync.Mutex
+	children   map[string]Thinger
+	user       string
+	passwd     string
 }
 
 func NewServer(thinger Thinger) *Server {
@@ -57,8 +58,8 @@ func NewServer(thinger Thinger) *Server {
 func (s *Server) connect(socket Socket) {
 	println("*** CONNECT ", socket.Name(), socket)
 
-	s.Lock()
-	defer s.Unlock()
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
 
 	_, ok := s.sockets[socket]
 	if ok {
@@ -70,8 +71,8 @@ func (s *Server) connect(socket Socket) {
 
 func (s *Server) disconnect(socket Socket) {
 
-	s.Lock()
-	defer s.Unlock()
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
 
 	if child := s.sockets[socket]; child != nil {
 		id := child.Id()
@@ -106,9 +107,6 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
 
-	s.Lock()
-	defer s.Unlock()
-
 	id, model, name := ann.Id, ann.Model, ann.Name
 
 	if child, ok = s.children[id]; !ok {
@@ -129,10 +127,13 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	}
 
 	socket := msg.src
+	socket.SetTag(id)
+
+	s.socketsMu.Lock()
 	s.sockets[socket] = child
+	s.socketsMu.Unlock()
 	fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
 
-	socket.SetTag(id)
 	s.Bus.Handle(id, s.busHandle(child))
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
@@ -195,7 +196,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	_path := r.URL.Path
 
 	// try exact match first
-	handler, ok := s.handlers[_path]
+	handler, ok := s.GetHandler(_path)
 	if ok {
 		handler(w, r)
 		return
@@ -203,7 +204,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 
 	// try with removing last element from path
 	dir, _ := path.Split(_path)
-	handler, ok = s.handlers[dir]
+	handler, ok = s.GetHandler(dir)
 	if ok {
 		handler(w, r)
 		return
@@ -215,7 +216,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		id := parts[1]
 		if _, ok := s.children[id]; ok {
 			newpath := "/" + id + "/"
-			handler, ok = s.handlers[newpath]
+			handler, ok = s.GetHandler(newpath)
 			if ok {
 				handler(w, r)
 				return
@@ -224,7 +225,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// everything else
-	handler, ok = s.handlers[""]
+	handler, ok = s.GetHandler("")
 	if ok {
 		handler(w, r)
 		return
@@ -265,15 +266,28 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
+func (s *Server) GetHandler(path string) (http.HandlerFunc, bool) {
+	s.handlersMu.RLock()
+	defer s.handlersMu.RUnlock()
+	handler, ok := s.handlers[path]
+	return handler, ok
+}
+
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
 	s.handlers[path] = handler
 }
 
 func (s *Server) Handle(path string, handler http.Handler) {
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
 	s.handlers[path] = handler.ServeHTTP
 }
 
 func (s *Server) Unhandle(path string) {
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
 	delete(s.handlers, path)
 }
 
