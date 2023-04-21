@@ -314,10 +314,12 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, "Thing: ", s.thinger.String())
 
+	s.handlersMu.RLock()
 	handlers := make([]string, 0, len(s.handlers))
 	for key := range s.handlers {
 		handlers = append(handlers, key)
 	}
+	s.handlersMu.RUnlock()
 	sort.Strings(handlers)
 
 	fmt.Fprintln(w)
@@ -326,6 +328,7 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "\t\"%s\"\n", handler)
 	}
 
+	s.socketsMu.Lock()
 	sockets := make([]string, 0, len(s.sockets))
 	for socket, thing := range s.sockets {
 		tag := socket.Tag()
@@ -339,6 +342,7 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 			sockets = append(sockets, tag+", "+socket.Name())
 		}
 	}
+	s.socketsMu.Unlock()
 	sort.Strings(sockets)
 
 	fmt.Fprintln(w)
