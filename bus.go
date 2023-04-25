@@ -84,7 +84,7 @@ func (b *Bus) broadcast(msg *Msg) {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
 		if msg.src != sock &&
 		   msg.src.Tag() == sock.Tag() && 
-		   msg.src.TestFlag(SocketFlagBcast) {
+		   sock.TestFlag(SocketFlagBcast) {
 			println("broadcast:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}
