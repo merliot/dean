@@ -137,7 +137,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	s.Bus.Handle(id, s.busHandle(child))
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
-	msg.Marshal(&ThingMsg{"attached"}).Reply()
+	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
 	s.Inject(msg)
 }
@@ -153,6 +153,8 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		case "announce":
 			go s.handleAnnounce(thinger, msg)
 			return
+		case "get/state", "state":
+			msg.src.SetFlag(SocketFlagBcast)
 		}
 
 		thinger.Lock()
@@ -188,7 +190,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Run() {
-	s.thinger.SetReal()
+	s.thinger.SetFlag(ThingFlagMetal)
 	s.thinger.Run(s.Injector)
 }
 

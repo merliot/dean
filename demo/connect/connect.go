@@ -62,7 +62,6 @@ func (c *Connect) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     c.saveState,
 		"get/state": c.getState,
-		"attached":  c.getState,
 		"update":    c.update,
 		"lux":       c.lux,
 		"tempc":     c.tempc,

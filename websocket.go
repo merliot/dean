@@ -20,7 +20,7 @@ type webSocket struct {
 
 func NewWebSocket(name string, bus *Bus) *webSocket {
 	return &webSocket{
-		socket: socket{name, "", bus},
+		socket: socket{name, "", 0, bus},
 	}
 }
 

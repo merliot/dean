@@ -82,7 +82,9 @@ func (b *Bus) broadcast(msg *Msg) {
 	defer b.socketsMu.RUnlock()
 	for sock := range b.sockets {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
-		if msg.src != sock && msg.src.Tag() == sock.Tag() {
+		if msg.src != sock &&
+		   msg.src.Tag() == sock.Tag() && 
+		   msg.src.TestFlag(SocketFlagBcast) {
 			println("broadcast:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}

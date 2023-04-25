@@ -56,7 +56,6 @@ func (m *Matrix) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     m.saveState,
 		"get/state": m.getState,
-		"attached":  m.getState,
 		"rx":        m.broadcast,
 		"relay":     m.broadcast,
 		"reset":     m.reset,

@@ -71,7 +71,6 @@ func (p *Pyportal) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     p.saveState,
 		"get/state": p.getState,
-		"attached":  p.getState,
 		"update":    p.update,
 		"neo":       p.neo,
 		"light":     p.light,

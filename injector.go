@@ -5,7 +5,7 @@ type Injector struct {
 }
 
 func NewInjector(name string, bus *Bus) *Injector {
-	i := &Injector{socket{name, "", bus}}
+	i := &Injector{socket{name, "", 0, bus}}
 	bus.plugin(i)
 	return i
 }

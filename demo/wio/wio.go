@@ -43,7 +43,6 @@ func (w *Wio) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     w.saveState,
 		"get/state": w.getState,
-		"attached":  w.getState,
 		"update":    w.update,
 	}
 }

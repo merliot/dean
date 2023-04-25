@@ -53,7 +53,6 @@ func (m *Metro) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     m.saveState,
 		"get/state": m.getState,
-		"attached":  m.getState,
 		"tx":        m.run,
 		"input":     m.broadcast,
 		"reset":     m.run,

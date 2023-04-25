@@ -22,10 +22,10 @@ type Thinger interface {
 	Model() string
 	Name() string
 	String() string
+	SetFlag(uint32)
+	TestFlag(uint32) bool
 	Lock()
 	Unlock()
-	SetReal()
-	IsMetal() bool
 }
 
 type Maker interface {
@@ -56,8 +56,8 @@ type ThingMsgDisconnect struct {
 }
 
 func ThingStore(t Thinger) {
-	println("THINGSTORE", t.IsMetal())
-	if t.IsMetal() {
+	if t.TestFlag(ThingFlagMetal) {
+		println("THINGSTORE")
 		storeName := t.Model() + "-" + t.Id()
 		bytes, _ := json.Marshal(t)
 		os.WriteFile(storeName, bytes, 0600)
@@ -65,7 +65,8 @@ func ThingStore(t Thinger) {
 }
 
 func ThingRestore(t Thinger) {
-	if t.IsMetal() {
+	if t.TestFlag(ThingFlagMetal) {
+		println("THINGRESTORE")
 		storeName := t.Model() + "-" + t.Id()
 		bytes, err := os.ReadFile(storeName)
 		if err == nil {
@@ -80,13 +81,17 @@ type Thing struct {
 	id     string
 	model  string
 	name   string
+	flags  uint32
 	mu     sync.Mutex
-	isMetal bool
 }
 
 func NewThing(id, model, name string) Thing {
 	return Thing{id: id, model: model, name: name}
 }
+
+const (
+	ThingFlagMetal uint32 = 1 << iota
+)
 
 func (t *Thing) Subscribers() Subscribers                     { return nil }
 func (t *Thing) ServeHTTP(http.ResponseWriter, *http.Request) {}
@@ -96,8 +101,9 @@ func (t *Thing) Model() string                                { return t.model }
 func (t *Thing) Name() string                                 { return t.name }
 func (t *Thing) Lock()                                        { t.mu.Lock() }
 func (t *Thing) Unlock()                                      { t.mu.Unlock() }
-func (t *Thing) SetReal()                                     { t.isMetal = true }
-func (t *Thing) IsMetal() bool                                 { return t.isMetal }
+func (t *Thing) SetFlag(flag uint32)                          { t.flags |= flag }
+func (t *Thing) TestFlag(flag uint32) bool                    { return (t.flags & flag) != 0 }
+func (t *Thing) IsMetal() bool                                { return t.TestFlag(ThingFlagMetal) }
 
 func (t *Thing) String() string {
 	return "[Id: " + t.id + ", Model: " + t.model + ", Name: " + t.name + "]"

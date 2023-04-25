@@ -40,7 +40,6 @@ func (a *Amlight) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     a.saveState,
 		"get/state": a.getState,
-		"attached":  a.getState,
 		"update":    a.update,
 	}
 }

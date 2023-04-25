@@ -145,7 +145,6 @@ func (g *Garden) Subscribers() dean.Subscribers {
 	return dean.Subscribers{
 		"state":     g.saveState,
 		"get/state": g.getState,
-		"attached":  g.getState,
 		"update":    g.update,
 		"starttime": g.startTime,
 		"startzone": g.startZone,
