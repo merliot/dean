@@ -15,5 +15,3 @@
 # vendor/
 
 tinynet/secrets.go
-hub/cert.pem
-hub/key.pem
