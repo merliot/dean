@@ -8,7 +8,7 @@ TinyGo.
 
 ### Example
 
-There is an example Server/Thing in examples/main.go.  To run:
+There is an example in examples/main.go.  To run:
 
 ```
 go run examples/main.go
