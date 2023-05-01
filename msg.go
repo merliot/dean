@@ -16,22 +16,24 @@ func (m *Msg) String() string {
 	return string(m.payload)
 }
 
-func (m *Msg) Reply() {
+func (m *Msg) Reply() *Msg {
 	if m.src == nil {
 		println("Can't reply to message: source is nil")
-		return
+		return m
 	}
 	println("Reply: src", m.src.Name())
 	m.src.Send(m)
+	return m
 }
 
-func (m *Msg) Broadcast() {
+func (m *Msg) Broadcast() *Msg {
 	if m.bus == nil {
 		println("Can't broadcast message: bus is nil")
-		return
+		return m
 	}
 	println("Broadcast: tag", m.src.Tag(), m.String())
 	m.bus.broadcast(m)
+	return m
 }
 
 func (m *Msg) Unmarshal(v any) *Msg {
