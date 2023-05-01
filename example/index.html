@@ -1,0 +1,43 @@
+<html lang="en">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	</head>
+	<body>
+		<p id="count"></p>
+		<button onclick="reset()">Reset</button>
+
+		<script>
+			var conn
+			var state
+
+			function show(msg) {
+				count = document.getElementById("count")
+				count.innerText = "Count:     " + msg.Count
+			}
+
+			function reset() {
+				conn.send(JSON.stringify({Path: "reset"}))
+			}
+
+			conn = new WebSocket("{{.WebSocket}}")
+
+			conn.onopen = function(evt) {
+				conn.send(JSON.stringify({Path: "get/state"}))
+			}
+
+			conn.onmessage = function(evt) {
+				msg = JSON.parse(evt.data)
+				console.log('example', msg)
+
+				switch(msg.Path) {
+				case "state":
+					// fall-thru
+				case "update":
+					show(msg)
+					break
+				}
+			}
+		</script>
+	</body>
+</html>
+
