@@ -59,13 +59,9 @@ func (s *Server) connect(socket Socket) {
 	println("*** CONNECT ", socket.Name(), socket)
 
 	s.socketsMu.Lock()
-	defer s.socketsMu.Unlock()
-
-	_, ok := s.sockets[socket]
-	if ok {
-		panic("ALREADY CONNECTED")
-	}
 	s.sockets[socket] = nil
+	s.socketsMu.Unlock()
+
 	fmt.Printf(">>>> added %p, %+v\r\n", socket, s.sockets)
 }
 
@@ -81,10 +77,6 @@ func (s *Server) disconnect(socket Socket) {
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
 		s.Inject(&msg)
 
-		s.Unhandle("/ws/" + id + "/")
-		s.Bus.Unhandle(id)
-		socket.SetTag("")
-
 		fmt.Printf("BEGIN closing other sockets\r\n")
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
@@ -93,6 +85,10 @@ func (s *Server) disconnect(socket Socket) {
 			}
 		}
 		fmt.Printf("DONE closing other sockets\r\n")
+
+		s.Unhandle("/ws/" + id + "/")
+		s.Bus.Unhandle(id)
+		socket.SetTag("")
 	}
 
 	fmt.Printf(">>>> before deleted %p, %+v\r\n", socket, s.sockets)
@@ -362,7 +358,7 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Bus Handlers")
 	for _, handler := range handlers {
-		fmt.Fprintf(w, "\t%s\n", handler)
+		fmt.Fprintf(w, "\t\"%s\"\n", handler)
 	}
 
 	children := make([]string, 0, len(s.children))
