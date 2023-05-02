@@ -1,4 +1,6 @@
-Dean is a Go framework.  It's currently under develoment.
+![Gopher Thing](images/gopher_cloud.png)
+
+Dean is a 100% Go framework.  It's currently under develoment.
 
 Dean wraps a Server around a Thing.  The Server extends Go's net/http web server.
 The Thing has a ServeHTTP() handler, subscribed message handlers, and a Run loop.
