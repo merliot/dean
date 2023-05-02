@@ -78,11 +78,11 @@ func ThingRestore(t Thinger) {
 }
 
 type Thing struct {
-	id     string
-	model  string
-	name   string
-	flags  uint32
-	mu     sync.Mutex
+	id    string
+	model string
+	name  string
+	flags uint32
+	mu    sync.Mutex
 }
 
 func NewThing(id, model, name string) Thing {

@@ -127,7 +127,7 @@ const extraDelay = time.Second
 func (w *webSocket) servePing(conn *websocket.Conn) {
 	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
-	var quietPeriod = 2 * pingPeriod + extraDelay
+	var quietPeriod = 2*pingPeriod + extraDelay
 	var pingSent = time.Now()
 	var lastRecv = pingSent
 

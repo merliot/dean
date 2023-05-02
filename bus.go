@@ -83,8 +83,8 @@ func (b *Bus) broadcast(msg *Msg) {
 	for sock := range b.sockets {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
 		if msg.src != sock &&
-		   msg.src.Tag() == sock.Tag() && 
-		   sock.TestFlag(SocketFlagBcast) {
+			msg.src.Tag() == sock.Tag() &&
+			sock.TestFlag(SocketFlagBcast) {
 			println("broadcast:", sock.Name(), msg.String())
 			sock.Send(msg)
 		}
