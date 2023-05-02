@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -16,6 +17,7 @@ type webSocket struct {
 	socket
 	conn *websocket.Conn
 	ping int
+	sync.RWMutex
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
@@ -25,12 +27,16 @@ func newWebSocket(name string, bus *Bus) *webSocket {
 }
 
 func (w *webSocket) Close() {
+	w.RLock()
+	defer w.RUnlock()
 	if w.conn != nil {
 		w.conn.Close()
 	}
 }
 
 func (w *webSocket) Send(msg *Msg) {
+	w.RLock()
+	defer w.RUnlock()
 	if w.conn != nil {
 		println("sending:", msg.src.Name(), msg.String())
 		websocket.Message.Send(w.conn, string(msg.payload))
@@ -124,9 +130,25 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 	}
 }
 
+func (w *webSocket) connect(conn *websocket.Conn) {
+	println("connecting")
+	w.Lock()
+	w.conn = conn
+	w.Unlock()
+	w.bus.plugin(w)
+}
+
+func (w *webSocket) disconnect(err error) {
+	println("disconnecting", err.Error())
+	w.bus.unplug(w)
+	w.Lock()
+	w.conn = nil
+	w.Unlock()
+}
+
 const extraDelay = time.Second
 
-func (w *webSocket) servePing(conn *websocket.Conn) {
+func (w *webSocket) servePing(conn *websocket.Conn) error {
 	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
 	var quietPeriod = 2*pingPeriod + extraDelay
@@ -160,22 +182,16 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 			}
 		}
 
-		println("disconnected", err.Error())
-		w.bus.unplug(w)
-		w.conn = nil
-
-		return
+		return err
 	}
 }
 
 func (w *webSocket) serve(conn *websocket.Conn) {
-	println("connected")
-
-	w.conn = conn
-	w.bus.plugin(w)
+	w.connect(conn)
 
 	if w.ping > 0 {
-		w.servePing(conn)
+		err := w.servePing(conn)
+		w.disconnect(err)
 		return
 	}
 
@@ -183,9 +199,7 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
-			println("disconnected", err.Error())
-			w.bus.unplug(w)
-			w.conn = nil
+			w.disconnect(err)
 			return
 		}
 
