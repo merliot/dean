@@ -1,3 +1,8 @@
+Dean
+
+[![Go Reference](https://pkg.go.dev/badge/pkg.dev.go/github.com/merliot/dean.svg)](https://pkg.go.dev/github.com/merliot/dean)
+[![Go Report Card](https://goreportcard.com/badge/github.com/merliot/dean)](https://goreportcard.com/report/github.com/merliot/dean)
+
 ![Gopher Thing](images/gopher_cloud.png)
 
 Dean is a 100% Go framework.  It's currently under develoment.
