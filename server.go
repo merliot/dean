@@ -16,8 +16,8 @@ import (
 type Server struct {
 	thinger Thinger
 	http.Server
-	*Bus
-	*Injector
+	bus        *Bus
+	injector   *Injector
 	subs       Subscribers
 	handlers   map[string]http.HandlerFunc
 	handlersMu sync.RWMutex
@@ -39,9 +39,9 @@ func NewServer(thinger Thinger) *Server {
 
 	s.subs = thinger.Subscribers()
 
-	s.Bus = NewBus("server bus", s.connect, s.disconnect)
-	s.Bus.Handle("", s.busHandle(thinger))
-	s.Injector = NewInjector("server injector", s.Bus)
+	s.bus = NewBus("server bus", s.connect, s.disconnect)
+	s.bus.Handle("", s.busHandle(thinger))
+	s.injector = NewInjector("server injector", s.bus)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.root)
@@ -75,7 +75,7 @@ func (s *Server) disconnect(socket Socket) {
 
 		var msg Msg
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
-		s.Inject(&msg)
+		s.injector.Inject(&msg)
 
 		fmt.Printf("BEGIN closing other sockets\r\n")
 		for sock := range s.sockets {
@@ -87,7 +87,7 @@ func (s *Server) disconnect(socket Socket) {
 		fmt.Printf("DONE closing other sockets\r\n")
 
 		s.Unhandle("/ws/" + id + "/")
-		s.Bus.Unhandle(id)
+		s.bus.Unhandle(id)
 		socket.SetTag("")
 	}
 
@@ -130,12 +130,12 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	s.socketsMu.Unlock()
 	fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
 
-	s.Bus.Handle(id, s.busHandle(child))
+	s.bus.Handle(id, s.busHandle(child))
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
-	s.Inject(msg)
+	s.injector.Inject(msg)
 }
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
@@ -163,12 +163,16 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	}
 }
 
+func (s *Server) MaxSockets(maxSockets int) {
+	s.bus.MaxSockets(maxSockets)
+}
+
 func (s *Server) BasicAuth(user, passwd string) {
 	s.user, s.passwd = user, passwd
 }
 
 func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
-	ws := NewWebSocket("websocket:"+rawURL, s.Bus)
+	ws := NewWebSocket("websocket:"+rawURL, s.bus)
 	go ws.Dial(user, passwd, rawURL, announce)
 }
 
@@ -176,7 +180,7 @@ const minPingMs = int(500) // 1/2 sec
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	var id string
-	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.Bus)
+	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.bus)
 	id, ws.ping = ws.parsePath(r.URL.Path)
 	if id != s.thinger.Id() {
 		ws.SetTag(id)
@@ -187,7 +191,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Run() {
 	s.thinger.SetFlag(ThingFlagMetal)
-	s.thinger.Run(s.Injector)
+	s.thinger.Run(s.injector)
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
@@ -349,8 +353,8 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "\t%s\n", socket)
 	}
 
-	handlers = make([]string, 0, len(s.Bus.handlers))
-	for key := range s.Bus.handlers {
+	handlers = make([]string, 0, len(s.bus.handlers))
+	for key := range s.bus.handlers {
 		handlers = append(handlers, key)
 	}
 	sort.Strings(handlers)
