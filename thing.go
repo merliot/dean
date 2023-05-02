@@ -122,7 +122,7 @@ func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
 		scheme = "ws://"
 	}
 
-	println("ServeFS:", r.URL.Path, "Id:", t.id)
+	//println("ServeFS:", r.URL.Path, "Id:", t.id)
 	switch r.URL.Path {
 	case "", "/", "/index.html":
 		html, _ := fs.ReadFile("index.html")
