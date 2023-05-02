@@ -18,7 +18,7 @@ type webSocket struct {
 	ping int
 }
 
-func NewWebSocket(name string, bus *Bus) *webSocket {
+func newWebSocket(name string, bus *Bus) *webSocket {
 	return &webSocket{
 		socket: socket{name, "", 0, bus},
 	}

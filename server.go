@@ -172,7 +172,7 @@ func (s *Server) BasicAuth(user, passwd string) {
 }
 
 func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
-	ws := NewWebSocket("websocket:"+rawURL, s.bus)
+	ws := newWebSocket("websocket:"+rawURL, s.bus)
 	go ws.Dial(user, passwd, rawURL, announce)
 }
 
@@ -180,7 +180,7 @@ const minPingMs = int(500) // 1/2 sec
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	var id string
-	ws := NewWebSocket("websocket:"+r.RemoteAddr, s.bus)
+	ws := newWebSocket("websocket:"+r.RemoteAddr, s.bus)
 	id, ws.ping = ws.parsePath(r.URL.Path)
 	if id != s.thinger.Id() {
 		ws.SetTag(id)

@@ -1,7 +1,7 @@
 package dean
 
 type Injector struct {
-	socket
+	sock socket
 }
 
 func NewInjector(name string, bus *Bus) *Injector {
