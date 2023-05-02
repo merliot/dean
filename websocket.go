@@ -25,7 +25,9 @@ func newWebSocket(name string, bus *Bus) *webSocket {
 }
 
 func (w *webSocket) Close() {
-	w.conn.Close()
+	if w.conn != nil {
+		w.conn.Close()
+	}
 }
 
 func (w *webSocket) Send(msg *Msg) {
