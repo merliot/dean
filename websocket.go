@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -15,28 +14,23 @@ import (
 
 type webSocket struct {
 	socket
-	conn *websocket.Conn
-	ping int
-	sync.RWMutex
+	conn    *websocket.Conn
+	ping    int
+	closeCh chan bool
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
 	return &webSocket{
 		socket: socket{name, "", 0, bus},
+		closeCh: make(chan bool),
 	}
 }
 
 func (w *webSocket) Close() {
-	w.RLock()
-	defer w.RUnlock()
-	if w.conn != nil {
-		w.conn.Close()
-	}
+	w.closeCh <- true
 }
 
 func (w *webSocket) Send(msg *Msg) {
-	w.RLock()
-	defer w.RUnlock()
 	if w.conn != nil {
 		println("sending:", msg.src.Name(), msg.String())
 		websocket.Message.Send(w.conn, string(msg.payload))
@@ -132,23 +126,19 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 
 func (w *webSocket) connect(conn *websocket.Conn) {
 	println("connecting")
-	w.Lock()
 	w.conn = conn
-	w.Unlock()
 	w.bus.plugin(w)
 }
 
-func (w *webSocket) disconnect(err error) {
-	println("disconnecting", err.Error())
+func (w *webSocket) disconnect() {
+	println("disconnecting")
 	w.bus.unplug(w)
-	w.Lock()
 	w.conn = nil
-	w.Unlock()
 }
 
 const extraDelay = time.Second
 
-func (w *webSocket) servePing(conn *websocket.Conn) error {
+func (w *webSocket) servePing(conn *websocket.Conn) {
 	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
 	var quietPeriod = 2*pingPeriod + extraDelay
@@ -157,6 +147,13 @@ func (w *webSocket) servePing(conn *websocket.Conn) error {
 
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
+
+		select {
+		case <-w.closeCh:
+			println("closing")
+			return
+		default:
+		}
 
 		if time.Now().Sub(pingSent) > pingPeriod {
 			msg.payload = pingMsg
@@ -182,7 +179,8 @@ func (w *webSocket) servePing(conn *websocket.Conn) error {
 			}
 		}
 
-		return err
+		println("disconnecting", err.Error())
+		return
 	}
 }
 
@@ -190,19 +188,38 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 	w.connect(conn)
 
 	if w.ping > 0 {
-		err := w.servePing(conn)
-		w.disconnect(err)
+		w.servePing(conn)
+		w.disconnect()
 		return
 	}
 
+loop:
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
-		if err := websocket.Message.Receive(conn, &msg.payload); err != nil {
-			w.disconnect(err)
-			return
+		select {
+		case <-w.closeCh:
+			println("closing")
+			break loop
+		default:
 		}
 
-		w.bus.receive(msg)
+		conn.SetReadDeadline(time.Now().Add(time.Second))
+		err := websocket.Message.Receive(conn, &msg.payload)
+		if err == nil {
+			w.bus.receive(msg)
+			continue
+		}
+
+		if netErr, ok := err.(*net.OpError); ok {
+			if netErr.Timeout() {
+				continue
+			}
+		}
+
+		println("disconnecting", err.Error())
+		break loop
 	}
+
+	w.disconnect()
 }
