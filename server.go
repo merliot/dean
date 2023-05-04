@@ -22,7 +22,7 @@ type Server struct {
 	handlersMu sync.RWMutex
 	handlers   map[string]http.HandlerFunc
 	socketsMu  sync.Mutex
-	sockets    map[Socket]Thinger
+	sockets    map[Socketer]Thinger
 	children   map[string]Thinger
 	user       string
 	passwd     string
@@ -32,7 +32,7 @@ func NewServer(thinger Thinger) *Server {
 	var s Server
 
 	s.handlers = make(map[string]http.HandlerFunc)
-	s.sockets = make(map[Socket]Thinger)
+	s.sockets = make(map[Socketer]Thinger)
 	s.children = make(map[string]Thinger)
 
 	s.thinger = thinger
@@ -55,7 +55,7 @@ func NewServer(thinger Thinger) *Server {
 	return &s
 }
 
-func (s *Server) connect(socket Socket) {
+func (s *Server) connect(socket Socketer) {
 	println("*** CONNECT ", socket.Name(), socket)
 
 	s.socketsMu.Lock()
@@ -63,7 +63,7 @@ func (s *Server) connect(socket Socket) {
 	s.socketsMu.Unlock()
 }
 
-func (s *Server) disconnect(socket Socket) {
+func (s *Server) disconnect(socket Socketer) {
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
