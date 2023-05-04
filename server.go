@@ -19,10 +19,10 @@ type Server struct {
 	bus        *Bus
 	injector   *Injector
 	subs       Subscribers
-	handlers   map[string]http.HandlerFunc
 	handlersMu sync.RWMutex
-	sockets    map[Socket]Thinger
+	handlers   map[string]http.HandlerFunc
 	socketsMu  sync.Mutex
+	sockets    map[Socket]Thinger
 	children   map[string]Thinger
 	user       string
 	passwd     string

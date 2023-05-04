@@ -9,11 +9,11 @@ var defaultMaxSockets = 20
 
 type Bus struct {
 	name       string
-	sockets    map[Socket]bool
 	socketsMu  sync.RWMutex
+	sockets    map[Socket]bool
 	socketQ    chan bool
-	handlers   map[string]func(*Msg)
 	handlersMu sync.RWMutex
+	handlers   map[string]func(*Msg)
 	connect    func(Socket)
 	disconnect func(Socket)
 }
