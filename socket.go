@@ -1,6 +1,6 @@
 package dean
 
-type Socket interface {
+type Socketer interface {
 	Close()
 	Send(*Msg)
 	Name() string

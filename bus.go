@@ -9,25 +9,25 @@ var defaultMaxSockets = 20
 
 type Bus struct {
 	name       string
-	sockets    map[Socket]bool
 	socketsMu  sync.RWMutex
+	sockets    map[Socketer]bool
 	socketQ    chan bool
-	handlers   map[string]func(*Msg)
 	handlersMu sync.RWMutex
-	connect    func(Socket)
-	disconnect func(Socket)
+	handlers   map[string]func(*Msg)
+	connect    func(Socketer)
+	disconnect func(Socketer)
 }
 
-func NewBus(name string, connect, disconnect func(Socket)) *Bus {
+func NewBus(name string, connect, disconnect func(Socketer)) *Bus {
 	if connect == nil {
-		connect = func(Socket) { /* don't notify */ }
+		connect = func(Socketer) { /* don't notify */ }
 	}
 	if disconnect == nil {
-		disconnect = func(Socket) { /* don't notify */ }
+		disconnect = func(Socketer) { /* don't notify */ }
 	}
 	return &Bus{
 		name:       name,
-		sockets:    make(map[Socket]bool),
+		sockets:    make(map[Socketer]bool),
 		socketQ:    make(chan bool, defaultMaxSockets),
 		handlers:   make(map[string]func(*Msg)),
 		connect:    connect,
@@ -59,7 +59,7 @@ func (b *Bus) MaxSockets(maxSockets int) {
 	b.socketQ = make(chan bool, maxSockets)
 }
 
-func (b *Bus) plugin(s Socket) {
+func (b *Bus) plugin(s Socketer) {
 	fmt.Printf("--- PLUGIN %s ---\r\n", s.Name())
 	b.socketQ <- true
 	b.socketsMu.Lock()
@@ -68,7 +68,7 @@ func (b *Bus) plugin(s Socket) {
 	b.connect(s)
 }
 
-func (b *Bus) unplug(s Socket) {
+func (b *Bus) unplug(s Socketer) {
 	fmt.Printf("--- UNPLUG %s ---\r\n", s.Name())
 	b.socketsMu.Lock()
 	delete(b.sockets, s)

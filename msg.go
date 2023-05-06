@@ -4,7 +4,7 @@ import "encoding/json"
 
 type Msg struct {
 	bus     *Bus
-	src     Socket
+	src     Socketer
 	payload []byte
 }
 
