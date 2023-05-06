@@ -4,12 +4,13 @@ package dean
 
 import (
 	"crypto/tls"
+	"log"
 	"net/http"
 
 	"golang.org/x/crypto/acme/autocert"
 )
 
-func (s *Server) ServeTLS(host string) error {
+func (s *Server) serveTLS(host string) {
 	certsDir := "certs-" + s.thinger.Id()
 
 	autocertManager := &autocert.Manager{
@@ -22,8 +23,10 @@ func (s *Server) ServeTLS(host string) error {
 		GetCertificate: autocertManager.GetCertificate,
 	}
 
-	go http.ListenAndServe(":http", autocertManager.HTTPHandler(nil))
+	log.Fatal(http.ListenAndServe(":http", autocertManager.HTTPHandler(nil)))
+}
 
-	s.Addr = ":https"
-	return (s.ListenAndServeTLS("", ""))
+func (s *Server) ServeTLS(host string) error {
+	go s.serveTLS(host)
+	return s.ListenAndServeTLS("", "")
 }
