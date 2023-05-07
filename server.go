@@ -101,6 +101,19 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	id, model, name := ann.Id, ann.Model, ann.Name
 
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
+
+	for _, child := range s.sockets {
+		if child != nil {
+			if child.Id() == id {
+				println("CHILD ALREADY CONNECTED")
+				msg.src.Close()
+				return
+			}
+		}
+	}
+
 	if child, ok = s.children[id]; !ok {
 		maker, ok := thinger.(Maker)
 		if !ok {
@@ -120,10 +133,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	socket := msg.src
 	socket.SetTag(id)
-
-	s.socketsMu.Lock()
 	s.sockets[socket] = child
-	s.socketsMu.Unlock()
 	//fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
 
 	s.bus.Handle(id, s.busHandle(child))
@@ -183,6 +193,16 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
+}
+
+func (s *Server) ListenAndServe() error {
+	println("Running HTTP on port", s.Addr)
+	return s.Server.ListenAndServe()
+}
+
+func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
+	println("Running HTTPS on port", s.Addr)
+	return s.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
 func (s *Server) Run() {
