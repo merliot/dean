@@ -8,9 +8,9 @@ import (
 	"path"
 	"sort"
 	"strings"
-	//"sync"
+	"sync"
 
-	sync "github.com/sasha-s/go-deadlock"
+	//sync "github.com/sasha-s/go-deadlock"
 	"golang.org/x/net/websocket"
 )
 

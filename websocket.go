@@ -16,20 +16,17 @@ type webSocket struct {
 	socket
 	conn    *websocket.Conn
 	ping    int
-	closeCh chan bool
 	closing bool
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
 	return &webSocket{
 		socket: socket{name, "", 0, bus},
-		closeCh: make(chan bool),
 	}
 }
 
 func (w *webSocket) Close() {
 	w.closing = true
-	//w.closeCh <- true
 }
 
 func (w *webSocket) Send(msg *Msg) {
@@ -150,15 +147,6 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
-		/*
-		select {
-		case <-w.closeCh:
-			println("closing")
-			return
-		default:
-		}
-		*/
-
 		if w.closing {
 			println("closing")
 			return
@@ -205,15 +193,6 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 loop:
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
-
-		/*
-		select {
-		case <-w.closeCh:
-			println("closing")
-			break loop
-		default:
-		}
-		*/
 
 		if w.closing {
 			println("closing")
