@@ -17,6 +17,7 @@ type webSocket struct {
 	conn    *websocket.Conn
 	ping    int
 	closeCh chan bool
+	closing bool
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
@@ -27,7 +28,8 @@ func newWebSocket(name string, bus *Bus) *webSocket {
 }
 
 func (w *webSocket) Close() {
-	w.closeCh <- true
+	w.closing = true
+	//w.closeCh <- true
 }
 
 func (w *webSocket) Send(msg *Msg) {
@@ -148,11 +150,18 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
+		/*
 		select {
 		case <-w.closeCh:
 			println("closing")
 			return
 		default:
+		}
+		*/
+
+		if w.closing {
+			println("closing")
+			return
 		}
 
 		if time.Now().Sub(pingSent) > pingPeriod {
@@ -197,11 +206,18 @@ loop:
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
+		/*
 		select {
 		case <-w.closeCh:
 			println("closing")
 			break loop
 		default:
+		}
+		*/
+
+		if w.closing {
+			println("closing")
+			return
 		}
 
 		conn.SetReadDeadline(time.Now().Add(time.Second))

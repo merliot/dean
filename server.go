@@ -8,8 +8,9 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"sync"
+	//"sync"
 
+	sync "github.com/sasha-s/go-deadlock"
 	"golang.org/x/net/websocket"
 )
 
@@ -21,7 +22,7 @@ type Server struct {
 	subs       Subscribers
 	handlersMu sync.RWMutex
 	handlers   map[string]http.HandlerFunc
-	socketsMu  sync.Mutex
+	socketsMu  sync.RWMutex
 	sockets    map[Socketer]Thinger
 	children   map[string]Thinger
 	user       string
@@ -65,9 +66,6 @@ func (s *Server) connect(socket Socketer) {
 
 func (s *Server) disconnect(socket Socketer) {
 
-	s.socketsMu.Lock()
-	defer s.socketsMu.Unlock()
-
 	if child := s.sockets[socket]; child != nil {
 		id := child.Id()
 
@@ -80,16 +78,20 @@ func (s *Server) disconnect(socket Socketer) {
 		socket.SetTag("")
 
 		//fmt.Printf("BEGIN closing other sockets\r\n")
+		s.socketsMu.RLock()
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				//fmt.Printf(">>>> closing %p\r\n", sock)
 				sock.Close()
 			}
 		}
+		s.socketsMu.RUnlock()
 		//fmt.Printf("DONE closing other sockets\r\n")
 	}
 
+	s.socketsMu.Lock()
 	delete(s.sockets, socket)
+	s.socketsMu.Unlock()
 	println("*** DISCONNECT", socket.Name())
 }
 
@@ -100,19 +102,19 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	msg.Unmarshal(&ann)
 
 	id, model, name := ann.Id, ann.Model, ann.Name
+	socket := msg.src
 
-	s.socketsMu.Lock()
-	defer s.socketsMu.Unlock()
-
+	s.socketsMu.RLock()
 	for _, child := range s.sockets {
 		if child != nil {
 			if child.Id() == id {
 				println("CHILD ALREADY CONNECTED")
-				msg.src.Close()
+				socket.Close()
 				return
 			}
 		}
 	}
+	s.socketsMu.RUnlock()
 
 	if child, ok = s.children[id]; !ok {
 		maker, ok := thinger.(Maker)
@@ -131,9 +133,11 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", child))
 	}
 
-	socket := msg.src
 	socket.SetTag(id)
+
+	s.socketsMu.Lock()
 	s.sockets[socket] = child
+	s.socketsMu.Unlock()
 	//fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
 
 	s.bus.Handle(id, s.busHandle(child))
@@ -193,16 +197,6 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
-}
-
-func (s *Server) ListenAndServe() error {
-	println("Running HTTP on port", s.Addr)
-	return s.Server.ListenAndServe()
-}
-
-func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
-	println("Running HTTPS on port", s.Addr)
-	return s.Server.ListenAndServeTLS(certFile, keyFile)
 }
 
 func (s *Server) Run() {

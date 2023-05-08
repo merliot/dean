@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"sync"
+	//"sync"
+	sync "github.com/sasha-s/go-deadlock"
 )
 
 type Subscribers map[string]func(*Msg)
