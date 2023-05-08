@@ -217,7 +217,7 @@ loop:
 
 		if w.closing {
 			println("closing")
-			return
+			break loop
 		}
 
 		conn.SetReadDeadline(time.Now().Add(time.Second))

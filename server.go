@@ -110,6 +110,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 			if child.Id() == id {
 				println("CHILD ALREADY CONNECTED")
 				socket.Close()
+				s.socketsMu.RUnlock()
 				return
 			}
 		}
