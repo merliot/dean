@@ -37,6 +37,9 @@ func NewBus(name string, connect, disconnect func(Socketer)) *Bus {
 }
 
 func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
+	if handler == nil {
+		panic("handler is nil")
+	}
 	b.handlersMu.Lock()
 	defer b.handlersMu.Unlock()
 	if _, ok := b.handlers[tag]; !ok {
