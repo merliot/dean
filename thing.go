@@ -1,10 +1,7 @@
 package dean
 
 import (
-	"bytes"
-	"embed"
 	"encoding/json"
-	"net/http"
 	"os"
 	"sync"
 	//sync "github.com/sasha-s/go-deadlock"
@@ -16,7 +13,6 @@ type ThingMaker func(id, model, name string) Thinger
 
 type Thinger interface {
 	Subscribers() Subscribers
-	ServeHTTP(http.ResponseWriter, *http.Request)
 	Announce() *Msg
 	Run(*Injector)
 	Id() string
@@ -87,6 +83,10 @@ type Thing struct {
 }
 
 func NewThing(id, model, name string) Thing {
+	if id == "" || model == "" || name == "" {
+		panic("missing something: id = \"" + id + "\", model = \"" +
+			model + "\", name = \"" + name + "\"")
+	}
 	return Thing{id: id, model: model, name: name}
 }
 
@@ -95,7 +95,6 @@ const (
 )
 
 func (t *Thing) Subscribers() Subscribers                     { return nil }
-func (t *Thing) ServeHTTP(http.ResponseWriter, *http.Request) {}
 func (t *Thing) Run(*Injector)                                { select {} }
 func (t *Thing) Id() string                                   { return t.id }
 func (t *Thing) Model() string                                { return t.model }
@@ -115,23 +114,4 @@ func (t *Thing) Announce() *Msg {
 	var ann = ThingMsgAnnounce{"announce", t.id, t.model, t.name}
 	msg.Marshal(&ann)
 	return &msg
-}
-
-func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
-	scheme := "wss://"
-	if r.TLS == nil {
-		scheme = "ws://"
-	}
-
-	//println("ServeFS:", r.URL.Path, "Id:", t.id)
-	switch r.URL.Path {
-	case "", "/", "/index.html":
-		html, _ := fs.ReadFile("index.html")
-		from := []byte("{{.WebSocket}}")
-		to := []byte(scheme + r.Host + "/ws/" + t.Id() + "/")
-		html = bytes.ReplaceAll(html, from, to)
-		w.Write(html)
-		return
-	}
-	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }

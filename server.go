@@ -1,8 +1,10 @@
 package dean
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
+	"embed"
 	"fmt"
 	"net/http"
 	"path"
@@ -48,7 +50,10 @@ func NewServer(thinger Thinger) *Server {
 	mux.HandleFunc("/", s.root)
 	s.Handler = mux
 
-	s.Handle("", thinger)
+	handler, ok := thinger.(http.Handler)
+	if ok {
+		s.Handle("", handler)
+	}
 	s.HandleFunc("/state", s.state)
 	s.HandleFunc("/ws/", s.serveWebSocket)
 	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serveWebSocket)
@@ -131,7 +136,10 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 			return
 		}
 		s.children[id] = child
-		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", child))
+		handler, ok := thinger.(http.Handler)
+		if ok {
+			s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+		}
 	}
 
 	socket.SetTag(id)
@@ -209,7 +217,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	_path := r.URL.Path
 
 	// try exact match first
-	handler, ok := s.GetHandler(_path)
+	handler, ok := s.getHandler(_path)
 	if ok {
 		handler(w, r)
 		return
@@ -217,7 +225,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 
 	// try with removing last element from path
 	dir, _ := path.Split(_path)
-	handler, ok = s.GetHandler(dir)
+	handler, ok = s.getHandler(dir)
 	if ok {
 		handler(w, r)
 		return
@@ -229,7 +237,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		id := parts[1]
 		if _, ok := s.children[id]; ok {
 			newpath := "/" + id + "/"
-			handler, ok = s.GetHandler(newpath)
+			handler, ok = s.getHandler(newpath)
 			if ok {
 				handler(w, r)
 				return
@@ -238,7 +246,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// everything else
-	handler, ok = s.GetHandler("")
+	handler, ok = s.getHandler("")
 	if ok {
 		handler(w, r)
 		return
@@ -279,7 +287,7 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
-func (s *Server) GetHandler(path string) (http.HandlerFunc, bool) {
+func (s *Server) getHandler(path string) (http.HandlerFunc, bool) {
 	s.handlersMu.RLock()
 	defer s.handlersMu.RUnlock()
 	handler, ok := s.handlers[path]
@@ -302,6 +310,25 @@ func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
 	delete(s.handlers, path)
+}
+
+func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
+	scheme := "wss://"
+	if r.TLS == nil {
+		scheme = "ws://"
+	}
+
+	//println("ServeFS:", r.URL.Path, "Id:", t.id)
+	switch r.URL.Path {
+	case "", "/", "/index.html":
+		html, _ := fs.ReadFile("index.html")
+		from := []byte("{{.WebSocket}}")
+		to := []byte(scheme + r.Host + "/ws/" + t.Id() + "/")
+		html = bytes.ReplaceAll(html, from, to)
+		w.Write(html)
+		return
+	}
+	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
 
 var htmlBegin = `
