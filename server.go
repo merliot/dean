@@ -136,7 +136,7 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 			return
 		}
 		s.children[id] = child
-		handler, ok := thinger.(http.Handler)
+		handler, ok := child.(http.Handler)
 		if ok {
 			s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
 		}
