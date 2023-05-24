@@ -86,6 +86,5 @@ func (t *Thing) String() string {
 func (t *Thing) Announce() *Msg {
 	var msg Msg
 	var ann = ThingMsgAnnounce{"announce", t.id, t.model, t.name}
-	msg.Marshal(&ann)
-	return &msg
+	return msg.Marshal(&ann)
 }
