@@ -172,8 +172,10 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 			msg.src.SetFlag(SocketFlagBcast)
 		}
 
-		thinger.Lock()
-		defer thinger.Unlock()
+		if locker, ok := thinger.(sync.Locker); ok {
+			locker.Lock()
+			defer locker.Unlock()
+		}
 
 		subs := thinger.Subscribers()
 		if sub, ok := subs[rmsg.Path]; ok {

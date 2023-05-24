@@ -19,8 +19,6 @@ type Thinger interface {
 	String() string
 	SetFlag(uint32)
 	TestFlag(uint32) bool
-	Lock()
-	Unlock()
 }
 
 type Maker interface {
