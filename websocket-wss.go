@@ -2,4 +2,4 @@
 
 package dean
 
-var scheme = "wss"
+var scheme = "wss://"
