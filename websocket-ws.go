@@ -1,4 +1,4 @@
-//go:build !wss
+//go:build !heroku
 
 package dean
 
