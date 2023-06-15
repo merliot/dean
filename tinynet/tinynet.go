@@ -3,9 +3,9 @@ package tinynet
 import "net"
 
 func GetHardwareAddr() (net.HardwareAddr, error) {
-	return netdev.GetHardwareAddr()
+	return netlink.GetHardwareAddr()
 }
 
 func GetIPAddr() (net.IP, error) {
-	return netdev.GetIPAddr()
+	return netlink.GetIPAddr()
 }

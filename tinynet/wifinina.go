@@ -7,35 +7,42 @@ import (
 	"machine"
 	"time"
 
+	"tinygo.org/x/drivers"
 	"tinygo.org/x/drivers/wifinina"
 )
 
-var cfg = wifinina.Config{
-	// WiFi AP credentials
-	Ssid:       ssid,
-	Passphrase: pass,
-	// Configure SPI for 8Mhz, Mode 0, MSB First
-	Spi:  machine.NINA_SPI,
-	Freq: 8 * 1e6,
-	Sdo:  machine.NINA_SDO,
-	Sdi:  machine.NINA_SDI,
-	Sck:  machine.NINA_SCK,
-	// Device pins
-	Cs:     machine.NINA_CS,
-	Ack:    machine.NINA_ACK,
-	Gpio0:  machine.NINA_GPIO0,
-	Resetn: machine.NINA_RESETN,
-	// Watchdog (set to 0 to disable)
-	WatchdogTimeo: time.Duration(20 * time.Second),
-}
+var netlink drivers.Netlinker
 
-var netdev = wifinina.New(&cfg)
+func netConnect(ssid, pass string) error {
+
+	cfg := wifinina.Config{
+		// Configure SPI for 8Mhz, Mode 0, MSB First
+		Spi:  machine.NINA_SPI,
+		Freq: 8 * 1e6,
+		Sdo:  machine.NINA_SDO,
+		Sdi:  machine.NINA_SDI,
+		Sck:  machine.NINA_SCK,
+		// Device pins
+		Cs:     machine.NINA_CS,
+		Ack:    machine.NINA_ACK,
+		Gpio0:  machine.NINA_GPIO0,
+		Resetn: machine.NINA_RESETN,
+		// Watchdog (set to 0 to disable)
+		WatchdogTimeout: time.Duration(20 * time.Second),
+	}
+
+	nina := wifinina.New(&cfg)
+	drivers.UseNetdev(nina)
+	netlink = nina
+
+	return nina.NetConnectToAP(ssid, pass)
+}
 
 func init() {
 	// wait a bit for serial
 	time.Sleep(2 * time.Second)
 
-	if err := netdev.NetConnect(); err != nil {
+	if err := netConnect(ssid, pass); err != nil {
 		log.Fatal(err)
 	}
 }
