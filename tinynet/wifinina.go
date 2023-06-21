@@ -4,38 +4,29 @@ package tinynet
 
 import (
 	"log"
-	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
-	"tinygo.org/x/drivers/wifinina"
+	"tinygo.org/x/drivers/netdev"
+	"tinygo.org/x/drivers/netlink"
+	"tinygo.org/x/drivers/netlink/probe"
 )
 
-var netlink drivers.Netlinker
+var link netlink.Netlinker
+var dev  netdev.Netdever
 
 func netConnect(ssid, pass string) error {
 
-	cfg := wifinina.Config{
-		// Configure SPI for 8Mhz, Mode 0, MSB First
-		Spi:  machine.NINA_SPI,
-		Freq: 8 * 1e6,
-		Sdo:  machine.NINA_SDO,
-		Sdi:  machine.NINA_SDI,
-		Sck:  machine.NINA_SCK,
-		// Device pins
-		Cs:     machine.NINA_CS,
-		Ack:    machine.NINA_ACK,
-		Gpio0:  machine.NINA_GPIO0,
-		Resetn: machine.NINA_RESETN,
-		// Watchdog (set to 0 to disable)
-		WatchdogTimeout: time.Duration(20 * time.Second),
+	link, dev = probe.Probe()
+
+	err := link.NetConnect(&netlink.ConnectParams{
+		Ssid:       ssid,
+		Passphrase: pass,
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	nina := wifinina.New(&cfg)
-	drivers.UseNetdev(nina)
-	netlink = nina
-
-	return nina.NetConnectToAP(ssid, pass)
+	return nil
 }
 
 func init() {
