@@ -21,19 +21,19 @@ type Thinger interface {
 	TestFlag(uint32) bool
 }
 
-func SaveState(t Thinger) func(*Msg) {
+func ThingSave(t Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		msg.Unmarshal(t)
 	}
 }
 
-func ReplyState(t Thinger) func(*Msg) {
+func ThingReply(t Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		msg.Marshal(t).Reply()
 	}
 }
 
-func UpdateState(t Thinger) func(*Msg) {
+func ThingUpdate(t Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		msg.Unmarshal(t).Broadcast()
 	}
