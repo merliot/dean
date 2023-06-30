@@ -136,9 +136,9 @@ func (w *webSocket) disconnect() {
 }
 
 const extraDelay = time.Second
+var pingMsg = []byte("ping")
 
 func (w *webSocket) servePing(conn *websocket.Conn) {
-	var pingMsg = []byte{0x42, 0x42, 0x42, 0x42}
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
 	var quietPeriod = 2*pingPeriod + extraDelay
 	var pingSent = time.Now()
@@ -202,7 +202,9 @@ loop:
 		conn.SetReadDeadline(time.Now().Add(time.Second))
 		err := websocket.Message.Receive(conn, &msg.payload)
 		if err == nil {
-			w.bus.receive(msg)
+			if !bytes.Equal(msg.payload, pingMsg) {
+				w.bus.receive(msg)
+			}
 			continue
 		}
 
