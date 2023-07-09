@@ -23,7 +23,7 @@ func New(id, model, name string) dean.Thinger {
 }
 
 func (t *thing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.ServeFS(fs, w, r)
+	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
 
 func (t *thing) getState(msg *dean.Msg) {
