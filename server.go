@@ -1,10 +1,8 @@
 package dean
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
-	"embed"
 	"fmt"
 	"net/http"
 	"path"
@@ -312,20 +310,6 @@ func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
 	delete(s.handlers, path)
-}
-
-func (t *Thing) ServeFS(fs embed.FS, w http.ResponseWriter, r *http.Request) {
-	//println("ServeFS:", r.URL.Path, "Id:", t.id)
-	switch r.URL.Path {
-	case "", "/", "/index.html":
-		html, _ := fs.ReadFile("index.html")
-		from := []byte("{{.WebSocket}}")
-		to := []byte(scheme + r.Host + "/ws/" + t.Id() + "/")
-		html = bytes.ReplaceAll(html, from, to)
-		w.Write(html)
-		return
-	}
-	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
 
 var htmlBegin = `

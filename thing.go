@@ -21,24 +21,6 @@ type Thinger interface {
 	TestFlag(uint32) bool
 }
 
-func ThingSave(t Thinger) func(*Msg) {
-	return func(msg *Msg) {
-		msg.Unmarshal(t)
-	}
-}
-
-func ThingReply(t Thinger) func(*Msg) {
-	return func(msg *Msg) {
-		msg.Marshal(t).Reply()
-	}
-}
-
-func ThingUpdate(t Thinger) func(*Msg) {
-	return func(msg *Msg) {
-		msg.Unmarshal(t).Broadcast()
-	}
-}
-
 type Maker interface {
 	Make(id, model, name string) Thinger
 }
