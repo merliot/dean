@@ -57,7 +57,7 @@ type Thing struct {
 }
 
 func NewThing(id, model, name string) Thing {
-	if !validId(id) || !validId(model) || !validId(name) {
+	if !ValidId(id) || !ValidId(model) || !ValidId(name) {
 		panic("something invalid: id = \"" + id + "\", model = \"" +
 			model + "\", name = \"" + name + "\"")
 	}
@@ -91,7 +91,7 @@ func (t *Thing) Announce() *Msg {
 
 // A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or
 // underscore characters.
-func validId(s string) bool {
+func ValidId(s string) bool {
 	for _, r := range s {
 		if (r < 'a' || r > 'z') &&
 			(r < 'A' || r > 'Z') &&

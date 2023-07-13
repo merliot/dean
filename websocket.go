@@ -89,6 +89,16 @@ func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, e
 	return config, nil
 }
 
+func (w *webSocket) ack(conn *websocket.Conn) bool {
+	println("Waiting for ACK")
+	conn.SetReadDeadline(time.Now().Add(time.Second))
+	// Do a zero-byte read.  If err != nil, the read timed out or there was
+	// some error, so fail the ACK.  If err == nil, then we didn't timeout
+	// and there is some data to read, so pass the ACK.
+	_, err := conn.Read([]byte{})
+	return err == nil
+}
+
 func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 
 	parsedURL, err := url.Parse(rawURL)
@@ -110,8 +120,11 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 		if err == nil {
 			// Send an announcement msg
 			websocket.Message.Send(conn, string(announce.payload))
-			// Serve websocket until EOF
-			w.serve(conn)
+			// Wait for ack of announcement
+			if w.ack(conn) {
+				// Serve websocket until EOF
+				w.serve(conn)
+			}
 			// Close websocket
 			conn.Close()
 		} else {
