@@ -48,6 +48,11 @@ type ThingMsgDisconnect struct {
 	Id   string
 }
 
+type ThingMsgAbandon struct {
+	Path string
+	Id   string
+}
+
 type Thing struct {
 	id    string
 	model string

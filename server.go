@@ -109,13 +109,11 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 
 	s.socketsMu.RLock()
 	for _, child := range s.sockets {
-		if child != nil {
-			if child.Id() == id {
-				println("CHILD ALREADY CONNECTED")
-				socket.Close()
-				s.socketsMu.RUnlock()
-				return
-			}
+		if child != nil && child.Id() == id {
+			println("CHILD ALREADY CONNECTED")
+			socket.Close()
+			s.socketsMu.RUnlock()
+			return
 		}
 	}
 	s.socketsMu.RUnlock()
@@ -155,6 +153,23 @@ func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
 	s.injector.Inject(msg)
 }
 
+func (s *Server) abandon(msg *Msg) {
+	var orphan ThingMsgAbandon
+	msg.Unmarshal(&orphan)
+
+	s.Unhandle("/"+orphan.Id+"/")
+	delete(s.children, orphan.Id)
+
+	s.socketsMu.RLock()
+	for socket, child := range s.sockets {
+		if child != nil && child.Id() == orphan.Id {
+			socket.Close()
+			break
+		}
+	}
+	s.socketsMu.RUnlock()
+}
+
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle %s\r\n", msg.String())
@@ -165,6 +180,9 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		switch rmsg.Path {
 		case "announce":
 			go s.handleAnnounce(thinger, msg)
+			return
+		case "abandon":
+			s.abandon(msg)
 			return
 		case "get/state", "state":
 			msg.src.SetFlag(SocketFlagBcast)
@@ -194,8 +212,6 @@ func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
 	ws := newWebSocket("websocket:"+rawURL, s.bus)
 	go ws.Dial(user, passwd, rawURL, announce)
 }
-
-const minPingMs = int(500) // 1/2 sec
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	var id string

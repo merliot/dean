@@ -36,6 +36,8 @@ func (w *webSocket) Send(msg *Msg) {
 	}
 }
 
+const minPingMs = int(500) // 1/2 sec
+
 func (w *webSocket) parsePath(path string) (id string, ping int) {
 	var pingMs string
 
@@ -89,14 +91,36 @@ func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, e
 	return config, nil
 }
 
-func (w *webSocket) ack(conn *websocket.Conn) bool {
-	println("Waiting for ACK")
-	conn.SetReadDeadline(time.Now().Add(time.Second))
-	// Do a zero-byte read.  If err != nil, the read timed out or there was
-	// some error, so fail the ACK.  If err == nil, then we didn't timeout
-	// and there is some data to read, so pass the ACK.
-	_, err := conn.Read([]byte{})
-	return err == nil
+func (w *webSocket) announced(conn *websocket.Conn, announce *Msg) bool {
+
+	for i := 0; i < 60; i++ {
+		var msg = &Msg{bus: w.bus, src: w}
+
+		// Send an announcement msg
+		err := websocket.Message.Send(conn, string(announce.payload))
+		if err != nil {
+			break
+		}
+
+		for {
+			// Any non-ping msg received is an ack of the announcement
+			conn.SetReadDeadline(time.Now().Add(time.Second))
+			err = websocket.Message.Receive(conn, &msg.payload)
+			if err == nil {
+				if !bytes.Equal(msg.payload, pingMsg) {
+					w.bus.receive(msg)
+					return true
+				}
+				// Just a ping msg; keep reading
+				continue
+			}
+			// Timed out; send another announcement
+			break
+		}
+	}
+
+	// Announcement was not acked
+	return false
 }
 
 func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
@@ -118,13 +142,13 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 		// Dial the websocket
 		conn, err := websocket.DialConfig(cfg)
 		if err == nil {
-			// Send an announcement msg
-			websocket.Message.Send(conn, string(announce.payload))
-			// Wait for ack of announcement
-			if w.ack(conn) {
+			w.connect(conn)
+			// Send announcement
+			if w.announced(conn, announce) {
 				// Serve websocket until EOF
-				w.serve(conn)
+				w.serveConn(conn)
 			}
+			w.disconnect()
 			// Close websocket
 			conn.Close()
 		} else {
@@ -194,22 +218,19 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 	}
 }
 
-func (w *webSocket) serve(conn *websocket.Conn) {
-	w.connect(conn)
+func (w *webSocket) serveConn(conn *websocket.Conn) {
 
 	if w.ping > 0 {
 		w.servePing(conn)
-		w.disconnect()
 		return
 	}
 
-loop:
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if w.closing {
 			println("closing")
-			break loop
+			break
 		}
 
 		conn.SetReadDeadline(time.Now().Add(time.Second))
@@ -228,8 +249,12 @@ loop:
 		}
 
 		println("disconnecting", err.Error())
-		break loop
+		break
 	}
+}
 
+func (w *webSocket) serve(conn *websocket.Conn) {
+	w.connect(conn)
+	w.serveConn(conn)
 	w.disconnect()
 }
