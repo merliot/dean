@@ -5,10 +5,6 @@ import (
 	//sync "github.com/sasha-s/go-deadlock"
 )
 
-type Subscribers map[string]func(*Msg)
-
-type ThingMaker func(id, model, name string) Thinger
-
 type Thinger interface {
 	Subscribers() Subscribers
 	Announce() *Msg
@@ -21,9 +17,14 @@ type Thinger interface {
 	TestFlag(uint32) bool
 }
 
+type Subscribers map[string]func(*Msg)
+
 type Maker interface {
 	Make(id, model, name string) Thinger
 }
+
+type ThingMaker func(id, model, name string) Thinger
+type Makers map[string]ThingMaker // keyed by model
 
 type ThingMsg struct {
 	Path string

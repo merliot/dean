@@ -25,6 +25,12 @@ type Server struct {
 	socketsMu  sync.RWMutex
 	sockets    map[Socketer]Thinger
 	children   map[string]Thinger
+
+	devicesMu  sync.RWMutex
+	devices    map[string]Thinger
+	makersMu   sync.RWMutex
+	makers     Makers
+
 	user       string
 	passwd     string
 }
@@ -35,6 +41,7 @@ func NewServer(thinger Thinger) *Server {
 	s.handlers = make(map[string]http.HandlerFunc)
 	s.sockets = make(map[Socketer]Thinger)
 	s.children = make(map[string]Thinger)
+	s.makers = dean.Makers{}
 
 	s.thinger = thinger
 
@@ -57,6 +64,18 @@ func NewServer(thinger Thinger) *Server {
 	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serveWebSocket)
 
 	return &s
+}
+
+func (s *Server) RegisterModel(model string, maker dean.ThingMaker) {
+	s.makersMu.Lock()
+	defer s.makersMu.Unlock()
+	s.makers[model] = maker
+}
+
+func (s *Server) UnregisterModel(model string) {
+	s.makersMu.Lock()
+	defer s.makersMu.Unlock()
+	delete(s.makers, model)
 }
 
 func (s *Server) connect(socket Socketer) {
@@ -170,6 +189,76 @@ func (s *Server) abandon(msg *Msg) {
 	s.socketsMu.RUnlock()
 }
 
+type ServerMsgModels struct {
+	ThingMsg
+	Models []string
+}
+
+func (s *Server) getModels(msg *Msg) {
+	var models = ServerMsgModels{Path: "models"}
+	s.makersMu.RLock()
+	defer s.makersMu.RUnlock()
+	for model in s.makers {
+		models.Models = append(models.Models, model)
+	}
+	msg.Marshal(&models).Reply()
+}
+
+type ServerMsgCreate struct {
+	ThingMsg
+	Id string
+	Model string
+	Name string
+	Err string
+}
+
+func (s *Server) _createDevice(id, model, name string)  error {
+	if !ValidId(id) {
+		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+	}
+	if !ValidId(model) {
+		return fmt.Errorf("Invalid Model.  A valid Model is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+	}
+	if !ValidId(name) {
+		return fmt.Errorf("Invalid Name.  A valid Name is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+	}
+
+	s.devicesMu.Lock()
+	defer s.devicesMu.Unlock()
+
+	if s.devices[id] != nil {
+		return fmt.Errorf("Device ID '%s' already exists", id)
+	}
+
+	s.makersMu.RLock()
+	defer s.makersMu.RUnlock()
+
+	maker, ok := s.makers[model]
+	if !ok {
+		return fmt.Errorf("Device Model '%s' not registered", model)
+	}
+
+	s.devices[id] = maker(id, model, name)
+	return nil
+}
+
+func (s *Server) createDevice(msg *Msg) {
+	var create ServerMsgCreate
+	msg.Unmarshal(&create)
+
+	err := s._createDevice(create.Id, create.Model, create.Name)
+	if err == nil {
+		create.Path = "create/device/good"
+		create.Err = ""
+	} else {
+		create.Path = "create/device/bad"
+		create.Err = err.Error()
+	}
+
+	msg.Marshal(&create).Reply().Broadcast()
+}
+
+
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle %s\r\n", msg.String())
@@ -178,6 +267,12 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		msg.Unmarshal(&rmsg)
 
 		switch rmsg.Path {
+		case "get/models":
+			s.getModels(msg)
+			return
+		case "create/device":
+			s.createDevice(msg)
+			return
 		case "announce":
 			go s.handleAnnounce(thinger, msg)
 			return
