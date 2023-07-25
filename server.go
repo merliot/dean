@@ -20,16 +20,15 @@ type Server struct {
 	bus        *Bus
 	injector   *Injector
 	subs       Subscribers
-	handlersMu sync.RWMutex
-	handlers   map[string]http.HandlerFunc
-	socketsMu  sync.RWMutex
-	sockets    map[Socketer]Thinger
-	children   map[string]Thinger
 
-	devicesMu  sync.RWMutex
-	devices    map[string]Thinger
 	makersMu   sync.RWMutex
 	makers     Makers
+	thingsMu   sync.RWMutex
+	things     map[string]Thinger // keyed by id
+	socketsMu  sync.RWMutex
+	sockets    map[Socketer]Thinger // keyed by socket
+	handlersMu sync.RWMutex
+	handlers   map[string]http.HandlerFunc // keyed by path
 
 	user       string
 	passwd     string
@@ -38,10 +37,10 @@ type Server struct {
 func NewServer(thinger Thinger) *Server {
 	var s Server
 
-	s.handlers = make(map[string]http.HandlerFunc)
+	s.makers = Makers{}
+	s.things = make(map[string]Thinger)
 	s.sockets = make(map[Socketer]Thinger)
-	s.children = make(map[string]Thinger)
-	s.makers = dean.Makers{}
+	s.handlers = make(map[string]http.HandlerFunc)
 
 	s.thinger = thinger
 
@@ -66,7 +65,7 @@ func NewServer(thinger Thinger) *Server {
 	return &s
 }
 
-func (s *Server) RegisterModel(model string, maker dean.ThingMaker) {
+func (s *Server) RegisterModel(model string, maker ThingMaker) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	s.makers[model] = maker
@@ -86,12 +85,66 @@ func (s *Server) connect(socket Socketer) {
 	s.socketsMu.Unlock()
 }
 
+func (s *Server) handleAnnounce(msg *Msg) {
+	var ok bool
+	var ann ThingMsgAnnounce
+	msg.Unmarshal(&ann)
+
+	id, model, name := ann.Id, ann.Model, ann.Name
+	socket := msg.src
+
+	println("*** ANNOUNCE ", socket.Name(), id, model, name)
+
+	s.thingsMu.RLock()
+	defer s.thingsMu.RUnlock()
+
+	dev, ok := s.things[id]
+	if !ok {
+		println("Ignoring annoucement: unknown device Id", id)
+		socket.Close()
+		return
+	}
+
+	if dev.Model() != model {
+		println("Ignoring annoucement: model doesn't match", id, model, dev.Model())
+		socket.Close()
+		return
+	}
+
+	if dev.Name() != name {
+		println("Ignoring annoucement: name doesn't match", id, name, dev.Name())
+		socket.Close()
+		return
+	}
+
+
+	socket.SetTag(id)
+
+	s.socketsMu.Lock()
+	s.sockets[socket] = dev
+	s.socketsMu.Unlock()
+
+	s.bus.Handle(id, s.busHandle(dev))
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+
+	msg.Marshal(&ThingMsg{"get/state"}).Reply()
+
+	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
+	s.injector.Inject(msg)
+}
+
 func (s *Server) disconnect(socket Socketer) {
+	println("*** DISCONNECT", socket.Name())
 
-	if child := s.sockets[socket]; child != nil {
-		id := child.Id()
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
 
+	dev := s.sockets[socket]
+
+	if dev != nil {
 		var msg Msg
+		var id = dev.Id()
+
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
 		s.injector.Inject(&msg)
 
@@ -99,120 +152,28 @@ func (s *Server) disconnect(socket Socketer) {
 		s.bus.Unhandle(id)
 		socket.SetTag("")
 
-		//fmt.Printf("BEGIN closing other sockets\r\n")
-		s.socketsMu.RLock()
+		// Close other sockets with tag == id
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
-				//fmt.Printf(">>>> closing %p\r\n", sock)
 				sock.Close()
 			}
 		}
-		s.socketsMu.RUnlock()
-		//fmt.Printf("DONE closing other sockets\r\n")
 	}
 
-	s.socketsMu.Lock()
 	delete(s.sockets, socket)
-	s.socketsMu.Unlock()
-	println("*** DISCONNECT", socket.Name())
 }
 
-func (s *Server) handleAnnounce(thinger Thinger, msg *Msg) {
-	var ok bool
-	var child Thinger
-	var ann ThingMsgAnnounce
-	msg.Unmarshal(&ann)
-
-	id, model, name := ann.Id, ann.Model, ann.Name
-	socket := msg.src
-
-	s.socketsMu.RLock()
-	for _, child := range s.sockets {
-		if child != nil && child.Id() == id {
-			println("CHILD ALREADY CONNECTED")
-			socket.Close()
-			s.socketsMu.RUnlock()
-			return
-		}
-	}
-	s.socketsMu.RUnlock()
-
-	if child, ok = s.children[id]; !ok {
-		maker, ok := thinger.(Maker)
-		if !ok {
-			// thinger is not a maker
-			println("THINGER IS NOT A MAKER")
-			return
-		}
-		child = maker.Make(id, model, name)
-		if child == nil {
-			// thinger couldn't make a child
-			println("THINGER COULDN'T MAKE A THING")
-			return
-		}
-		s.children[id] = child
-		handler, ok := child.(http.Handler)
-		if ok {
-			s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
-		}
-	}
-
-	socket.SetTag(id)
-
-	s.socketsMu.Lock()
-	s.sockets[socket] = child
-	s.socketsMu.Unlock()
-	//fmt.Printf(">>>> updated %p, %+v\r\n", socket, s.sockets)
-
-	s.bus.Handle(id, s.busHandle(child))
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
-
-	msg.Marshal(&ThingMsg{"get/state"}).Reply()
-	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
-	s.injector.Inject(msg)
-}
-
-func (s *Server) abandon(msg *Msg) {
-	var orphan ThingMsgAbandon
-	msg.Unmarshal(&orphan)
-
-	s.Unhandle("/"+orphan.Id+"/")
-	delete(s.children, orphan.Id)
-
-	s.socketsMu.RLock()
-	for socket, child := range s.sockets {
-		if child != nil && child.Id() == orphan.Id {
-			socket.Close()
-			break
-		}
-	}
-	s.socketsMu.RUnlock()
-}
-
-type ServerMsgModels struct {
-	ThingMsg
-	Models []string
-}
-
-func (s *Server) getModels(msg *Msg) {
-	var models = ServerMsgModels{Path: "models"}
+func (s *Server) GetModels() []string {
+	var models []string
 	s.makersMu.RLock()
 	defer s.makersMu.RUnlock()
-	for model in s.makers {
-		models.Models = append(models.Models, model)
+	for model := range s.makers {
+		models = append(models, model)
 	}
-	msg.Marshal(&models).Reply()
+	return models
 }
 
-type ServerMsgCreate struct {
-	ThingMsg
-	Id string
-	Model string
-	Name string
-	Err string
-}
-
-func (s *Server) _createDevice(id, model, name string)  error {
+func (s *Server) CreateThing(id, model, name string)  error {
 	if !ValidId(id) {
 		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
@@ -223,11 +184,11 @@ func (s *Server) _createDevice(id, model, name string)  error {
 		return fmt.Errorf("Invalid Name.  A valid Name is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
 
-	s.devicesMu.Lock()
-	defer s.devicesMu.Unlock()
+	s.thingsMu.Lock()
+	defer s.thingsMu.Unlock()
 
-	if s.devices[id] != nil {
-		return fmt.Errorf("Device ID '%s' already exists", id)
+	if s.things[id] != nil {
+		return fmt.Errorf("Thing ID '%s' already exists", id)
 	}
 
 	s.makersMu.RLock()
@@ -235,29 +196,24 @@ func (s *Server) _createDevice(id, model, name string)  error {
 
 	maker, ok := s.makers[model]
 	if !ok {
-		return fmt.Errorf("Device Model '%s' not registered", model)
+		return fmt.Errorf("Thing Model '%s' not registered", model)
 	}
 
-	s.devices[id] = maker(id, model, name)
+	s.things[id] = maker(id, model, name)
 	return nil
 }
 
-func (s *Server) createDevice(msg *Msg) {
-	var create ServerMsgCreate
-	msg.Unmarshal(&create)
+func (s *Server) DeleteThing(id string)  error {
+	s.thingsMu.Lock()
+	defer s.thingsMu.Unlock()
 
-	err := s._createDevice(create.Id, create.Model, create.Name)
-	if err == nil {
-		create.Path = "create/device/good"
-		create.Err = ""
-	} else {
-		create.Path = "create/device/bad"
-		create.Err = err.Error()
+	if s.things[id] == nil {
+		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
 
-	msg.Marshal(&create).Reply().Broadcast()
+	delete(s.things, id)
+	return nil
 }
-
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
@@ -267,17 +223,8 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		msg.Unmarshal(&rmsg)
 
 		switch rmsg.Path {
-		case "get/models":
-			s.getModels(msg)
-			return
-		case "create/device":
-			s.createDevice(msg)
-			return
 		case "announce":
-			go s.handleAnnounce(thinger, msg)
-			return
-		case "abandon":
-			s.abandon(msg)
+			go s.handleAnnounce(msg)
 			return
 		case "get/state", "state":
 			msg.src.SetFlag(SocketFlagBcast)
@@ -342,11 +289,14 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.thingsMu.RLock()
+	defer s.thingsMu.RUnlock()
+
 	// redirect /id/* to child
 	parts := strings.Split(_path, "/")
 	if len(parts) > 1 {
 		id := parts[1]
-		if _, ok := s.children[id]; ok {
+		if _, ok := s.things[id]; ok {
 			newpath := "/" + id + "/"
 			handler, ok = s.getHandler(newpath)
 			if ok {
@@ -495,16 +445,16 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "\t\"%s\"\n", handler)
 	}
 
-	children := make([]string, 0, len(s.children))
-	for _, child := range s.children {
-		children = append(children, child.String())
+	things := make([]string, 0, len(s.things))
+	for _, dev := range s.things {
+		things = append(things, dev.String())
 	}
-	sort.Strings(children)
+	sort.Strings(things)
 
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Children")
-	for _, child := range children {
-		fmt.Fprintf(w, "\t%s\n", child)
+	fmt.Fprintln(w, "Things")
+	for _, dev := range things {
+		fmt.Fprintf(w, "\t%s\n", dev)
 	}
 
 	fmt.Fprintln(w, htmlEnd)
