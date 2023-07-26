@@ -12,7 +12,7 @@ import (
 )
 
 var link netlink.Netlinker
-var dev  netdev.Netdever
+var dev netdev.Netdever
 
 func netConnect(ssid, pass string) error {
 

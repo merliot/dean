@@ -148,11 +148,11 @@ func (s *Server) disconnect(socket Socketer) {
 
 		// Close other sockets with tag == id
 		/*
-		for sock := range s.sockets {
-			if sock.Tag() == id && sock != socket {
-				sock.Close()
+			for sock := range s.sockets {
+				if sock.Tag() == id && sock != socket {
+					sock.Close()
+				}
 			}
-		}
 		*/
 	}
 
