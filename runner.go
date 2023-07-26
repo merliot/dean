@@ -1,7 +1,7 @@
 package dean
 
 type Runner struct {
-	thinger Thinger
+	thinger  Thinger
 	bus      *Bus
 	injector *Injector
 }

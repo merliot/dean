@@ -74,16 +74,16 @@ const (
 	ThingFlagMetal uint32 = 1 << iota
 )
 
-func (t *Thing) Subscribers() Subscribers                     { return nil }
-func (t *Thing) Run(*Injector)                                { select {} }
-func (t *Thing) Id() string                                   { return t.id }
-func (t *Thing) Model() string                                { return t.model }
-func (t *Thing) Name() string                                 { return t.name }
-func (t *Thing) Lock()                                        { t.mu.Lock() }
-func (t *Thing) Unlock()                                      { t.mu.Unlock() }
-func (t *Thing) SetFlag(flag uint32)                          { t.flags |= flag }
-func (t *Thing) TestFlag(flag uint32) bool                    { return (t.flags & flag) != 0 }
-func (t *Thing) IsMetal() bool                                { return t.TestFlag(ThingFlagMetal) }
+func (t *Thing) Subscribers() Subscribers  { return nil }
+func (t *Thing) Run(*Injector)             { select {} }
+func (t *Thing) Id() string                { return t.id }
+func (t *Thing) Model() string             { return t.model }
+func (t *Thing) Name() string              { return t.name }
+func (t *Thing) Lock()                     { t.mu.Lock() }
+func (t *Thing) Unlock()                   { t.mu.Unlock() }
+func (t *Thing) SetFlag(flag uint32)       { t.flags |= flag }
+func (t *Thing) TestFlag(flag uint32) bool { return (t.flags & flag) != 0 }
+func (t *Thing) IsMetal() bool             { return t.TestFlag(ThingFlagMetal) }
 
 func (t *Thing) String() string {
 	return "[Id: " + t.id + ", Model: " + t.model + ", Name: " + t.name + "]"

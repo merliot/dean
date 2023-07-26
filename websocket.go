@@ -173,6 +173,7 @@ func (w *webSocket) disconnect() {
 }
 
 const extraDelay = time.Second
+
 var pingMsg = []byte("ping")
 
 func (w *webSocket) servePing(conn *websocket.Conn) {

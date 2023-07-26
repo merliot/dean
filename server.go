@@ -17,9 +17,9 @@ import (
 type Server struct {
 	thinger Thinger
 	http.Server
-	bus        *Bus
-	injector   *Injector
-	subs       Subscribers
+	bus      *Bus
+	injector *Injector
+	subs     Subscribers
 
 	makersMu   sync.RWMutex
 	makers     Makers
@@ -30,8 +30,8 @@ type Server struct {
 	handlersMu sync.RWMutex
 	handlers   map[string]http.HandlerFunc // keyed by path
 
-	user       string
-	passwd     string
+	user   string
+	passwd string
 }
 
 func NewServer(thinger Thinger) *Server {
@@ -98,34 +98,30 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
 
-	dev, ok := s.things[id]
+	thing, ok := s.things[id]
 	if !ok {
-		println("Ignoring annoucement: unknown device Id", id)
+		fmt.Println("Ignoring annoucement: unknown thing Id", id)
 		socket.Close()
 		return
 	}
 
-	if dev.Model() != model {
-		println("Ignoring annoucement: model doesn't match", id, model, dev.Model())
+	if thing.Model() != model {
+		fmt.Println("Ignoring annoucement: model doesn't match", id, model, thing.Model())
 		socket.Close()
 		return
 	}
 
-	if dev.Name() != name {
-		println("Ignoring annoucement: name doesn't match", id, name, dev.Name())
+	if thing.Name() != name {
+		fmt.Println("Ignoring annoucement: name doesn't match", id, name, thing.Name())
 		socket.Close()
 		return
 	}
-
 
 	socket.SetTag(id)
 
 	s.socketsMu.Lock()
-	s.sockets[socket] = dev
+	s.sockets[socket] = thing
 	s.socketsMu.Unlock()
-
-	s.bus.Handle(id, s.busHandle(dev))
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 
@@ -139,25 +135,25 @@ func (s *Server) disconnect(socket Socketer) {
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
 
-	dev := s.sockets[socket]
+	thing := s.sockets[socket]
 
-	if dev != nil {
+	if thing != nil {
 		var msg Msg
-		var id = dev.Id()
+		var id = thing.Id()
 
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
 		s.injector.Inject(&msg)
 
-		s.Unhandle("/ws/" + id + "/")
-		s.bus.Unhandle(id)
 		socket.SetTag("")
 
 		// Close other sockets with tag == id
+		/*
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				sock.Close()
 			}
 		}
+		*/
 	}
 
 	delete(s.sockets, socket)
@@ -173,7 +169,7 @@ func (s *Server) GetModels() []string {
 	return models
 }
 
-func (s *Server) CreateThing(id, model, name string)  error {
+func (s *Server) CreateThing(id, model, name string) error {
 	if !ValidId(id) {
 		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
@@ -199,17 +195,32 @@ func (s *Server) CreateThing(id, model, name string)  error {
 		return fmt.Errorf("Thing Model '%s' not registered", model)
 	}
 
-	s.things[id] = maker(id, model, name)
+	thing := maker(id, model, name)
+	handler, ok := thing.(http.Handler)
+	if !ok {
+		return fmt.Errorf("Thing Model '%s' not an http handler", model)
+	}
+
+	s.things[id] = thing
+
+	s.bus.Handle(id, s.busHandle(thing))
+	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+
 	return nil
 }
 
-func (s *Server) DeleteThing(id string)  error {
+func (s *Server) DeleteThing(id string) error {
 	s.thingsMu.Lock()
 	defer s.thingsMu.Unlock()
 
 	if s.things[id] == nil {
 		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
+
+	s.Unhandle("/ws/" + id + "/")
+	s.Unhandle("/" + id + "/")
+	s.bus.Unhandle(id)
 
 	delete(s.things, id)
 	return nil
@@ -446,15 +457,15 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 	}
 
 	things := make([]string, 0, len(s.things))
-	for _, dev := range s.things {
-		things = append(things, dev.String())
+	for _, thing := range s.things {
+		things = append(things, thing.String())
 	}
 	sort.Strings(things)
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Things")
-	for _, dev := range things {
-		fmt.Fprintf(w, "\t%s\n", dev)
+	for _, thing := range things {
+		fmt.Fprintf(w, "\t%s\n", thing)
 	}
 
 	fmt.Fprintln(w, htmlEnd)
