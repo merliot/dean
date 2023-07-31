@@ -36,6 +36,7 @@ type Server struct {
 
 func NewServer(thinger Thinger) *Server {
 	var s Server
+	var id, _, _ = thinger.Identity()
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)
@@ -43,6 +44,7 @@ func NewServer(thinger Thinger) *Server {
 	s.handlers = make(map[string]http.HandlerFunc)
 
 	s.thinger = thinger
+	s.thinger.SetOnline(true)
 
 	s.subs = thinger.Subscribers()
 
@@ -54,13 +56,12 @@ func NewServer(thinger Thinger) *Server {
 	mux.HandleFunc("/", s.root)
 	s.Handler = mux
 
-	handler, ok := thinger.(http.Handler)
-	if ok {
+	if handler, ok := thinger.(http.Handler); ok {
 		s.Handle("", handler)
 	}
 	s.HandleFunc("/state", s.state)
 	s.HandleFunc("/ws/", s.serveWebSocket)
-	s.HandleFunc("/ws/"+thinger.Id()+"/", s.serveWebSocket)
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	return &s
 }
@@ -90,43 +91,53 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
 
-	id, model, name := ann.Id, ann.Model, ann.Name
 	socket := msg.src
 
-	println("*** ANNOUNCE ", socket.Name(), id, model, name)
+	println("*** ANNOUNCE ", socket.Name(), ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
 
-	thing, ok := s.things[id]
+	thinger, ok := s.things[ann.Id]
 	if !ok {
-		fmt.Println("Ignoring annoucement: unknown thing Id", id)
+		fmt.Println("Ignoring annoucement: unknown thing Id", ann.Id)
 		socket.Close()
 		return
 	}
 
-	if thing.Model() != model {
-		fmt.Println("Ignoring annoucement: model doesn't match", id, model, thing.Model())
+	var id, model, name = thinger.Identity()
+
+	if model != ann.Model {
+		fmt.Println("Ignoring annoucement: model doesn't match", id, model, ann.Model)
 		socket.Close()
 		return
 	}
 
-	if thing.Name() != name {
-		fmt.Println("Ignoring annoucement: name doesn't match", id, name, thing.Name())
+	if name != ann.Name {
+		fmt.Println("Ignoring annoucement: name doesn't match", id, name, ann.Name)
 		socket.Close()
 		return
 	}
 
+	thinger.SetOnline(true)
 	socket.SetTag(id)
 
 	s.socketsMu.Lock()
-	s.sockets[socket] = thing
+	s.sockets[socket] = thinger
 	s.socketsMu.Unlock()
 
 	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 
 	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
 	s.injector.Inject(msg)
+
+	// Notify other sockets with tag == id
+	msg.Marshal(&ThingMsg{"online"})
+	for sock := range s.sockets {
+		if sock.Tag() == id && sock != socket {
+			sock.Send(msg)
+		}
+	}
 }
 
 func (s *Server) disconnect(socket Socketer) {
@@ -135,25 +146,26 @@ func (s *Server) disconnect(socket Socketer) {
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
 
-	thing := s.sockets[socket]
+	thinger := s.sockets[socket]
 
-	if thing != nil {
+	if thinger != nil {
 		var msg Msg
-		var id = thing.Id()
+		var id, _, _ = thinger.Identity()
+
+		thinger.SetOnline(false)
 
 		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
 		s.injector.Inject(&msg)
 
 		socket.SetTag("")
 
-		// Close other sockets with tag == id
-		/*
-			for sock := range s.sockets {
-				if sock.Tag() == id && sock != socket {
-					sock.Close()
-				}
+		// Notify other sockets with tag == id
+		msg.Marshal(&ThingMsg{"offline"})
+		for sock := range s.sockets {
+			if sock.Tag() == id && sock != socket {
+				sock.Send(&msg)
 			}
-		*/
+		}
 	}
 
 	delete(s.sockets, socket)
@@ -195,16 +207,13 @@ func (s *Server) CreateThing(id, model, name string) error {
 		return fmt.Errorf("Thing Model '%s' not registered", model)
 	}
 
-	thing := maker(id, model, name)
-	handler, ok := thing.(http.Handler)
-	if !ok {
-		return fmt.Errorf("Thing Model '%s' not an http handler", model)
+	thinger := maker(id, model, name)
+	s.things[id] = thinger
+
+	if handler, ok := thinger.(http.Handler); ok {
+		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
 	}
-
-	s.things[id] = thing
-
-	s.bus.Handle(id, s.busHandle(thing))
-	s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+	s.bus.Handle(id, s.busHandle(thinger))
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	return nil
@@ -267,11 +276,12 @@ func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
 }
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	var id string
+	var thingId string
+	var serverId, _, _ = s.thinger.Identity()
 	ws := newWebSocket("websocket:"+r.RemoteAddr, s.bus)
-	id, ws.ping = ws.parsePath(r.URL.Path)
-	if id != s.thinger.Id() {
-		ws.SetTag(id)
+	thingId, ws.ping = ws.parsePath(r.URL.Path)
+	if serverId != thingId {
+		ws.SetTag(thingId)
 	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
@@ -423,14 +433,14 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 
 	s.socketsMu.Lock()
 	sockets := make([]string, 0, len(s.sockets))
-	for socket, thing := range s.sockets {
+	for socket, thinger := range s.sockets {
 		tag := socket.Tag()
 		if tag == "" {
 			tag = "{self}"
 		}
-		if thing != nil {
+		if thinger != nil {
 			sockets = append(sockets, tag+", "+socket.Name()+
-				" "+thing.String())
+				" "+thinger.String())
 		} else {
 			sockets = append(sockets, tag+", "+socket.Name())
 		}
@@ -457,8 +467,8 @@ func (s *Server) state(w http.ResponseWriter, r *http.Request) {
 	}
 
 	things := make([]string, 0, len(s.things))
-	for _, thing := range s.things {
-		things = append(things, thing.String())
+	for _, thinger := range s.things {
+		things = append(things, thinger.String())
 	}
 	sort.Strings(things)
 

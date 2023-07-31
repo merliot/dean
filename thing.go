@@ -9,9 +9,8 @@ type Thinger interface {
 	Subscribers() Subscribers
 	Announce() *Msg
 	Run(*Injector)
-	Id() string
-	Model() string
-	Name() string
+	Identity() (string, string, string)
+	SetOnline(bool)
 	String() string
 	SetFlag(uint32)
 	TestFlag(uint32) bool
@@ -27,7 +26,7 @@ type ThingMaker func(id, model, name string) Thinger
 type Makers map[string]ThingMaker // keyed by model
 
 type ThingMsg struct {
-	Path string
+	Path  string
 }
 
 type ThingMsgAnnounce struct {
@@ -49,17 +48,14 @@ type ThingMsgDisconnect struct {
 	Id   string
 }
 
-type ThingMsgAbandon struct {
-	Path string
-	Id   string
-}
-
 type Thing struct {
-	id    string
-	model string
-	name  string
-	flags uint32
-	mu    sync.Mutex
+	Path   string
+	Id     string
+	Model  string
+	Name   string
+	Online bool
+	flags  uint32
+	mu     sync.Mutex
 }
 
 func NewThing(id, model, name string) Thing {
@@ -67,7 +63,7 @@ func NewThing(id, model, name string) Thing {
 		panic("something invalid: id = \"" + id + "\", model = \"" +
 			model + "\", name = \"" + name + "\"")
 	}
-	return Thing{id: id, model: model, name: name}
+	return Thing{Id: id, Model: model, Name: name}
 }
 
 const (
@@ -76,22 +72,21 @@ const (
 
 func (t *Thing) Subscribers() Subscribers  { return nil }
 func (t *Thing) Run(*Injector)             { select {} }
-func (t *Thing) Id() string                { return t.id }
-func (t *Thing) Model() string             { return t.model }
-func (t *Thing) Name() string              { return t.name }
+func (t *Thing) Identity() (string, string, string)                { return t.Id, t.Model, t.Name }
 func (t *Thing) Lock()                     { t.mu.Lock() }
 func (t *Thing) Unlock()                   { t.mu.Unlock() }
+func (t *Thing) SetOnline(online bool)     { t.Online = online }
 func (t *Thing) SetFlag(flag uint32)       { t.flags |= flag }
 func (t *Thing) TestFlag(flag uint32) bool { return (t.flags & flag) != 0 }
 func (t *Thing) IsMetal() bool             { return t.TestFlag(ThingFlagMetal) }
 
 func (t *Thing) String() string {
-	return "[Id: " + t.id + ", Model: " + t.model + ", Name: " + t.name + "]"
+	return "[Id: " + t.Id + ", Model: " + t.Model + ", Name: " + t.Name + "]"
 }
 
 func (t *Thing) Announce() *Msg {
 	var msg Msg
-	var ann = ThingMsgAnnounce{"announce", t.id, t.model, t.name}
+	var ann = ThingMsgAnnounce{"announce", t.Id, t.Model, t.Name}
 	return msg.Marshal(&ann)
 }
 
