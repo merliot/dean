@@ -181,6 +181,7 @@ func (s *Server) GetModels() []string {
 	return models
 }
 
+// Must hold s.handlersMu
 func (s *Server) CreateThing(id, model, name string) error {
 	if !ValidId(id) {
 		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
@@ -210,15 +211,17 @@ func (s *Server) CreateThing(id, model, name string) error {
 	thinger := maker(id, model, name)
 	s.things[id] = thinger
 
-	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
-	}
 	s.bus.Handle(id, s.busHandle(thinger))
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+
+	if handler, ok := thinger.(http.Handler); ok {
+		s._handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+	}
+	s._handleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	return nil
 }
 
+// Must hold s.handlersMu
 func (s *Server) DeleteThing(id string) error {
 	s.thingsMu.Lock()
 	defer s.thingsMu.Unlock()
@@ -227,8 +230,8 @@ func (s *Server) DeleteThing(id string) error {
 		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
 
-	s.Unhandle("/ws/" + id + "/")
-	s.Unhandle("/" + id + "/")
+	s._unhandle("/ws/" + id + "/")
+	s._unhandle("/" + id + "/")
 	s.bus.Unhandle(id)
 
 	delete(s.things, id)
@@ -296,41 +299,28 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 	_path := r.URL.Path
 
 	// try exact match first
-	handler, ok := s.getHandler(_path)
-	if ok {
-		handler(w, r)
+	if ok := s.runHandler(_path, w, r); ok {
 		return
 	}
 
 	// try with removing last element from path
 	dir, _ := path.Split(_path)
-	handler, ok = s.getHandler(dir)
-	if ok {
-		handler(w, r)
+	if ok := s.runHandler(dir, w, r); ok {
 		return
 	}
-
-	s.thingsMu.RLock()
-	defer s.thingsMu.RUnlock()
 
 	// redirect /id/* to child
 	parts := strings.Split(_path, "/")
 	if len(parts) > 1 {
 		id := parts[1]
-		if _, ok := s.things[id]; ok {
-			newpath := "/" + id + "/"
-			handler, ok = s.getHandler(newpath)
-			if ok {
-				handler(w, r)
-				return
-			}
+		newpath := "/" + id + "/"
+		if ok := s.runHandler(newpath, w, r); ok {
+			return
 		}
 	}
 
 	// everything else
-	handler, ok = s.getHandler("")
-	if ok {
-		handler(w, r)
+	if ok := s.runHandler("", w, r); ok {
 		return
 	}
 
@@ -369,29 +359,44 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
-func (s *Server) getHandler(path string) (http.HandlerFunc, bool) {
+func (s *Server) runHandler(path string, w http.ResponseWriter, r *http.Request) bool {
 	s.handlersMu.RLock()
-	defer s.handlersMu.RUnlock()
 	handler, ok := s.handlers[path]
-	return handler, ok
+	s.handlersMu.RUnlock()
+	if ok {
+		handler(w, r)
+	}
+	return ok
+}
+
+func (s *Server) _handleFunc(path string, handler http.HandlerFunc) {
+	s.handlers[path] = handler
 }
 
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	s.handlers[path] = handler
+	s._handleFunc(path, handler)
+}
+
+func (s *Server) _handle(path string, handler http.Handler) {
+	s.handlers[path] = handler.ServeHTTP
 }
 
 func (s *Server) Handle(path string, handler http.Handler) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	s.handlers[path] = handler.ServeHTTP
+	s._handle(path, handler)
+}
+
+func (s *Server) _unhandle(path string) {
+	delete(s.handlers, path)
 }
 
 func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	delete(s.handlers, path)
+	s._unhandle(path)
 }
 
 var htmlBegin = `

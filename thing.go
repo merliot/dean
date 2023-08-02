@@ -2,6 +2,7 @@ package dean
 
 import (
 	"sync"
+
 	//sync "github.com/sasha-s/go-deadlock"
 )
 
