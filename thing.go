@@ -49,6 +49,18 @@ type ThingMsgDisconnect struct {
 	Id   string
 }
 
+type ThingMsgCreated struct {
+	Path  string
+	Id    string
+	Model string
+	Name  string
+}
+
+type ThingMsgDeleted struct {
+	Path  string
+	Id    string
+}
+
 type Thing struct {
 	Path   string
 	Id     string

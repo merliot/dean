@@ -123,8 +123,9 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	socket.SetTag(id)
 
 	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
+
 	s.sockets[socket] = thinger
-	s.socketsMu.Unlock()
 
 	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 
@@ -183,6 +184,8 @@ func (s *Server) GetModels() []string {
 
 // Must hold s.handlersMu
 func (s *Server) CreateThing(id, model, name string) error {
+	var msg Msg
+
 	if !ValidId(id) {
 		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
@@ -218,11 +221,16 @@ func (s *Server) CreateThing(id, model, name string) error {
 	}
 	s._handleFunc("/ws/"+id+"/", s.serveWebSocket)
 
+	msg.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
+	s.injector.Inject(&msg)
+
 	return nil
 }
 
 // Must hold s.handlersMu
 func (s *Server) DeleteThing(id string) error {
+	var msg Msg
+
 	s.thingsMu.Lock()
 	defer s.thingsMu.Unlock()
 
@@ -235,6 +243,19 @@ func (s *Server) DeleteThing(id string) error {
 	s.bus.Unhandle(id)
 
 	delete(s.things, id)
+
+	msg.Marshal(&ThingMsgDeleted{Path: "deleted/thing", Id: id})
+	s.injector.Inject(&msg)
+
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
+
+	for sock := range s.sockets {
+		if sock.Tag() == id {
+			sock.Close()
+		}
+	}
+
 	return nil
 }
 
