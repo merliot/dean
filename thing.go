@@ -2,7 +2,6 @@ package dean
 
 import (
 	"sync"
-
 	//sync "github.com/sasha-s/go-deadlock"
 )
 
@@ -27,7 +26,7 @@ type ThingMaker func(id, model, name string) Thinger
 type Makers map[string]ThingMaker // keyed by model
 
 type ThingMsg struct {
-	Path  string
+	Path string
 }
 
 type ThingMsgAnnounce struct {
@@ -57,8 +56,8 @@ type ThingMsgCreated struct {
 }
 
 type ThingMsgDeleted struct {
-	Path  string
-	Id    string
+	Path string
+	Id   string
 }
 
 type Thing struct {
@@ -83,15 +82,15 @@ const (
 	ThingFlagMetal uint32 = 1 << iota
 )
 
-func (t *Thing) Subscribers() Subscribers  { return nil }
-func (t *Thing) Run(*Injector)             { select {} }
-func (t *Thing) Identity() (string, string, string)                { return t.Id, t.Model, t.Name }
-func (t *Thing) Lock()                     { t.mu.Lock() }
-func (t *Thing) Unlock()                   { t.mu.Unlock() }
-func (t *Thing) SetOnline(online bool)     { t.Online = online }
-func (t *Thing) SetFlag(flag uint32)       { t.flags |= flag }
-func (t *Thing) TestFlag(flag uint32) bool { return (t.flags & flag) != 0 }
-func (t *Thing) IsMetal() bool             { return t.TestFlag(ThingFlagMetal) }
+func (t *Thing) Subscribers() Subscribers           { return nil }
+func (t *Thing) Run(*Injector)                      { select {} }
+func (t *Thing) Identity() (string, string, string) { return t.Id, t.Model, t.Name }
+func (t *Thing) Lock()                              { t.mu.Lock() }
+func (t *Thing) Unlock()                            { t.mu.Unlock() }
+func (t *Thing) SetOnline(online bool)              { t.Online = online }
+func (t *Thing) SetFlag(flag uint32)                { t.flags |= flag }
+func (t *Thing) TestFlag(flag uint32) bool          { return (t.flags & flag) != 0 }
+func (t *Thing) IsMetal() bool                      { return t.TestFlag(ThingFlagMetal) }
 
 func (t *Thing) String() string {
 	return "[Id: " + t.Id + ", Model: " + t.Model + ", Name: " + t.Name + "]"
