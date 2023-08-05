@@ -2,11 +2,13 @@ package dean
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -14,6 +16,7 @@ import (
 
 type webSocket struct {
 	socket
+	sync.Mutex
 	conn    *websocket.Conn
 	ping    int
 	closing bool
@@ -29,11 +32,27 @@ func (w *webSocket) Close() {
 	w.closing = true
 }
 
-func (w *webSocket) Send(msg *Msg) {
-	if w.conn != nil {
-		println("sending:", msg.src.Name(), msg.String())
-		websocket.Message.Send(w.conn, string(msg.payload))
+func (w *webSocket) sendRaw(msg *Msg) error {
+	w.Lock()
+	defer w.Unlock()
+	if w.conn == nil {
+		return fmt.Errorf("Send on nil connection")
 	}
+	return websocket.Message.Send(w.conn, msg.payload)
+}
+
+func (w *webSocket) Send(msg *Msg) error {
+	w.Lock()
+	defer w.Unlock()
+	if w.conn == nil {
+		return fmt.Errorf("Send on nil connection")
+	}
+	if msg.src == nil {
+		println("sending:", msg.String())
+	} else {
+		println("sending:", msg.src.Name(), msg.String())
+	}
+	return websocket.Message.Send(w.conn, string(msg.payload))
 }
 
 const minPingMs = int(500) // 1/2 sec
@@ -91,21 +110,20 @@ func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, e
 	return config, nil
 }
 
-func (w *webSocket) announced(conn *websocket.Conn, announce *Msg) bool {
+func (w *webSocket) announced(announce *Msg) bool {
 
 	for i := 0; i < 60; i++ {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		// Send an announcement msg
-		err := websocket.Message.Send(conn, string(announce.payload))
-		if err != nil {
+		if err := w.Send(announce); err != nil {
 			break
 		}
 
 		for {
 			// Any non-ping msg received is an ack of the announcement
-			conn.SetReadDeadline(time.Now().Add(time.Second))
-			err = websocket.Message.Receive(conn, &msg.payload)
+			w.conn.SetReadDeadline(time.Now().Add(time.Second))
+			err := websocket.Message.Receive(w.conn, &msg.payload)
 			if err == nil {
 				if !bytes.Equal(msg.payload, pingMsg) {
 					w.bus.receive(msg)
@@ -144,9 +162,9 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 		if err == nil {
 			w.connect(conn)
 			// Send announcement
-			if w.announced(conn, announce) {
+			if w.announced(announce) {
 				// Serve websocket until EOF
-				w.serveConn(conn)
+				w.serveConn()
 			}
 			w.disconnect()
 			// Close websocket
@@ -176,7 +194,7 @@ const extraDelay = time.Second
 
 var pingMsg = []byte("ping")
 
-func (w *webSocket) servePing(conn *websocket.Conn) {
+func (w *webSocket) servePing() {
 	var pingPeriod = time.Duration(w.ping) * time.Millisecond
 	var quietPeriod = 2*pingPeriod + extraDelay
 	var pingSent = time.Now()
@@ -192,12 +210,12 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 
 		if time.Now().Sub(pingSent) > pingPeriod {
 			msg.payload = pingMsg
-			websocket.Message.Send(conn, msg.payload)
+			w.sendRaw(msg)
 			pingSent = time.Now()
 		}
 
-		conn.SetReadDeadline(time.Now().Add(pingPeriod))
-		err := websocket.Message.Receive(conn, &msg.payload)
+		w.conn.SetReadDeadline(time.Now().Add(pingPeriod))
+		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			lastRecv = time.Now()
 			if !bytes.Equal(msg.payload, pingMsg) {
@@ -219,10 +237,10 @@ func (w *webSocket) servePing(conn *websocket.Conn) {
 	}
 }
 
-func (w *webSocket) serveConn(conn *websocket.Conn) {
+func (w *webSocket) serveConn() {
 
 	if w.ping > 0 {
-		w.servePing(conn)
+		w.servePing()
 		return
 	}
 
@@ -234,8 +252,8 @@ func (w *webSocket) serveConn(conn *websocket.Conn) {
 			break
 		}
 
-		conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(conn, &msg.payload)
+		w.conn.SetReadDeadline(time.Now().Add(time.Second))
+		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if !bytes.Equal(msg.payload, pingMsg) {
 				w.bus.receive(msg)
@@ -256,6 +274,6 @@ func (w *webSocket) serveConn(conn *websocket.Conn) {
 
 func (w *webSocket) serve(conn *websocket.Conn) {
 	w.connect(conn)
-	w.serveConn(conn)
+	w.serveConn()
 	w.disconnect()
 }

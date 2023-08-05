@@ -2,7 +2,7 @@ package dean
 
 type Socketer interface {
 	Close()
-	Send(*Msg)
+	Send(*Msg) error
 	Name() string
 	Tag() string
 	SetTag(string)
@@ -24,8 +24,8 @@ const (
 func (s *socket) Close() {
 }
 
-func (s *socket) Send(msg *Msg) {
-	// >/dev/null
+func (s *socket) Send(msg *Msg) error {
+	return nil
 }
 
 func (s *socket) Name() string {
