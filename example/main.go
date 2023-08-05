@@ -14,7 +14,6 @@ var fs embed.FS
 
 type thing struct {
 	dean.Thing
-	dean.ThingMsg
 	Count uint
 }
 
