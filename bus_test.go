@@ -83,8 +83,9 @@ type testSocket struct {
 	sent bool
 }
 
-func (s *testSocket) Send(msg *Msg) {
+func (s *testSocket) Send(msg *Msg) error {
 	s.sent = true
+	return nil
 }
 
 func TestBroadcast(t *testing.T) {
