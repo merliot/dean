@@ -131,6 +131,9 @@ func (w *webSocket) announced(announce *Msg) bool {
 				}
 				// Just a ping msg; keep reading
 				continue
+			} else {
+				// wait a bit
+				time.Sleep(time.Second)
 			}
 			// Timed out; send another announcement
 			break
