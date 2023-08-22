@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/at24cx"
+	"github.com/merliot/dean/drivers/at24cx"
 )
 
 func main() {

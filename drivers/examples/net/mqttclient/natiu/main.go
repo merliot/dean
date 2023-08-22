@@ -20,8 +20,8 @@ import (
 	"time"
 
 	mqtt "github.com/soypat/natiu-mqtt"
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 var (

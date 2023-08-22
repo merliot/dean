@@ -3,9 +3,9 @@
 //
 // Datasheet:
 // https://www.nxp.com/docs/en/data-sheet/MMA8653FC.pdf
-package mma8653 // import "tinygo.org/x/drivers/mma8653"
+package mma8653 // import "github.com/merliot/dean/drivers/mma8653"
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Device wraps an I2C connection to a MMA8653 device.
 type Device struct {

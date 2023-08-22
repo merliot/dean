@@ -2,7 +2,7 @@
 // For example, the Adafruit PDM MEMS breakout board (https://www.adafruit.com/product/3492)
 //
 // Datasheet: https://cdn-learn.adafruit.com/assets/assets/000/049/977/original/MP34DT01-M.pdf
-package microphone // import "tinygo.org/x/drivers/microphone"
+package microphone // import "github.com/merliot/dean/drivers/microphone"
 
 import (
 	"machine"

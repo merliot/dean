@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a HD44780 I2C LCD with related data.

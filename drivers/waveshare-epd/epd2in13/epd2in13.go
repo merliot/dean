@@ -1,7 +1,7 @@
 // Package epd2in13 implements a driver for Waveshare 2.13in black and white e-paper device.
 //
 // Datasheet: https://www.waveshare.com/w/upload/e/e6/2.13inch_e-Paper_Datasheet.pdf
-package epd2in13 // import "tinygo.org/x/drivers/waveshare-epd/epd2in13"
+package epd2in13 // import "github.com/merliot/dean/drivers/waveshare-epd/epd2in13"
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Config struct {

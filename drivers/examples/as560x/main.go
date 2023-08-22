@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"tinygo.org/x/drivers/as560x"
+	"github.com/merliot/dean/drivers/as560x"
 )
 
 func main() {

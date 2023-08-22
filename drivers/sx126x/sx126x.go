@@ -9,8 +9,8 @@ import (
 
 	"machine"
 
-	"tinygo.org/x/drivers"
-	"tinygo.org/x/drivers/lora"
+	"github.com/merliot/dean/drivers"
+	"github.com/merliot/dean/drivers/lora"
 )
 
 var (

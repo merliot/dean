@@ -13,7 +13,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Config struct {

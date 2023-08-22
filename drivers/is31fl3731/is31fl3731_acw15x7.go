@@ -3,7 +3,7 @@ package is31fl3731
 import (
 	"fmt"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // DeviceAdafruitCharlieWing15x7 implements TinyGo driver for Lumissil

@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/hts221"
+	"github.com/merliot/dean/drivers/hts221"
 )
 
 func main() {

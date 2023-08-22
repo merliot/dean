@@ -1,6 +1,6 @@
 package st7789
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Registers
 const (

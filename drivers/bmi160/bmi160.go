@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // DeviceSPI is the SPI interface to a BMI160 accelerometer/gyroscope. There is

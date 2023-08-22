@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"machine"
 	"time"
-	"tinygo.org/x/drivers/dht"
+	"github.com/merliot/dean/drivers/dht"
 )
 
 func main() {

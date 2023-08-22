@@ -5,12 +5,12 @@
 // https://www.vishay.com/docs/84277/veml6070.pdf
 // Application Notes:
 // https://www.vishay.com/docs/84310/designingveml6070.pdf
-package veml6070 // import "tinygo.org/x/drivers/veml6070"
+package veml6070 // import "github.com/merliot/dean/drivers/veml6070"
 
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a VEML6070 device.

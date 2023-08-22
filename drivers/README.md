@@ -1,6 +1,6 @@
 # TinyGo Drivers
 
-[![PkgGoDev](https://pkg.go.dev/badge/tinygo.org/x/drivers)](https://pkg.go.dev/tinygo.org/x/drivers) [![Build](https://github.com/tinygo-org/drivers/actions/workflows/build.yml/badge.svg?branch=dev)](https://github.com/tinygo-org/drivers/actions/workflows/build.yml)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/merliot/dean/drivers)](https://pkg.go.dev/github.com/merliot/dean/drivers) [![Build](https://github.com/tinygo-org/drivers/actions/workflows/build.yml/badge.svg?branch=dev)](https://github.com/tinygo-org/drivers/actions/workflows/build.yml)
 
 
 This package provides a collection of hardware drivers for devices such as sensors and displays that can be used together with [TinyGo](https://tinygo.org).
@@ -8,7 +8,7 @@ This package provides a collection of hardware drivers for devices such as senso
 ## Installing
 
 ```shell
-go get tinygo.org/x/drivers
+go get github.com/merliot/dean/drivers
 ```
 
 ## How to use
@@ -23,7 +23,7 @@ import (
 
     "machine"
 
-    "tinygo.org/x/drivers/bmp180"
+    "github.com/merliot/dean/drivers/bmp180"
 )
 
 func main() {

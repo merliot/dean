@@ -3,7 +3,7 @@
 package main
 
 import (
-	"tinygo.org/x/drivers/lora/lorawan"
+	"github.com/merliot/dean/drivers/lora/lorawan"
 )
 
 // These are sample keys, so the example builds

@@ -12,7 +12,7 @@ import (
 	"image/color"
 	"io"
 
-	"tinygo.org/x/drivers/image/internal/imageutil"
+	"github.com/merliot/dean/drivers/image/internal/imageutil"
 )
 
 // A FormatError reports that the input is not a valid JPEG.

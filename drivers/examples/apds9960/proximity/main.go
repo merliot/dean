@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/apds9960"
+	"github.com/merliot/dean/drivers/apds9960"
 )
 
 func main() {

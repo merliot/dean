@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"time"
-	"tinygo.org/x/drivers/onewire"
+	"github.com/merliot/dean/drivers/onewire"
 )
 
 func main() {

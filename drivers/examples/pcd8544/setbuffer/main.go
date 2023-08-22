@@ -4,8 +4,8 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/examples/pcd8544/setbuffer/data"
-	"tinygo.org/x/drivers/pcd8544"
+	"github.com/merliot/dean/drivers/examples/pcd8544/setbuffer/data"
+	"github.com/merliot/dean/drivers/pcd8544"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 // Package st7735 implements a driver for the ST7735 TFT displays, it comes in various screen sizes.
 //
 // Datasheet: https://www.crystalfontz.com/controllers/Sitronix/ST7735R/319/
-package st7735 // import "tinygo.org/x/drivers/st7735"
+package st7735 // import "github.com/merliot/dean/drivers/st7735"
 
 import (
 	"image/color"
@@ -10,7 +10,7 @@ import (
 
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Model uint8

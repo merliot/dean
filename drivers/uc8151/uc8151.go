@@ -2,7 +2,7 @@
 //
 // Inspired by https://github.com/pimoroni/pimoroni-pico/blob/main/drivers/uc8151/uc8151.cpp
 // Datasheet: https://www.buydisplay.com/download/ic/UC8151C.pdf
-package uc8151 // import "tinygo.org/x/drivers/uc8151"
+package uc8151 // import "github.com/merliot/dean/drivers/uc8151"
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Config struct {

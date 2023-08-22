@@ -1,13 +1,13 @@
 // Package mcp3008 implements a driver for the MCP3008 Analog to Digital Converter.
 //
 // Datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/21295d.pdf
-package mcp3008 // import "tinygo.org/x/drivers/mcp3008"
+package mcp3008 // import "github.com/merliot/dean/drivers/mcp3008"
 
 import (
 	"errors"
 	"machine"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps MCP3008 SPI ADC.

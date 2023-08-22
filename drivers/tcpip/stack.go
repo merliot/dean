@@ -1,7 +1,7 @@
 package tcpip
 
 import (
-	"tinygo.org/x/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink"
 )
 
 type Stack struct {

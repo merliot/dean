@@ -2,9 +2,9 @@
 //
 // Datasheet: https://download.mikroe.com/documents/datasheets/tmp102-data-sheet.pdf
 
-package tmp102 // import "tinygo.org/x/drivers/tmp102"
+package tmp102 // import "github.com/merliot/dean/drivers/tmp102"
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Device holds the already configured I2C bus and the address of the sensor.
 type Device struct {

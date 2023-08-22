@@ -3,7 +3,7 @@ package aht20
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to an AHT20 device.

@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/scd4x"
+	"github.com/merliot/dean/drivers/scd4x"
 )
 
 var (

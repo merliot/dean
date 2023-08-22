@@ -1,12 +1,12 @@
 // LSM9DS1, 9 axis Inertial Measurement Unit (IMU)
 //
 // Datasheet: https://www.st.com/resource/en/datasheet/lsm6ds3.pdf
-package lsm9ds1 // import "tinygo.org/x/drivers/lsm9ds1"
+package lsm9ds1 // import "github.com/merliot/dean/drivers/lsm9ds1"
 
 import (
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type AccelRange uint8

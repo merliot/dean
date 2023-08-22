@@ -3,8 +3,8 @@ package main
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/examples/flash/console"
-	"tinygo.org/x/drivers/flash"
+	"github.com/merliot/dean/drivers/examples/flash/console"
+	"github.com/merliot/dean/drivers/flash"
 )
 
 func main() {

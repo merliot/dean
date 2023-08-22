@@ -16,7 +16,7 @@ import (
 	"image/color"
 	"io"
 
-	"tinygo.org/x/drivers/image/internal/compress/zlib"
+	"github.com/merliot/dean/drivers/image/internal/compress/zlib"
 )
 
 // Color type, as per the PNG spec.

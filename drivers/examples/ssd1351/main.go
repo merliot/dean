@@ -5,7 +5,7 @@ import (
 
 	"image/color"
 
-	"tinygo.org/x/drivers/ssd1351"
+	"github.com/merliot/dean/drivers/ssd1351"
 )
 
 func main() {

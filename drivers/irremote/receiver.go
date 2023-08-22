@@ -1,4 +1,4 @@
-package irremote // import "tinygo.org/x/drivers/irremote"
+package irremote // import "github.com/merliot/dean/drivers/irremote"
 
 import (
 	"machine"

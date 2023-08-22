@@ -1,6 +1,6 @@
 package ili9341
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 type Rotation uint8
 

@@ -3,8 +3,8 @@ package lorawan
 import (
 	"errors"
 
-	"tinygo.org/x/drivers/lora"
-	"tinygo.org/x/drivers/lora/lorawan/region"
+	"github.com/merliot/dean/drivers/lora"
+	"github.com/merliot/dean/drivers/lora/lorawan/region"
 )
 
 var (

@@ -1,12 +1,12 @@
 // Package adt7410 provides a driver for the adt7410 I2C Temperature Sensor.
 //
 // Datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/ADT7410.pdf
-package adt7410 // import "tinygo.org/x/drivers/adt7410"
+package adt7410 // import "github.com/merliot/dean/drivers/adt7410"
 
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Error uint8

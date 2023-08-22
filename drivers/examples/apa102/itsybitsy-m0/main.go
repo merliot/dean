@@ -9,7 +9,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/apa102"
+	"github.com/merliot/dean/drivers/apa102"
 )
 
 var (

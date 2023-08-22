@@ -7,7 +7,7 @@ import (
 
 	"time"
 
-	"tinygo.org/x/drivers/waveshare-epd/epd2in13"
+	"github.com/merliot/dean/drivers/waveshare-epd/epd2in13"
 )
 
 var display epd2in13.Device

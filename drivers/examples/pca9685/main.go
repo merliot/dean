@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/pca9685"
+	"github.com/merliot/dean/drivers/pca9685"
 )
 
 func main() {

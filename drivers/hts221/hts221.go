@@ -7,7 +7,7 @@ package hts221
 import (
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a HTS221 device.

@@ -1,6 +1,6 @@
 package region
 
-import "tinygo.org/x/drivers/lora"
+import "github.com/merliot/dean/drivers/lora"
 
 const (
 	EU868_DEFAULT_PREAMBLE_LEN = 8

@@ -3,10 +3,10 @@
 //
 // http://www.x-powers.com/en.php/Info/product_detail/article_id/29
 // Datasheet: https://github.com/m5stack/M5-Schematic/blob/master/Core/AXP192%20Datasheet_v1.1_en_draft_2211.pdf
-package axp192 // import "tinygo.org/x/drivers/axp192"
+package axp192 // import "github.com/merliot/dean/drivers/axp192"
 
 import (
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Error uint8

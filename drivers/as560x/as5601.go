@@ -1,9 +1,9 @@
 //	Product: https://ams.com/as5601
 //	Datasheet: https://ams.com/documents/20143/36005/AS5601_DS000395_3-00.pdf
 
-package as560x // import tinygo.org/x/drivers/ams560x
+package as560x // import github.com/merliot/dean/drivers/ams560x
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // AS5601Device represents an ams AS5601 device driver accessed over I2C
 type AS5601Device struct {

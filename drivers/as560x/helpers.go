@@ -1,4 +1,4 @@
-package as560x // import tinygo.org/x/drivers/ams560x
+package as560x // import github.com/merliot/dean/drivers/ams560x
 
 import "math"
 

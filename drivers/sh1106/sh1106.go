@@ -1,7 +1,7 @@
 // Package sh1106 implements a driver for the SH1106 display controller
 //
 // Copied from https://github.com/toyo/tinygo-sh1106 (under BSD 3-clause license)
-package sh1106 // import "tinygo.org/x/drivers/sh1106"
+package sh1106 // import "github.com/merliot/dean/drivers/sh1106"
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an SPI connection.

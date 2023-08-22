@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"tinygo.org/x/drivers/netdev"
+	"github.com/merliot/dean/drivers/netdev"
 )
 
 func (s *Stack) GetHostByName(name string) (net.IP, error) {

@@ -5,8 +5,8 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/adt7410"
-	"tinygo.org/x/drivers/i2csoft"
+	"github.com/merliot/dean/drivers/adt7410"
+	"github.com/merliot/dean/drivers/i2csoft"
 )
 
 func main() {

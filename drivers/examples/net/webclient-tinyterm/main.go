@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"tinygo.org/x/drivers/ili9341"
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/ili9341"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink/probe"
 	"tinygo.org/x/tinyfont/proggy"
 	"tinygo.org/x/tinyterm"
 )

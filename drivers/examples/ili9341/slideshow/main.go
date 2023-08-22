@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"tinygo.org/x/drivers/examples/ili9341/initdisplay"
-	"tinygo.org/x/drivers/ili9341"
-	"tinygo.org/x/drivers/image/jpeg"
-	"tinygo.org/x/drivers/image/png"
+	"github.com/merliot/dean/drivers/examples/ili9341/initdisplay"
+	"github.com/merliot/dean/drivers/ili9341"
+	"github.com/merliot/dean/drivers/image/jpeg"
+	"github.com/merliot/dean/drivers/image/png"
 )
 
 var (

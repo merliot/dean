@@ -5,13 +5,13 @@
 // This driver is heavily influenced by the scd4x code from Adafruit for CircuitPython:
 // https://github.com/adafruit/Adafruit_CircuitPython_SCD4X
 // Thank you!
-package scd4x // import "tinygo.org/x/drivers/scd4x"
+package scd4x // import "github.com/merliot/dean/drivers/scd4x"
 
 import (
 	"encoding/binary"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Device struct {

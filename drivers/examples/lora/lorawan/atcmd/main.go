@@ -12,10 +12,10 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/examples/lora/lorawan/common"
-	"tinygo.org/x/drivers/lora"
-	"tinygo.org/x/drivers/lora/lorawan"
-	"tinygo.org/x/drivers/lora/lorawan/region"
+	"github.com/merliot/dean/drivers/examples/lora/lorawan/common"
+	"github.com/merliot/dean/drivers/lora"
+	"github.com/merliot/dean/drivers/lora/lorawan"
+	"github.com/merliot/dean/drivers/lora/lorawan/region"
 )
 
 // change these to test a different UART or pins if available

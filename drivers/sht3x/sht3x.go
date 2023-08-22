@@ -3,12 +3,12 @@
 //
 // Datasheet:
 // https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/2_Humidity_Sensors/Datasheets/Sensirion_Humidity_Sensors_SHT3x_Datasheet_digital.pdf
-package sht3x // import "tinygo.org/x/drivers/sht3x"
+package sht3x // import "github.com/merliot/dean/drivers/sht3x"
 
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a SHT31 device.

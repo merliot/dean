@@ -7,7 +7,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/sh1106"
+	"github.com/merliot/dean/drivers/sh1106"
 )
 
 var (

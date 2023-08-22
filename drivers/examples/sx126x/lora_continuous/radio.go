@@ -5,7 +5,7 @@ package main
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/sx126x"
+	"github.com/merliot/dean/drivers/sx126x"
 )
 
 var (

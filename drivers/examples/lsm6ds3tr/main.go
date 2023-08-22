@@ -5,7 +5,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/lsm6ds3tr"
+	"github.com/merliot/dean/drivers/lsm6ds3tr"
 )
 
 func main() {

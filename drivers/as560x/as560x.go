@@ -9,12 +9,12 @@
 //	AS5601: https://ams.com/documents/20143/36005/AS5601_DS000395_3-00.pdf
 //
 
-package as560x // import tinygo.org/x/drivers/ams560x
+package as560x // import github.com/merliot/dean/drivers/ams560x
 
 import (
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Config holds the configuration for the AMS AS560x sensor devices.

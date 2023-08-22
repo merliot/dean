@@ -2,7 +2,7 @@
 
 package lps22hb
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Configure sets up the LPS22HB device for communication.
 func (d *Device) Configure() {

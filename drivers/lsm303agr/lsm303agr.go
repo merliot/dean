@@ -2,13 +2,13 @@
 // a 3 axis accelerometer/magnetic sensor which is included on BBC micro:bits v1.5.
 //
 // Datasheet: https://www.st.com/resource/en/datasheet/lsm303agr.pdf
-package lsm303agr // import "tinygo.org/x/drivers/lsm303agr"
+package lsm303agr // import "github.com/merliot/dean/drivers/lsm303agr"
 
 import (
 	"errors"
 	"math"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a LSM303AGR device.

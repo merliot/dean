@@ -5,7 +5,7 @@ package initdisplay
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/ili9341"
+	"github.com/merliot/dean/drivers/ili9341"
 )
 
 func InitDisplay() *ili9341.Device {

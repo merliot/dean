@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"tinygo.org/x/drivers/ttp229"
+	"github.com/merliot/dean/drivers/ttp229"
 
 	"machine"
 )

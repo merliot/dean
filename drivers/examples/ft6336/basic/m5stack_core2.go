@@ -5,9 +5,9 @@ package main
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/ft6336"
-	"tinygo.org/x/drivers/i2csoft"
-	"tinygo.org/x/drivers/touch"
+	"github.com/merliot/dean/drivers/ft6336"
+	"github.com/merliot/dean/drivers/i2csoft"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 // InitDisplay initializes the display of each board.

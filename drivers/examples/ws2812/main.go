@@ -9,7 +9,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/ws2812"
+	"github.com/merliot/dean/drivers/ws2812"
 )
 
 var leds [10]color.RGBA

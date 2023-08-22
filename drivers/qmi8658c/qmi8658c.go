@@ -5,7 +5,7 @@
 // https://www.qstcorp.com/upload/pdf/202202/%EF%BC%88%E5%B7%B2%E4%BC%A0%EF%BC%89QMI8658C%20datasheet%20rev%200.9.pdf
 package qmi8656c
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Device wraps the I2C connection to the QMIC8658 sensor
 type Device struct {

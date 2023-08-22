@@ -3,7 +3,7 @@ package bmp280
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // OversamplingMode is the oversampling ratio of the temperature or pressure measurement.

@@ -1,12 +1,12 @@
 //	Product: https://ams.com/as5600
 //	Datasheet: https://ams.com/documents/20143/36005/AS5600_DS000365_5-00.pdf
 
-package as560x // import tinygo.org/x/drivers/ams560x
+package as560x // import github.com/merliot/dean/drivers/ams560x
 
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // AS5600 includes MPOS & MANG in addition to ZPOS to set a 'narrower angle range'

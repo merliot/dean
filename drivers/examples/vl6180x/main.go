@@ -3,7 +3,7 @@ package main
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/vl6180x"
+	"github.com/merliot/dean/drivers/vl6180x"
 
 	"time"
 )

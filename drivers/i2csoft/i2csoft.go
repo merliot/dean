@@ -5,7 +5,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/delay"
+	"github.com/merliot/dean/drivers/delay"
 )
 
 // I2C is an I2C implementation by Software. Since it is implemented by

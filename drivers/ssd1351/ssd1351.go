@@ -1,7 +1,7 @@
 // Package ssd1351 implements a driver for the SSD1351 OLED color displays.
 //
 // Datasheet: https://download.mikroe.com/documents/datasheets/ssd1351-revision-1.3.pdf
-package ssd1351 // import "tinygo.org/x/drivers/ssd1351"
+package ssd1351 // import "github.com/merliot/dean/drivers/ssd1351"
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 var (

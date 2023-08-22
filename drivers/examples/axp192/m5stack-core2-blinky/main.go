@@ -4,8 +4,8 @@ import (
 	"machine"
 	"time"
 
-	axp192 "tinygo.org/x/drivers/axp192/m5stack-core2-axp192"
-	"tinygo.org/x/drivers/i2csoft"
+	axp192 "github.com/merliot/dean/drivers/axp192/m5stack-core2-axp192"
+	"github.com/merliot/dean/drivers/i2csoft"
 )
 
 func main() {

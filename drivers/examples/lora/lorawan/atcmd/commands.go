@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"tinygo.org/x/drivers/examples/lora/lorawan/common"
-	"tinygo.org/x/drivers/lora/lorawan"
+	"github.com/merliot/dean/drivers/examples/lora/lorawan/common"
+	"github.com/merliot/dean/drivers/lora/lorawan"
 )
 
 // Use to test if connection to module is OK.

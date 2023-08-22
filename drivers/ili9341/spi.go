@@ -5,7 +5,7 @@ package ili9341
 import (
 	"machine"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 var buf [64]byte

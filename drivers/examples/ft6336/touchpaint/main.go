@@ -4,8 +4,8 @@ import (
 	"image/color"
 	"math"
 
-	"tinygo.org/x/drivers"
-	"tinygo.org/x/drivers/touch"
+	"github.com/merliot/dean/drivers"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 type touchPaintDisplay interface {

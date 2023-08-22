@@ -1,1 +1,1 @@
-package waveshareepd // import "tinygo.org/x/drivers/waveshare-epd"
+package waveshareepd // import "github.com/merliot/dean/drivers/waveshare-epd"

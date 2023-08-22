@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"machine"
 
-	"tinygo.org/x/drivers/uc8151"
+	"github.com/merliot/dean/drivers/uc8151"
 )
 
 var display uc8151.Device

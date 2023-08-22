@@ -5,7 +5,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/mma8653"
+	"github.com/merliot/dean/drivers/mma8653"
 )
 
 func main() {

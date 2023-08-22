@@ -5,7 +5,7 @@ import (
 
 	"image/color"
 
-	"tinygo.org/x/drivers/st7735"
+	"github.com/merliot/dean/drivers/st7735"
 )
 
 func main() {

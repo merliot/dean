@@ -1,6 +1,6 @@
 package ina260
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Device wraps an I2C connection to an INA260 device.
 type Device struct {

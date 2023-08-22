@@ -7,8 +7,8 @@ package ft6336
 import (
 	"machine"
 
-	"tinygo.org/x/drivers"
-	"tinygo.org/x/drivers/touch"
+	"github.com/merliot/dean/drivers"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 // Device wraps FT6336 I2C Self-Capacitive touch

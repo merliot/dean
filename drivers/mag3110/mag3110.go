@@ -2,9 +2,9 @@
 // Freescale/NXP.
 //
 // Datasheet: https://www.nxp.com/docs/en/data-sheet/MAG3110.pdf
-package mag3110 // import "tinygo.org/x/drivers/mag3110"
+package mag3110 // import "github.com/merliot/dean/drivers/mag3110"
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 // Device wraps an I2C connection to a MAG3110 device.
 type Device struct {

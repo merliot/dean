@@ -5,7 +5,7 @@ import (
 	"machine"
 	"math/rand"
 
-	"tinygo.org/x/drivers/ssd1289"
+	"github.com/merliot/dean/drivers/ssd1289"
 )
 
 func main() {

@@ -2,12 +2,12 @@
 //
 // Datasheet:
 // https://cdn-learn.adafruit.com/assets/assets/000/043/261/original/Grid-EYE_SPECIFICATIONS%28Reference%29.pdf
-package amg88xx // import "tinygo.org/x/drivers/amg88xx"
+package amg88xx // import "github.com/merliot/dean/drivers/amg88xx"
 
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a AMG88xx device.

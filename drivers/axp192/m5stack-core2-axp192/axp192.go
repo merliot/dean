@@ -3,8 +3,8 @@ package axp192
 import (
 	"time"
 
-	"tinygo.org/x/drivers"
-	axp192orig "tinygo.org/x/drivers/axp192"
+	"github.com/merliot/dean/drivers"
+	axp192orig "github.com/merliot/dean/drivers/axp192"
 )
 
 // Device wraps an I2C connection to a AXP192 device.

@@ -1,7 +1,7 @@
 // Package wire implements the Dallas Semiconductor Corp.'s 1-wire bus system.
 //
 // Wikipedia: https://en.wikipedia.org/wiki/1-Wire
-package onewire // import "tinygo.org/x/drivers/onewire"
+package onewire // import "github.com/merliot/dean/drivers/onewire"
 
 import (
 	"errors"

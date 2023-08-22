@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/irremote"
+	"github.com/merliot/dean/drivers/irremote"
 )
 
 var irCmdButtons = map[uint16]string{

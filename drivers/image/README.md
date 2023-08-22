@@ -1,4 +1,4 @@
-# tinygo.org/x/drivers/image
+# github.com/merliot/dean/drivers/image
 
 This is an image package that uses less RAM to run on a microcontroller.
 Unlike Go's original image package, `image.Decode()` does not return `image.Image`.

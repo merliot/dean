@@ -1,4 +1,4 @@
-package microbitmatrix // import "tinygo.org/x/drivers/microbitmatrix"
+package microbitmatrix // import "github.com/merliot/dean/drivers/microbitmatrix"
 
 import (
 	"image/color"

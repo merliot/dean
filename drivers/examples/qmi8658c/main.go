@@ -8,7 +8,7 @@ import (
 	"machine"
 	"time"
 
-	imu "tinygo.org/x/drivers/qmi8658c"
+	imu "github.com/merliot/dean/drivers/qmi8658c"
 )
 
 func main() {

@@ -2,7 +2,7 @@
 //
 // Datasheet:
 // https://www.analog.com/media/en/technical-documentation/data-sheets/DS18B20.pdf
-package ds18b20 // import "tinygo.org/x/drivers/ds18b20"
+package ds18b20 // import "github.com/merliot/dean/drivers/ds18b20"
 
 import (
 	"errors"

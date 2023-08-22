@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 const (

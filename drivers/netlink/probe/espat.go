@@ -5,9 +5,9 @@ package probe
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/espat"
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
+	"github.com/merliot/dean/drivers/espat"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
 )
 
 func Probe() (netlink.Netlinker, netdev.Netdever) {

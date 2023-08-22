@@ -7,7 +7,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/touch"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 type Device struct {

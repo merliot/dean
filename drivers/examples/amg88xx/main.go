@@ -4,9 +4,9 @@ import (
 	"image/color"
 	"machine"
 
-	"tinygo.org/x/drivers/st7735"
+	"github.com/merliot/dean/drivers/st7735"
 
-	"tinygo.org/x/drivers/amg88xx"
+	"github.com/merliot/dean/drivers/amg88xx"
 )
 
 func main() {

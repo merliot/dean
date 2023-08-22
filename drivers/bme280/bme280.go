@@ -9,7 +9,7 @@ import (
 	"math"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // calibrationCoefficients reads at startup and stores the calibration coefficients

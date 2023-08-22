@@ -3,7 +3,7 @@
 // Datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/MCP2515-Stand-Alone-CAN-Controller-with-SPI-20001801J.pdf
 //
 // Reference: https://github.com/coryjfowler/MCP_CAN_lib
-package mcp2515 // import "tinygo.org/x/drivers/mcp2515"
+package mcp2515 // import "github.com/merliot/dean/drivers/mcp2515"
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps MCP2515 SPI CAN Module.

@@ -2,13 +2,13 @@
 //
 // Datasheet:
 // https://www.openimpulse.com/blog/wp-content/uploads/wpsc/downloadables/24C32-Datasheet.pdf
-package at24cx // import "tinygo.org/x/drivers/at24cx"
+package at24cx // import "github.com/merliot/dean/drivers/at24cx"
 
 import (
 	"errors"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a DS3231 device.

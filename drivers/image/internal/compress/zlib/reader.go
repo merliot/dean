@@ -30,7 +30,7 @@ import (
 	"hash/adler32"
 	"io"
 
-	"tinygo.org/x/drivers/image/internal/compress/flate"
+	"github.com/merliot/dean/drivers/image/internal/compress/flate"
 )
 
 const zlibDeflate = 8

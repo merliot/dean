@@ -3,13 +3,13 @@
 //
 // Datasheet:
 // https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/MPU-6886-000193%2Bv1.1_GHIC_en.pdf
-package mpu6886 // import "tinygo.org/x/drivers/mpu6886"
+package mpu6886 // import "github.com/merliot/dean/drivers/mpu6886"
 
 import (
 	"errors"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 const WhoAmI = 0x19

@@ -1,4 +1,4 @@
-package as560x // import tinygo.org/x/drivers/ams560x
+package as560x // import github.com/merliot/dean/drivers/ams560x
 
 // DefaultAddress is the default I2C address of the AMS AS560x sensors (0x36).
 const DefaultAddress uint8 = 0x36

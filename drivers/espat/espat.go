@@ -18,7 +18,7 @@
 //
 // 02/2023    sfeldma@gmail.com    Heavily modified to use netdev interface
 
-package espat // import "tinygo.org/x/drivers/espat"
+package espat // import "github.com/merliot/dean/drivers/espat"
 
 import (
 	"errors"
@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
 )
 
 type Config struct {

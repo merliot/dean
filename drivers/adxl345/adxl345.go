@@ -3,9 +3,9 @@
 // Datasheet EN: http://www.analog.com/media/en/technical-documentation/data-sheets/ADXL345.pdf
 //
 // Datasheet JP: http://www.analog.com/media/jp/technical-documentation/data-sheets/ADXL345_jp.pdf
-package adxl345 // import "tinygo.org/x/drivers/adxl345"
+package adxl345 // import "github.com/merliot/dean/drivers/adxl345"
 
-import "tinygo.org/x/drivers"
+import "github.com/merliot/dean/drivers"
 
 type Range uint8
 type Rate uint8

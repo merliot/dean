@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"tinygo.org/x/drivers/delay"
+	"github.com/merliot/dean/drivers/delay"
 )
 
 func main() {

@@ -2,12 +2,12 @@
 // a 6 axis Inertial Measurement Unit (IMU)
 //
 // Datasheet: https://www.st.com/resource/en/datasheet/lsm6dsox.pdf
-package lsm6dsox // import "tinygo.org/x/drivers/lsm6dsox"
+package lsm6dsox // import "github.com/merliot/dean/drivers/lsm6dsox"
 
 import (
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type AccelRange uint8

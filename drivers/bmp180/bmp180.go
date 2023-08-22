@@ -3,13 +3,13 @@
 //
 // Datasheet:
 // https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
-package bmp180 // import "tinygo.org/x/drivers/bmp180"
+package bmp180 // import "github.com/merliot/dean/drivers/bmp180"
 
 import (
 	"math"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // OversamplingMode is the oversampling ratio of the pressure measurement.

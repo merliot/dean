@@ -23,7 +23,7 @@
 //	sensor.SeriesResistor = 10000
 //	sensor.NominalResistance = 10000
 //	sensor.HighSide = true
-package thermistor // import "tinygo.org/x/drivers/thermistor"
+package thermistor // import "github.com/merliot/dean/drivers/thermistor"
 
 import (
 	"machine"

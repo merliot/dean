@@ -7,7 +7,7 @@
 //
 // 12/2022    sfeldma@gmail.com    Heavily modified to use netdev interface
 
-package wifinina // import "tinygo.org/x/drivers/wifinina"
+package wifinina // import "github.com/merliot/dean/drivers/wifinina"
 
 import (
 	"encoding/binary"
@@ -20,9 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"tinygo.org/x/drivers"
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
+	"github.com/merliot/dean/drivers"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
+	//"github.com/merliot/dean/drivers"
+	//"github.com/merliot/dean/drivers/netdev"
+	//"github.com/merliot/dean/drivers/netlink"
 )
 
 var _debug debug = debugBasic

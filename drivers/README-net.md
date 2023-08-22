@@ -65,7 +65,7 @@ allows the app to work on multiple targets.
 package main
 
 import (
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 func main() {
@@ -94,8 +94,8 @@ IP network.
 package main
 
 import (
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 func main() {
@@ -133,8 +133,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
@@ -204,9 +204,9 @@ package main
 import (
 	"net"  // only need to parse IP address
 
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/netlink/probe"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 func main() {

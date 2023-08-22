@@ -9,14 +9,14 @@
 //
 // This implementation is essentially a copy of the 2in13 driver with the correct LUTs and
 // default size for the 2.9in device.
-package epd2in9 // import "tinygo.org/x/drivers/waveshare-epd/epd2in9"
+package epd2in9 // import "github.com/merliot/dean/drivers/waveshare-epd/epd2in9"
 
 import (
 	"image/color"
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type Config struct {

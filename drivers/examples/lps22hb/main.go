@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/lps22hb"
+	"github.com/merliot/dean/drivers/lps22hb"
 )
 
 func main() {

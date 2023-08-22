@@ -3,7 +3,7 @@ package pca9685
 import (
 	"encoding/binary"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // 16 PWM channels, 2 2 byte values each (on, off 16bits)

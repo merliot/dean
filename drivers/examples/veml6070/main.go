@@ -5,7 +5,7 @@ import (
 
 	"machine"
 
-	"tinygo.org/x/drivers/veml6070"
+	"github.com/merliot/dean/drivers/veml6070"
 )
 
 func main() {

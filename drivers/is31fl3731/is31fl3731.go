@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device implements TinyGo driver for Lumissil IS31FL3731 matrix LED driver

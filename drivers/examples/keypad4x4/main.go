@@ -3,7 +3,7 @@ package main
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/keypad4x4"
+	"github.com/merliot/dean/drivers/keypad4x4"
 )
 
 func main() {

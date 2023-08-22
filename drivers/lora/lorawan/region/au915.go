@@ -1,6 +1,6 @@
 package region
 
-import "tinygo.org/x/drivers/lora"
+import "github.com/merliot/dean/drivers/lora"
 
 const (
 	AU915_DEFAULT_PREAMBLE_LEN = 8

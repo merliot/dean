@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/tone"
+	"github.com/merliot/dean/drivers/tone"
 )
 
 var (

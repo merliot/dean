@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/servo"
+	"github.com/merliot/dean/drivers/servo"
 )
 
 // Configuration for the Arduino Uno.

@@ -1,7 +1,7 @@
 // Package gc9a01 implements a driver for the gc9a01 LCD round display
 //
 // Datasheet: https://www.waveshare.com/w/upload/5/5e/GC9A01A.pdf
-package gc9a01 // import "tinygo.org/x/drivers/gc9a01"
+package gc9a01 // import "github.com/merliot/dean/drivers/gc9a01"
 
 import (
 	"image/color"
@@ -10,7 +10,7 @@ import (
 
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Rotation controls the rotation used by the display.

@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/shiftregister"
+	"github.com/merliot/dean/drivers/shiftregister"
 )
 
 func main() {

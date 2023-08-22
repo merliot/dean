@@ -4,10 +4,10 @@ package probe
 
 import (
 	"github.com/soypat/cyw43439"
-	//"tinygo.org/x/drivers/cyw43439"
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/tcpip"
+	//"github.com/merliot/dean/drivers/cyw43439"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/tcpip"
 )
 
 func Probe() (netlink.Netlinker, netdev.Netdever) {

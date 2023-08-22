@@ -1,6 +1,6 @@
 //go:build tinygo
 
-package dht // import "tinygo.org/x/drivers/dht"
+package dht // import "github.com/merliot/dean/drivers/dht"
 
 import (
 	"machine"

@@ -5,9 +5,9 @@ package probe
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
-	"tinygo.org/x/drivers/rtl8720dn"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
+	"github.com/merliot/dean/drivers/rtl8720dn"
 )
 
 func Probe() (netlink.Netlinker, netdev.Netdever) {

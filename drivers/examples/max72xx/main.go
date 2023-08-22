@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/max72xx"
+	"github.com/merliot/dean/drivers/max72xx"
 )
 
 // example for a 4 digit 7 segment display

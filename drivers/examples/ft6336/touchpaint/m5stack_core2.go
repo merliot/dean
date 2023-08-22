@@ -6,11 +6,11 @@ import (
 	"image/color"
 	"machine"
 
-	axp192 "tinygo.org/x/drivers/axp192/m5stack-core2-axp192"
-	"tinygo.org/x/drivers/ft6336"
-	"tinygo.org/x/drivers/i2csoft"
-	"tinygo.org/x/drivers/ili9341"
-	"tinygo.org/x/drivers/touch"
+	axp192 "github.com/merliot/dean/drivers/axp192/m5stack-core2-axp192"
+	"github.com/merliot/dean/drivers/ft6336"
+	"github.com/merliot/dean/drivers/i2csoft"
+	"github.com/merliot/dean/drivers/ili9341"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 // InitDisplay initializes the display of each board.

@@ -5,9 +5,9 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/onewire"
+	"github.com/merliot/dean/drivers/onewire"
 
-	"tinygo.org/x/drivers/ds18b20"
+	"github.com/merliot/dean/drivers/ds18b20"
 )
 
 func main() {

@@ -7,8 +7,8 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/lora"
-	"tinygo.org/x/drivers/sx127x"
+	"github.com/merliot/dean/drivers/lora"
+	"github.com/merliot/dean/drivers/sx127x"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 	"image/color"
 	"time"
 
-	"tinygo.org/x/drivers/examples/hub75/gopherimg"
-	"tinygo.org/x/drivers/hub75"
+	"github.com/merliot/dean/drivers/examples/hub75/gopherimg"
+	"github.com/merliot/dean/drivers/hub75"
 )
 
 var display hub75.Device

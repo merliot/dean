@@ -6,13 +6,13 @@
 // This driver was based on the library https://github.com/pololu/vl53l1x-arduino
 // and ST's VL53L1X API (STSW-IMG007)
 // https://www.st.com/content/st_com/en/products/embedded-software/proximity-sensors-software/stsw-img007.html
-package vl53l1x // import "tinygo.org/x/drivers/vl53l1x"
+package vl53l1x // import "github.com/merliot/dean/drivers/vl53l1x"
 
 import (
 	"errors"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 type DistanceMode uint8

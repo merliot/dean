@@ -2,13 +2,13 @@
 // a magnetic sensor which is included on BBC micro:bit v1.5.
 //
 // Datasheet: https://www.st.com/resource/en/datasheet/lis2mdl.pdf
-package lis2mdl // import "tinygo.org/x/drivers/lis2mdl"
+package lis2mdl // import "github.com/merliot/dean/drivers/lis2mdl"
 
 import (
 	"math"
 	"time"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Device wraps an I2C connection to a LIS2MDL device.

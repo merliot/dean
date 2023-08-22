@@ -6,7 +6,7 @@ import (
 
 	"image/color"
 
-	"tinygo.org/x/drivers/gc9a01"
+	"github.com/merliot/dean/drivers/gc9a01"
 )
 
 func main() {

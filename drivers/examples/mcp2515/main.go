@@ -5,7 +5,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/mcp2515"
+	"github.com/merliot/dean/drivers/mcp2515"
 )
 
 var (

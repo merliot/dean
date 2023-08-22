@@ -3,7 +3,7 @@ package resistive
 import (
 	"machine"
 
-	"tinygo.org/x/drivers/touch"
+	"github.com/merliot/dean/drivers/touch"
 )
 
 // FourWire represents a resistive touchscreen with a four-wire interface as

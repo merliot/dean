@@ -1,5 +1,5 @@
 // Package shifter is for 8bit shift register, most common are 74HC165 and 74165
-package shifter // import "tinygo.org/x/drivers/shifter"
+package shifter // import "github.com/merliot/dean/drivers/shifter"
 
 import (
 	"errors"

@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/buzzer"
+	"github.com/merliot/dean/drivers/buzzer"
 )
 
 type note struct {

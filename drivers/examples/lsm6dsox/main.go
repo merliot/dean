@@ -6,7 +6,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/lsm6dsox"
+	"github.com/merliot/dean/drivers/lsm6dsox"
 )
 
 const (

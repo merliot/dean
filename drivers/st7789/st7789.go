@@ -3,7 +3,7 @@
 // Datasheets: https://cdn-shop.adafruit.com/product-files/3787/3787_tft_QT154H2201__________20190228182902.pdf
 //
 //	http://www.newhavendisplay.com/appnotes/datasheets/LCDs/ST7789V.pdf
-package st7789 // import "tinygo.org/x/drivers/st7789"
+package st7789 // import "github.com/merliot/dean/drivers/st7789"
 
 import (
 	"image/color"
@@ -13,7 +13,7 @@ import (
 
 	"errors"
 
-	"tinygo.org/x/drivers"
+	"github.com/merliot/dean/drivers"
 )
 
 // Rotation controls the rotation used by the display.

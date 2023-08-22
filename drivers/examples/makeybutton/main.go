@@ -4,7 +4,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/makeybutton"
+	"github.com/merliot/dean/drivers/makeybutton"
 )
 
 var (

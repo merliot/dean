@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	qt "github.com/frankban/quicktest"
-	"tinygo.org/x/drivers/tester"
+	"github.com/merliot/dean/drivers/tester"
 )
 
 func TestDefaultI2CAddress(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 
 	"machine"
 
-	"tinygo.org/x/drivers/is31fl3731"
+	"github.com/merliot/dean/drivers/is31fl3731"
 )
 
 // I2CAddress -- address of led matrix

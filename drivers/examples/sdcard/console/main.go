@@ -5,7 +5,7 @@ import (
 	"machine"
 	"time"
 
-	"tinygo.org/x/drivers/sdcard"
+	"github.com/merliot/dean/drivers/sdcard"
 )
 
 var (

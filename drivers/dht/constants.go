@@ -6,7 +6,7 @@
 // [2] Datasheet DHT22: https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
 // Adafruit C++ driver: https://github.com/adafruit/DHT-sensor-library
 
-package dht // import "tinygo.org/x/drivers/dht"
+package dht // import "github.com/merliot/dean/drivers/dht"
 
 import (
 	"machine"

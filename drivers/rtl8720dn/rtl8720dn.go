@@ -3,7 +3,7 @@
 //
 // 01/2023    sfeldma@gmail.com    Heavily modified to use netdev interface
 
-package rtl8720dn // import "tinygo.org/x/drivers/rtl8720dn"
+package rtl8720dn // import "github.com/merliot/dean/drivers/rtl8720dn"
 
 import (
 	"encoding/hex"
@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"tinygo.org/x/drivers/netdev"
-	"tinygo.org/x/drivers/netlink"
+	"github.com/merliot/dean/drivers/netdev"
+	"github.com/merliot/dean/drivers/netlink"
 )
 
 var _debug debug = debugBasic
