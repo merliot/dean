@@ -1,0 +1,3 @@
+#!/bin/bash -x
+
+tinygo flash -monitor -target $1 -stack-size=$2 -size short -ldflags '-X "main.ssid=test" -X "main.pass=testtest"' ~/work/tinygo-drivers/examples/net/$3/
