@@ -10,9 +10,6 @@ import (
 	"github.com/merliot/dean/drivers/netdev"
 	"github.com/merliot/dean/drivers/netlink"
 	"github.com/merliot/dean/drivers/netlink/probe"
-	//"github.com/merliot/dean/drivers/netdev"
-	//"github.com/merliot/dean/drivers/netlink"
-	//"github.com/merliot/dean/drivers/netlink/probe"
 )
 
 var link netlink.Netlinker
