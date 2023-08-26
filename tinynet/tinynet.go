@@ -7,12 +7,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/merliot/dean/drivers/netdev"
-	"github.com/merliot/dean/drivers/netlink"
-	"github.com/merliot/dean/drivers/netlink/probe"
-	//"github.com/merliot/dean/drivers/netdev"
-	//"github.com/merliot/dean/drivers/netlink"
-	//"github.com/merliot/dean/drivers/netlink/probe"
+	"tinygo.org/x/drivers/netdev"
+	"tinygo.org/x/drivers/netlink"
+	"tinygo.org/x/drivers/netlink/probe"
 )
 
 var link netlink.Netlinker
