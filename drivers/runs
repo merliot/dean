@@ -1,3 +1,0 @@
-#!/bin/bash -x
-
-tinygo flash -monitor -target $1 -stack-size=$2 -size short -ldflags '-X "main.ssid=Feldman Starlink" -X "main.pass=itsasecret"' ~/work/tinygo-drivers/examples/net/$3/
