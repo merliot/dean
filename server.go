@@ -182,7 +182,6 @@ func (s *Server) GetModels() []string {
 	return models
 }
 
-// Must hold s.handlersMu
 func (s *Server) CreateThing(id, model, name string) error {
 	var msg Msg
 
@@ -217,9 +216,9 @@ func (s *Server) CreateThing(id, model, name string) error {
 	s.bus.Handle(id, s.busHandle(thinger))
 
 	if handler, ok := thinger.(http.Handler); ok {
-		s._handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
 	}
-	s._handleFunc("/ws/"+id+"/", s.serveWebSocket)
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
 	s.injector.Inject(&msg)
@@ -227,7 +226,6 @@ func (s *Server) CreateThing(id, model, name string) error {
 	return nil
 }
 
-// Must hold s.handlersMu
 func (s *Server) DeleteThing(id string) error {
 	var msg Msg
 
@@ -238,8 +236,8 @@ func (s *Server) DeleteThing(id string) error {
 		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
 
-	s._unhandle("/ws/" + id + "/")
-	s._unhandle("/" + id + "/")
+	s.Unhandle("/ws/" + id + "/")
+	s.Unhandle("/" + id + "/")
 	s.bus.Unhandle(id)
 
 	delete(s.things, id)
@@ -390,34 +388,22 @@ func (s *Server) runHandler(path string, w http.ResponseWriter, r *http.Request)
 	return ok
 }
 
-func (s *Server) _handleFunc(path string, handler http.HandlerFunc) {
-	s.handlers[path] = handler
-}
-
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	s._handleFunc(path, handler)
-}
-
-func (s *Server) _handle(path string, handler http.Handler) {
-	s.handlers[path] = handler.ServeHTTP
+	s.handlers[path] = handler
 }
 
 func (s *Server) Handle(path string, handler http.Handler) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	s._handle(path, handler)
-}
-
-func (s *Server) _unhandle(path string) {
-	delete(s.handlers, path)
+	s.handlers[path] = handler.ServeHTTP
 }
 
 func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
-	s._unhandle(path)
+	delete(s.handlers, path)
 }
 
 var htmlBegin = `
