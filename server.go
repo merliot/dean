@@ -182,24 +182,24 @@ func (s *Server) GetModels() []string {
 	return models
 }
 
-func (s *Server) CreateThing(id, model, name string) error {
+func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	var msg Msg
 
 	if !ValidId(id) {
-		return fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+		return nil, fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
 	if !ValidId(model) {
-		return fmt.Errorf("Invalid Model.  A valid Model is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+		return nil, fmt.Errorf("Invalid Model.  A valid Model is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
 	if !ValidId(name) {
-		return fmt.Errorf("Invalid Name.  A valid Name is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+		return nil, fmt.Errorf("Invalid Name.  A valid Name is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
 
 	s.thingsMu.Lock()
 	defer s.thingsMu.Unlock()
 
 	if s.things[id] != nil {
-		return fmt.Errorf("Thing ID '%s' already exists", id)
+		return nil, fmt.Errorf("Thing ID '%s' already exists", id)
 	}
 
 	s.makersMu.RLock()
@@ -207,7 +207,7 @@ func (s *Server) CreateThing(id, model, name string) error {
 
 	maker, ok := s.makers[model]
 	if !ok {
-		return fmt.Errorf("Thing Model '%s' not registered", model)
+		return nil, fmt.Errorf("Thing Model '%s' not registered", model)
 	}
 
 	thinger := maker(id, model, name)
@@ -223,7 +223,7 @@ func (s *Server) CreateThing(id, model, name string) error {
 	msg.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
 	s.injector.Inject(&msg)
 
-	return nil
+	return thinger, nil
 }
 
 func (s *Server) DeleteThing(id string) error {
