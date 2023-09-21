@@ -59,7 +59,7 @@ func NewServer(thinger Thinger) *Server {
 	if handler, ok := thinger.(http.Handler); ok {
 		s.Handle("", handler)
 	}
-	s.HandleFunc("/state", s.state)
+	s.HandleFunc("/server-state", s.serverState)
 	s.HandleFunc("/ws/", s.serveWebSocket)
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
@@ -423,7 +423,7 @@ var htmlEnd = `
 </html>
 `
 
-func (s *Server) state(w http.ResponseWriter, r *http.Request) {
+func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, htmlBegin)
 
