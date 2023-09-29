@@ -3,5 +3,14 @@
 package main
 
 import (
-	_ "github.com/merliot/dean/tinynet"
+	"github.com/merliot/dean/tinynet"
 )
+
+var (
+	ssid string
+	pass string
+)
+
+func init() {
+	tinynet.NetConnect(ssid, pass)
+}

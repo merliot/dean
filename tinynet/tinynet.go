@@ -3,7 +3,6 @@
 package tinynet
 
 import (
-	"log"
 	"net"
 	"time"
 
@@ -15,35 +14,30 @@ import (
 var link netlink.Netlinker
 var dev netdev.Netdever
 
-func netConnect(ssid, pass string) error {
+func NetConnect(ssid, pass string) error {
+
+	// wait a bit for serial
+	time.Sleep(2 * time.Second)
 
 	link, dev = probe.Probe()
 
-	err := link.NetConnect(&netlink.ConnectParams{
+	return link.NetConnect(&netlink.ConnectParams{
 		Ssid:       ssid,
 		Passphrase: pass,
 		WatchdogTimeout: 10 * time.Second,
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return nil
-}
-
-func init() {
-	// wait a bit for serial
-	time.Sleep(2 * time.Second)
-
-	if err := netConnect(ssid, pass); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func GetHardwareAddr() (net.HardwareAddr, error) {
+	if link == nil {
+		return nil, errors.New("Not available")
+	}
 	return link.GetHardwareAddr()
 }
 
 func GetIPAddr() (net.IP, error) {
+	if dev == nil {
+		return nil, errors.New("Not available")
+	}
 	return dev.GetIPAddr()
 }
