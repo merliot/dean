@@ -3,6 +3,7 @@
 package tinynet
 
 import (
+	"errors"
 	"net"
 	"time"
 
