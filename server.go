@@ -119,6 +119,12 @@ func (s *Server) handleAnnounce(msg *Msg) {
 		return
 	}
 
+	if thinger.IsOnline() {
+		fmt.Println("Ignoring annoucement: thing already connected", id)
+		socket.Close()
+		return
+	}
+
 	thinger.SetOnline(true)
 	socket.SetTag(id)
 

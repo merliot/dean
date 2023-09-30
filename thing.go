@@ -10,6 +10,7 @@ type Thinger interface {
 	Announce() *Msg
 	Run(*Injector)
 	Identity() (string, string, string)
+	IsOnline() bool
 	SetOnline(bool)
 	String() string
 	SetFlag(uint32)
@@ -87,6 +88,7 @@ func (t *Thing) Run(*Injector)                      { select {} }
 func (t *Thing) Identity() (string, string, string) { return t.Id, t.Model, t.Name }
 func (t *Thing) Lock()                              { t.mu.Lock() }
 func (t *Thing) Unlock()                            { t.mu.Unlock() }
+func (t *Thing) IsOnline() bool                     { return t.Online }
 func (t *Thing) SetOnline(online bool)              { t.Online = online }
 func (t *Thing) SetFlag(flag uint32)                { t.flags |= flag }
 func (t *Thing) TestFlag(flag uint32) bool          { return (t.flags & flag) != 0 }
