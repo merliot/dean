@@ -72,7 +72,7 @@ type Thing struct {
 }
 
 func NewThing(id, model, name string) Thing {
-	if !ValidId(id) || !ValidId(model) || !ValidId(name) {
+	if !ValidId(id) || !ValidId(model) || name == "" {
 		panic("something invalid: id = \"" + id + "\", model = \"" +
 			model + "\", name = \"" + name + "\"")
 	}
