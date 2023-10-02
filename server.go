@@ -197,8 +197,8 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	if !ValidId(model) {
 		return nil, fmt.Errorf("Invalid Model.  A valid Model is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
 	}
-	if !ValidId(name) {
-		return nil, fmt.Errorf("Invalid Name.  A valid Name is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
+	if name == "" {
+		return nil, fmt.Errorf("Invalid Name.  A valid Name is a non-empty string.")
 	}
 
 	s.thingsMu.Lock()
