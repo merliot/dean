@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// webSocket wraps a websocket.Conn and implements the Socketer imterface
 type webSocket struct {
 	socket
 	sync.Mutex

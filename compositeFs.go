@@ -7,6 +7,8 @@ import (
 	"html/template"
 )
 
+// CompositeFS is an ordered (layered) file system, built up from individual
+// file systems
 type CompositeFS struct {
 	fileSystems []fs.FS
 }
@@ -15,10 +17,13 @@ func NewCompositeFS() *CompositeFS {
 	return &CompositeFS{}
 }
 
+// AddFS adds fsys to the composite fs.  Order matters: first added is lowest
+// in priority when seraching for a file name in the composite fs.
 func (c *CompositeFS) AddFS(fsys fs.FS) {
 	c.fileSystems = append(c.fileSystems, fsys)
 }
 
+// Open a file by name
 func (c *CompositeFS) Open(name string) (fs.File, error) {
 
 	// Start with newest (last added) FS, giving newer FSes priority over
@@ -35,6 +40,8 @@ func (c *CompositeFS) Open(name string) (fs.File, error) {
 	return nil, fs.ErrNotExist
 }
 
+// ParseFS returns a template by parsing the composite file system for the
+// template name matching the pattern name
 func (c *CompositeFS) ParseFS(pattern string) *template.Template {
 
 	// Iterate from oldest (first added) FS to newest FS, building a "main"

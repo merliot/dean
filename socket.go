@@ -1,15 +1,24 @@
 package dean
 
+// Socketer defines a socket interface
 type Socketer interface {
+	// Close the socket
 	Close()
+	// Send the msg on the socket
 	Send(*Msg) error
+	// Name of socket
 	Name() string
+	// Tag returns the socket tag
 	Tag() string
+	// SetTag set the socket tag.  A socket tag is like a VLAN ID.
 	SetTag(string)
+	// SetFlag on socket
 	SetFlag(uint32)
+	// TestFlag returns true if flag is set
 	TestFlag(uint32) bool
 }
 
+// socket implements Socketer
 type socket struct {
 	name  string
 	tag   string
@@ -18,6 +27,8 @@ type socket struct {
 }
 
 const (
+	// Socket is broadcast-ready.  If flag is not set, msgs will not be
+	// broadcast on this socket.
 	SocketFlagBcast uint32 = 1 << iota
 )
 

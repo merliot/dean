@@ -16,6 +16,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// Server serves a Thing
 type Server struct {
 	thinger Thinger
 	http.Server
@@ -36,6 +37,7 @@ type Server struct {
 	passwd string
 }
 
+// NewServer returns a server, serving the Thinger
 func NewServer(thinger Thinger) *Server {
 	var s Server
 	var id, _, _ = thinger.Identity()
@@ -68,12 +70,14 @@ func NewServer(thinger Thinger) *Server {
 	return &s
 }
 
+// RegisterModel registers a new Thing model
 func (s *Server) RegisterModel(model string, maker ThingMaker) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	s.makers[model] = maker
 }
 
+// UnregisterModel unregisters the Thing model
 func (s *Server) UnregisterModel(model string) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
@@ -180,6 +184,7 @@ func (s *Server) disconnect(socket Socketer) {
 	delete(s.sockets, socket)
 }
 
+// GetModels returns a list of register models
 func (s *Server) GetModels() []string {
 	var models []string
 	s.makersMu.RLock()
@@ -190,6 +195,7 @@ func (s *Server) GetModels() []string {
 	return models
 }
 
+// CreateThing creates a new Thing based on model
 func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	var msg Msg
 
@@ -234,6 +240,7 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	return thinger, nil
 }
 
+// DeleteThing deletes a Thing given id
 func (s *Server) DeleteThing(id string) error {
 	var msg Msg
 
@@ -292,14 +299,18 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	}
 }
 
+// MaxSocket sets the maximum number of sockets that can connect to the server
 func (s *Server) MaxSockets(maxSockets int) {
 	s.bus.MaxSockets(maxSockets)
 }
 
+// BasicAuth sets the server's HTTP Basic Auth credentials
 func (s *Server) BasicAuth(user, passwd string) {
 	s.user, s.passwd = user, passwd
 }
 
+// DialWebSocket connects a web socket to rawURL.  User/passwd can be set for HTTP
+// Basic Auth.  The announce msg is sent when the web socket connects.
 func (s *Server) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
 	ws := newWebSocket("websocket:"+rawURL, s.bus)
 	go ws.Dial(user, passwd, rawURL, announce)
@@ -317,6 +328,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	serv.ServeHTTP(w, r)
 }
 
+// Run the server's main run loop
 func (s *Server) Run() {
 	s.thinger.SetFlag(ThingFlagMetal)
 	s.thinger.Run(s.injector)
@@ -396,18 +408,21 @@ func (s *Server) runHandler(path string, w http.ResponseWriter, r *http.Request)
 	return ok
 }
 
+// HandleFunc registers an http handler func for path
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
 	s.handlers[path] = handler
 }
 
+// HandleFunc registers an http handler for path
 func (s *Server) Handle(path string, handler http.Handler) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
 	s.handlers[path] = handler.ServeHTTP
 }
 
+// Unhandle unregisters the http handler (or func) for path
 func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()

@@ -5,6 +5,7 @@ import (
 	//sync "github.com/sasha-s/go-deadlock"
 )
 
+// Thinger defines a thing interface
 type Thinger interface {
 	Subscribers() Subscribers
 	Announce() *Msg
@@ -19,17 +20,22 @@ type Thinger interface {
 
 type Subscribers map[string]func(*Msg)
 
+// Maker can make a Thing
 type Maker interface {
-	Make(id, model, name string) Thinger
+	ThingMaker
 }
 
+// ThingMaker returns a Thinger
 type ThingMaker func(id, model, name string) Thinger
-type Makers map[string]ThingMaker // keyed by model
+// Makers is a map of ThinkMakers, keyed by model
+type Makers map[string]ThingMaker
 
+// ThingMsg is the prototypical msg.  All msgs have the Path member.
 type ThingMsg struct {
 	Path string
 }
 
+// ThingMsgAnnounce is sent to annouce a Thing to a server
 type ThingMsgAnnounce struct {
 	Path  string
 	Id    string
@@ -37,6 +43,7 @@ type ThingMsgAnnounce struct {
 	Name  string
 }
 
+// ThingMsgConnect is sent when a Thing connects to a server
 type ThingMsgConnect struct {
 	Path  string
 	Id    string
@@ -44,11 +51,13 @@ type ThingMsgConnect struct {
 	Name  string
 }
 
+// ThingMsgDisconnect is sent when a Thing disconnects from a server
 type ThingMsgDisconnect struct {
 	Path string
 	Id   string
 }
 
+// ThingMsgCreated is sent when as new Thing is created on a server
 type ThingMsgCreated struct {
 	Path  string
 	Id    string
@@ -56,11 +65,13 @@ type ThingMsgCreated struct {
 	Name  string
 }
 
+// ThingMsgDeleted is sent when Thing is deleted from a server
 type ThingMsgDeleted struct {
 	Path string
 	Id   string
 }
 
+// Thing implements Thinger and is the base structure for building things
 type Thing struct {
 	Path   string
 	Id     string
@@ -80,6 +91,7 @@ func NewThing(id, model, name string) Thing {
 }
 
 const (
+	// ThingFlagMetal indicates thing is running the Run() loop
 	ThingFlagMetal uint32 = 1 << iota
 )
 
@@ -98,13 +110,15 @@ func (t *Thing) String() string {
 	return "[Id: " + t.Id + ", Model: " + t.Model + ", Name: " + t.Name + "]"
 }
 
+// Announce returns an announcement msg.  The announcement msg identifies the
+// Thing.
 func (t *Thing) Announce() *Msg {
 	var msg Msg
 	var ann = ThingMsgAnnounce{"announce", t.Id, t.Model, t.Name}
 	return msg.Marshal(&ann)
 }
 
-// A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or
+// ValidId is a non-empty string with only [a-z], [A-Z], [0-9], or
 // underscore characters.
 func ValidId(s string) bool {
 	for _, r := range s {

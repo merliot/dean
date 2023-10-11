@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// Runner runs a Thing
 type Runner struct {
 	thinger  Thinger
 	bus      *Bus
@@ -48,11 +49,14 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 	}
 }
 
+// DialWebSocket connects a web socket to rawURL.  User/passwd can be set for HTTP
+// Basic Auth.  The announce msg is sent when the web socket connects.
 func (r *Runner) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
 	ws := newWebSocket("websocket:"+rawURL, r.bus)
 	go ws.Dial(user, passwd, rawURL, announce)
 }
 
+// Run the main run loop
 func (r *Runner) Run() {
 	r.thinger.SetFlag(ThingFlagMetal)
 	r.thinger.Run(r.injector)
