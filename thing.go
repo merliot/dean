@@ -27,6 +27,7 @@ type Maker interface {
 
 // ThingMaker returns a Thinger
 type ThingMaker func(id, model, name string) Thinger
+
 // Makers is a map of ThinkMakers, keyed by model
 type Makers map[string]ThingMaker
 

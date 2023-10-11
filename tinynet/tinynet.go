@@ -23,8 +23,8 @@ func NetConnect(ssid, pass string) error {
 	link, dev = probe.Probe()
 
 	return link.NetConnect(&netlink.ConnectParams{
-		Ssid:       ssid,
-		Passphrase: pass,
+		Ssid:            ssid,
+		Passphrase:      pass,
 		WatchdogTimeout: 10 * time.Second,
 	})
 }
