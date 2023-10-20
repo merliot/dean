@@ -86,22 +86,20 @@ func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, e
 
 func (w *webSocket) announced(announce *Msg) bool {
 
-	for i := 0; i < 60; i++ {
-		var msg = &Msg{bus: w.bus, src: w}
+	var msg = &Msg{bus: w.bus, src: w}
 
-		// Send an announcement msg
-		if err := w.Send(announce); err != nil {
-			println("error sending announcement:", err.Error())
-			break
-		}
+	// Send an announcement msg
+	if err := w.Send(announce); err != nil {
+		println("error sending announcement:", err.Error())
+		return false
+	}
 
-		// Any msg received is an ack of the announcement
-		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(w.conn, &msg.payload)
-		if err == nil {
-			w.bus.receive(msg)
-			return true
-		}
+	// Any msg received is an ack of the announcement
+	w.conn.SetReadDeadline(time.Now().Add(time.Second))
+	err := websocket.Message.Receive(w.conn, &msg.payload)
+	if err == nil {
+		w.bus.receive(msg)
+		return true
 	}
 
 	// Announcement was not acked
@@ -152,6 +150,12 @@ func (w *webSocket) disconnect() {
 
 var pingMsg = []byte("ping")
 var pongMsg = []byte("pong")
+
+func (w *webSocket) serve(conn *websocket.Conn) {
+	w.connect(conn)
+	w.serveServer()
+	w.disconnect()
+}
 
 func (w *webSocket) serveClient() {
 
@@ -211,6 +215,7 @@ func (w *webSocket) serveServer() {
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pingMsg) {
+				// Received ping, send pong
 				err := websocket.Message.Send(w.conn, string(pongMsg))
 				if err != nil {
 					println("error sending pong, disconnecting", err.Error())
@@ -225,10 +230,4 @@ func (w *webSocket) serveServer() {
 		println("disconnecting", err.Error())
 		break
 	}
-}
-
-func (w *webSocket) serve(conn *websocket.Conn) {
-	w.connect(conn)
-	w.serveServer()
-	w.disconnect()
 }
