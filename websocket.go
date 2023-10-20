@@ -169,7 +169,6 @@ func (w *webSocket) serveClient() {
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pongMsg) {
-				println("received pong")
 				alive = true
 			} else {
 				w.bus.receive(msg)
@@ -184,7 +183,6 @@ func (w *webSocket) serveClient() {
 					break
 				}
 				alive = false
-				println("sending ping")
 				err := websocket.Message.Send(w.conn, string(pingMsg))
 				if err != nil {
 					println("error sending ping, disconnecting", err.Error())
@@ -213,7 +211,6 @@ func (w *webSocket) serveServer() {
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pingMsg) {
-				println("sending pong")
 				err := websocket.Message.Send(w.conn, string(pongMsg))
 				if err != nil {
 					println("error sending pong, disconnecting", err.Error())
