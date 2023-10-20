@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +17,6 @@ type webSocket struct {
 	socket
 	sync.Mutex
 	conn    *websocket.Conn
-	ping    int
 	closing bool
 }
 
@@ -56,37 +53,13 @@ func (w *webSocket) Send(msg *Msg) error {
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
 
-const minPingMs = int(500) // 1/2 sec
-
-func (w *webSocket) parsePath(path string) (id string, ping int) {
-	var pingMs string
-
+func (w *webSocket) parsePath(path string) string {
+	/* get ID from /ws/[id]/ */
 	parts := strings.Split(path, "/")
-
-	// TODO use URL params for options like ping ms
-
-	switch len(parts) {
-	case 3:
-		/* /ws/ */
-		/* /ws/[ping ms] */
-		pingMs = parts[2]
-	case 4:
-		/* /ws/[id]/ */
-		/* /ws/[id]/[ping ms] */
-		id = parts[2]
-		pingMs = parts[3]
-	default:
-		return
+	if len(parts) == 4 {
+		return parts[2]
 	}
-
-	if pingMs != "" {
-		ping, _ = strconv.Atoi(pingMs)
-		if ping < minPingMs {
-			ping = minPingMs
-		}
-	}
-
-	return
+	return ""
 }
 
 func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, error) {
@@ -118,26 +91,16 @@ func (w *webSocket) announced(announce *Msg) bool {
 
 		// Send an announcement msg
 		if err := w.Send(announce); err != nil {
+			println("error sending announcement:", err.Error())
 			break
 		}
 
-		for {
-			// Any non-ping msg received is an ack of the announcement
-			w.conn.SetReadDeadline(time.Now().Add(time.Second))
-			err := websocket.Message.Receive(w.conn, &msg.payload)
-			if err == nil {
-				if !bytes.Equal(msg.payload, pingMsg) {
-					w.bus.receive(msg)
-					return true
-				}
-				// Just a ping msg; keep reading
-				continue
-			} else {
-				// wait a bit
-				time.Sleep(time.Second)
-			}
-			// Timed out; send another announcement
-			break
+		// Any msg received is an ack of the announcement
+		w.conn.SetReadDeadline(time.Now().Add(time.Second))
+		err := websocket.Message.Receive(w.conn, &msg.payload)
+		if err == nil {
+			w.bus.receive(msg)
+			return true
 		}
 	}
 
@@ -146,13 +109,6 @@ func (w *webSocket) announced(announce *Msg) bool {
 }
 
 func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
-
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		println("Error parsing URL:", err.Error())
-		return
-	}
-	_, w.ping = w.parsePath(parsedURL.Path)
 
 	cfg, err := w.newConfig(user, passwd, rawURL)
 	if err != nil {
@@ -167,8 +123,8 @@ func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
 			w.connect(conn)
 			// Send announcement
 			if w.announced(announce) {
-				// Serve websocket until EOF
-				w.serveConn()
+				// Serve websocket until EOF or error
+				w.serveClient()
 			}
 			w.disconnect()
 			// Close websocket
@@ -194,59 +150,12 @@ func (w *webSocket) disconnect() {
 	w.conn = nil
 }
 
-const extraDelay = time.Second
-
 var pingMsg = []byte("ping")
+var pongMsg = []byte("pong")
 
-func (w *webSocket) servePing() {
-	var pingPeriod = time.Duration(w.ping) * time.Millisecond
-	var quietPeriod = 2*pingPeriod + extraDelay
-	var pingSent = time.Now()
-	var lastRecv = pingSent
+func (w *webSocket) serveClient() {
 
-	for {
-		var msg = &Msg{bus: w.bus, src: w}
-
-		if w.closing {
-			println("closing")
-			return
-		}
-
-		if time.Now().Sub(pingSent) > pingPeriod {
-			msg.payload = pingMsg
-			w.sendRaw(msg)
-			pingSent = time.Now()
-		}
-
-		w.conn.SetReadDeadline(time.Now().Add(pingPeriod))
-		err := websocket.Message.Receive(w.conn, &msg.payload)
-		if err == nil {
-			lastRecv = time.Now()
-			if !bytes.Equal(msg.payload, pingMsg) {
-				w.bus.receive(msg)
-			}
-			continue
-		}
-
-		if netErr, ok := err.(*net.OpError); ok {
-			if netErr.Timeout() {
-				if time.Now().Sub(lastRecv) < quietPeriod {
-					continue
-				}
-			}
-		}
-
-		println("disconnecting", err.Error())
-		return
-	}
-}
-
-func (w *webSocket) serveConn() {
-
-	if w.ping > 0 {
-		w.servePing()
-		return
-	}
+	var alive = true
 
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
@@ -259,7 +168,10 @@ func (w *webSocket) serveConn() {
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
-			if !bytes.Equal(msg.payload, pingMsg) {
+			if bytes.Equal(msg.payload, pongMsg) {
+				println("received pong")
+				alive = true
+			} else {
 				w.bus.receive(msg)
 			}
 			continue
@@ -267,6 +179,17 @@ func (w *webSocket) serveConn() {
 
 		if netErr, ok := err.(*net.OpError); ok {
 			if netErr.Timeout() {
+				if !alive {
+					println("no pong; disconnecting")
+					break
+				}
+				alive = false
+				println("sending ping")
+				err := websocket.Message.Send(w.conn, string(pingMsg))
+				if err != nil {
+					println("error sending ping, disconnecting", err.Error())
+					break
+				}
 				continue
 			}
 		}
@@ -276,8 +199,39 @@ func (w *webSocket) serveConn() {
 	}
 }
 
+func (w *webSocket) serveServer() {
+
+	for {
+		var msg = &Msg{bus: w.bus, src: w}
+
+		if w.closing {
+			println("closing")
+			break
+		}
+
+		w.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		err := websocket.Message.Receive(w.conn, &msg.payload)
+		if err == nil {
+			if bytes.Equal(msg.payload, pingMsg) {
+				println("sending pong")
+				err := websocket.Message.Send(w.conn, string(pongMsg))
+				if err != nil {
+					println("error sending pong, disconnecting", err.Error())
+					break
+				}
+			} else {
+				w.bus.receive(msg)
+			}
+			continue
+		}
+
+		println("disconnecting", err.Error())
+		break
+	}
+}
+
 func (w *webSocket) serve(conn *websocket.Conn) {
 	w.connect(conn)
-	w.serveConn()
+	w.serveServer()
 	w.disconnect()
 }

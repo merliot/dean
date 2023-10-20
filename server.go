@@ -320,7 +320,7 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	var thingId string
 	var serverId, _, _ = s.thinger.Identity()
 	ws := newWebSocket("websocket:"+r.RemoteAddr, s.bus)
-	thingId, ws.ping = ws.parsePath(r.URL.Path)
+	thingId = ws.parsePath(r.URL.Path)
 	if serverId != thingId {
 		ws.SetTag(thingId)
 	}
