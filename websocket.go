@@ -207,7 +207,7 @@ func (w *webSocket) serveServer() {
 			break
 		}
 
-		w.conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+		w.conn.SetReadDeadline(time.Now().Add(4 * time.Second))
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pingMsg) {
