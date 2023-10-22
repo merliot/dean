@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"net/url"
 
 	"golang.org/x/net/websocket"
 )
@@ -16,8 +18,9 @@ import (
 type webSocket struct {
 	socket
 	sync.Mutex
-	conn    *websocket.Conn
-	closing bool
+	conn       *websocket.Conn
+	closing    bool
+	pingPeriod time.Duration
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
@@ -53,27 +56,38 @@ func (w *webSocket) Send(msg *Msg) error {
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
 
-func (w *webSocket) parsePath(path string) string {
+const pingPeriodMin = time.Second
+
+func (w *webSocket) parseURL(url *url.URL) string {
+
+	/* param ping-period */
+	period, _ := strconv.Atoi(url.Query().Get("ping-period"))
+	w.pingPeriod = time.Duration(period) * time.Second
+	if w.pingPeriod < pingPeriodMin {
+		w.pingPeriod = pingPeriodMin
+	}
+
 	/* get ID from /ws/[id]/ */
-	parts := strings.Split(path, "/")
+	parts := strings.Split(url.Path, "/")
 	if len(parts) == 4 {
 		return parts[2]
 	}
+
 	return ""
 }
 
-func (w *webSocket) newConfig(user, passwd, rawURL string) (*websocket.Config, error) {
+func (w *webSocket) newConfig(user, passwd, url string) (*websocket.Config, error) {
 	origin := "http://localhost/"
 
 	// Configure the websocket
-	config, err := websocket.NewConfig(rawURL, origin)
+	config, err := websocket.NewConfig(url, origin)
 	if err != nil {
 		return nil, err
 	}
 
 	if user != "" {
 		// Set the basic auth header for the request
-		req, err := http.NewRequest("GET", rawURL, nil)
+		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -106,9 +120,9 @@ func (w *webSocket) announced(announce *Msg) bool {
 	return false
 }
 
-func (w *webSocket) Dial(user, passwd, rawURL string, announce *Msg) {
+func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 
-	cfg, err := w.newConfig(user, passwd, rawURL)
+	cfg, err := w.newConfig(user, passwd, url)
 	if err != nil {
 		println("Error configuring websocket:", err.Error())
 		return
@@ -203,6 +217,9 @@ func (w *webSocket) serveClient() {
 
 func (w *webSocket) serveServer() {
 
+	pingCheck := w.pingPeriod + (2 * time.Second)
+	lastRecv := time.Now()
+
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
 
@@ -211,9 +228,10 @@ func (w *webSocket) serveServer() {
 			break
 		}
 
-		w.conn.SetReadDeadline(time.Now().Add(4 * time.Second))
+		w.conn.SetReadDeadline(time.Now().Add(time.Second))
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
+			lastRecv = time.Now()
 			if bytes.Equal(msg.payload, pingMsg) {
 				// Received ping, send pong
 				err := websocket.Message.Send(w.conn, string(pongMsg))
@@ -225,6 +243,16 @@ func (w *webSocket) serveServer() {
 				w.bus.receive(msg)
 			}
 			continue
+		}
+
+		if netErr, ok := err.(*net.OpError); ok {
+			if netErr.Timeout() {
+				if time.Now().After(lastRecv.Add(pingCheck)) {
+					println("timeout, disconnecting", err.Error())
+					break
+				}
+				continue
+			}
 		}
 
 		println("disconnecting", err.Error())

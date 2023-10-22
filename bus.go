@@ -6,7 +6,7 @@ import (
 	//sync "github.com/sasha-s/go-deadlock"
 )
 
-var defaultMaxSockets = 20
+var defaultMaxSockets = 80
 
 // Bus is a logical msg broadcast bus.  Msgs arrive on sockets connected to the
 // bus.  A received msg can be broadcast to the other sockets, or replied back
