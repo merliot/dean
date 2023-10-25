@@ -371,6 +371,13 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Printf("[%s] %s %s %s\n",
+		r.RemoteAddr,
+		r.Method,
+		r.URL.Path,
+		r.Proto,
+	)
+
 	// skip basic authentication if no user
 	if s.user == "" {
 		s.mux(w, r)
