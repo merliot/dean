@@ -198,7 +198,6 @@ func (w *webSocket) serveClient() {
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pongMsg) {
-				println("pong recved", time.Now().Sub(w.pingSent).String())
 				w.pongRecieved = true
 			} else {
 				w.bus.receive(msg)
