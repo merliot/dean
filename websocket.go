@@ -18,9 +18,11 @@ import (
 type webSocket struct {
 	socket
 	sync.Mutex
-	conn       *websocket.Conn
-	closing    bool
-	pingPeriod time.Duration
+	conn         *websocket.Conn
+	closing      bool
+	pingPeriod   time.Duration
+	pingSent     time.Time
+	pongRecieved bool
 }
 
 func newWebSocket(name string, bus *Bus) *webSocket {
@@ -171,9 +173,16 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 	w.disconnect()
 }
 
+func (w *webSocket) ping() {
+	w.pongRecieved = false
+	w.pingSent = time.Now()
+	websocket.Message.Send(w.conn, string(pingMsg))
+}
+
 func (w *webSocket) serveClient() {
 
-	var alive = true
+	w.pingPeriod = 4 * time.Second
+	w.ping()
 
 	for {
 		var msg = &Msg{bus: w.bus, src: w}
@@ -187,31 +196,25 @@ func (w *webSocket) serveClient() {
 		err := websocket.Message.Receive(w.conn, &msg.payload)
 		if err == nil {
 			if bytes.Equal(msg.payload, pongMsg) {
-				alive = true
+				println("pong recved", time.Now().Sub(w.pingSent).String())
+				w.pongRecieved = true
 			} else {
 				w.bus.receive(msg)
 			}
-			continue
+		} else if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
+			// allow timeout errors
+		} else {
+			println("disconnecting", err.Error())
+			break
 		}
 
-		if netErr, ok := err.(*net.OpError); ok {
-			if netErr.Timeout() {
-				if !alive {
-					println("no pong; disconnecting")
-					break
-				}
-				alive = false
-				err := websocket.Message.Send(w.conn, string(pingMsg))
-				if err != nil {
-					println("error sending ping, disconnecting", err.Error())
-					break
-				}
-				continue
+		if time.Now().After(w.pingSent.Add(w.pingPeriod)) {
+			if !w.pongRecieved {
+				println("no pong; disconnecting")
+				break
 			}
+			w.ping()
 		}
-
-		println("disconnecting", err.Error())
-		break
 	}
 }
 
@@ -245,14 +248,12 @@ func (w *webSocket) serveServer() {
 			continue
 		}
 
-		if netErr, ok := err.(*net.OpError); ok {
-			if netErr.Timeout() {
-				if time.Now().After(lastRecv.Add(pingCheck)) {
-					println("timeout, disconnecting", err.Error())
-					break
-				}
-				continue
+		if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
+			if time.Now().After(lastRecv.Add(pingCheck)) {
+				println("timeout, disconnecting", err.Error())
+				break
 			}
+			continue
 		}
 
 		println("disconnecting", err.Error())
