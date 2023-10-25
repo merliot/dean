@@ -2,6 +2,7 @@ package dean
 
 import (
 	"fmt"
+	"net/url"
 	"sync"
 )
 
@@ -51,9 +52,10 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 
 // DialWebSocket connects a web socket to rawURL.  User/passwd can be set for HTTP
 // Basic Auth.  The announce msg is sent when the web socket connects.
-func (r *Runner) DialWebSocket(user, passwd, rawURL string, announce *Msg) {
-	ws := newWebSocket("websocket:"+rawURL, r.bus)
-	go ws.Dial(user, passwd, rawURL, announce)
+func (r *Runner) DialWebSocket(user, passwd, rawUrl string, announce *Msg) {
+	u, _ := url.Parse(rawUrl)
+	ws := newWebSocket(u, r.bus)
+	go ws.Dial(user, passwd, rawUrl, announce)
 }
 
 // Run the main run loop

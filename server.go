@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"sort"
 	"strings"
@@ -311,16 +312,16 @@ func (s *Server) BasicAuth(user, passwd string) {
 
 // DialWebSocket connects a web socket to URL.  User/passwd can be set for HTTP
 // Basic Auth.  The announce msg is sent when the web socket connects.
-func (s *Server) DialWebSocket(user, passwd, url string, announce *Msg) {
-	ws := newWebSocket("websocket:"+url, s.bus)
-	go ws.Dial(user, passwd, url, announce)
+func (s *Server) DialWebSocket(user, passwd, rawUrl string, announce *Msg) {
+	u, _ := url.Parse(rawUrl)
+	ws := newWebSocket(u, s.bus)
+	go ws.Dial(user, passwd, rawUrl, announce)
 }
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	var thingId string
-	var serverId, _, _ = s.thinger.Identity()
-	ws := newWebSocket("websocket:"+r.RemoteAddr, s.bus)
-	thingId = ws.parseURL(r.URL)
+	ws := newWebSocket(r.URL, s.bus)
+	thingId := ws.getId()
+	serverId, _, _ := s.thinger.Identity()
 	if serverId != thingId {
 		ws.SetTag(thingId)
 	}

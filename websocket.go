@@ -18,6 +18,7 @@ import (
 type webSocket struct {
 	socket
 	sync.Mutex
+	url          *url.URL
 	conn         *websocket.Conn
 	closing      bool
 	pingPeriod   time.Duration
@@ -25,10 +26,23 @@ type webSocket struct {
 	pongRecieved bool
 }
 
-func newWebSocket(name string, bus *Bus) *webSocket {
-	return &webSocket{
-		socket: socket{name, "", 0, bus},
+const pingPeriodMin = time.Second
+
+func newWebSocket(url *url.URL, bus *Bus) *webSocket {
+	w := &webSocket{}
+
+	name := "ws:" + url.String()
+	w.socket = socket{name, "", 0, bus}
+	w.url = url
+
+	/* param ping-period */
+	period, _ := strconv.Atoi(url.Query().Get("ping-period"))
+	w.pingPeriod = time.Duration(period) * time.Second
+	if w.pingPeriod < pingPeriodMin {
+		w.pingPeriod = pingPeriodMin
 	}
+
+	return w
 }
 
 func (w *webSocket) Close() {
@@ -58,23 +72,12 @@ func (w *webSocket) Send(msg *Msg) error {
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
 
-const pingPeriodMin = time.Second
-
-func (w *webSocket) parseURL(url *url.URL) string {
-
-	/* param ping-period */
-	period, _ := strconv.Atoi(url.Query().Get("ping-period"))
-	w.pingPeriod = time.Duration(period) * time.Second
-	if w.pingPeriod < pingPeriodMin {
-		w.pingPeriod = pingPeriodMin
-	}
-
+func (w *webSocket) getId() string {
 	/* get ID from /ws/[id]/ */
-	parts := strings.Split(url.Path, "/")
+	parts := strings.Split(w.url.Path, "/")
 	if len(parts) == 4 {
 		return parts[2]
 	}
-
 	return ""
 }
 
@@ -181,7 +184,6 @@ func (w *webSocket) ping() {
 
 func (w *webSocket) serveClient() {
 
-	w.pingPeriod = 4 * time.Second
 	w.ping()
 
 	for {
@@ -220,7 +222,7 @@ func (w *webSocket) serveClient() {
 
 func (w *webSocket) serveServer() {
 
-	pingCheck := w.pingPeriod + (2 * time.Second)
+	pingCheck := w.pingPeriod + time.Second
 	lastRecv := time.Now()
 
 	for {
