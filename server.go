@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -34,14 +35,26 @@ type Server struct {
 	handlersMu sync.RWMutex
 	handlers   map[string]http.HandlerFunc // keyed by path
 
-	user   string
-	passwd string
+	port     string
+	user     string
+	passwd   string
+	dialURLs string
 }
 
 // NewServer returns a server, serving the Thinger
 func NewServer(thinger Thinger) *Server {
 	var s Server
 	var id, _, _ = thinger.Identity()
+
+	s.port = os.Getenv("PORT")
+	s.user = os.Getenv("USER")
+	s.passwd = os.Getenv("PASSWD")
+	s.dialURLs = os.Getenv("DIAL_URLS")
+
+	println("    PORT:     ", s.port)
+	println("    USER:     ", s.user)
+	println("    PASSWD:   ", s.passwd)
+	println("    DIAL_URLS:", s.dialURLs)
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)
@@ -305,17 +318,20 @@ func (s *Server) MaxSockets(maxSockets int) {
 	s.bus.MaxSockets(maxSockets)
 }
 
-// BasicAuth sets the server's HTTP Basic Auth credentials
-func (s *Server) BasicAuth(user, passwd string) {
-	s.user, s.passwd = user, passwd
-}
-
-// DialWebSocket connects a web socket to URL.  User/passwd can be set for HTTP
-// Basic Auth.  The announce msg is sent when the web socket connects.
-func (s *Server) DialWebSocket(user, passwd, rawUrl string, announce *Msg) {
-	u, _ := url.Parse(rawUrl)
-	ws := newWebSocket(u, s.bus)
-	go ws.Dial(user, passwd, rawUrl, announce)
+// Dial connects server to other servers
+func (s *Server) Dial() {
+	for _, u := range strings.Split(s.dialURLs, ",") {
+		purl, err := url.Parse(u)
+		if err != nil {
+			println("Error parsing URL:", err.Error())
+			continue
+		}
+		switch purl.Scheme {
+		case "ws", "wss":
+			ws := newWebSocket(purl, s.bus)
+			go ws.Dial(s.user, s.passwd, u, s.thinger.Announce())
+		}
+	}
 }
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -329,9 +345,18 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	serv.ServeHTTP(w, r)
 }
 
-// Run the server's main run loop
+// Run the server
 func (s *Server) Run() {
+	// Start http server if valid listening port
+	if s.port != "" {
+		s.Addr = ":" + s.port
+		go s.ListenAndServe()
+	}
+
+	// Thinger is metal when run in server
 	s.thinger.SetFlag(ThingFlagMetal)
+
+	// Run thinger's main loop
 	s.thinger.Run(s.injector)
 }
 
