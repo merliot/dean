@@ -15,6 +15,12 @@ import (
 var link netlink.Netlinker
 var dev netdev.Netdever
 
+func init() {
+	if ssid != "" {
+		NetConnect(ssid, pass)
+	}
+}
+
 func NetConnect(ssid, pass string) error {
 
 	// wait a bit for serial

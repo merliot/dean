@@ -3,6 +3,8 @@ package dean
 import (
 	"fmt"
 	"net/url"
+	"os"
+	"strings"
 	"sync"
 )
 
@@ -11,10 +13,18 @@ type Runner struct {
 	thinger  Thinger
 	bus      *Bus
 	injector *Injector
+
+	user     string
+	passwd   string
+	dialURLs string
 }
 
 func NewRunner(thinger Thinger) *Runner {
 	var r Runner
+
+	r.user = os.Getenv("USER")
+	r.passwd = os.Getenv("PASSWD")
+	r.dialURLs = os.Getenv("DIAL_URLS")
 
 	r.thinger = thinger
 	r.thinger.SetOnline(true)
@@ -50,12 +60,20 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 	}
 }
 
-// DialWebSocket connects a web socket to rawURL.  User/passwd can be set for HTTP
-// Basic Auth.  The announce msg is sent when the web socket connects.
-func (r *Runner) DialWebSocket(user, passwd, rawUrl string, announce *Msg) {
-	u, _ := url.Parse(rawUrl)
-	ws := newWebSocket(u, r.bus)
-	go ws.Dial(user, passwd, rawUrl, announce)
+// Dial connects runner to other servers
+func (r *Runner) Dial() {
+	for _, u := range strings.Split(r.dialURLs, ",") {
+		purl, err := url.Parse(u)
+		if err != nil {
+			println("Error parsing URL:", err.Error())
+			continue
+		}
+		switch purl.Scheme {
+		case "ws", "wss":
+			ws := newWebSocket(purl, r.bus)
+			go ws.Dial(r.user, r.passwd, u, r.thinger.Announce())
+		}
+	}
 }
 
 // Run the main run loop
