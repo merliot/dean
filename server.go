@@ -286,6 +286,33 @@ func (s *Server) DeleteThing(id string) error {
 	return nil
 }
 
+// AdoptThing adds a thing to server
+func (s *Server) AdoptThing(thinger Thinger) error {
+	var msg Msg
+	var id, model, name = thinger.Identity()
+
+	s.thingsMu.Lock()
+	defer s.thingsMu.Unlock()
+
+	if s.things[id] != nil {
+		return fmt.Errorf("Thing ID '%s' already exists", id)
+	}
+
+	s.things[id] = thinger
+
+	s.bus.Handle(id, s.busHandle(thinger))
+
+	if handler, ok := thinger.(http.Handler); ok {
+		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+	}
+	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+
+	msg.Marshal(&ThingMsgAdopted{Path: "adopted/thing", Id: id, Model: model, Name: name})
+	s.injector.Inject(&msg)
+
+	return nil
+}
+
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle %s\r\n", msg.String())

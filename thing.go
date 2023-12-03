@@ -58,7 +58,7 @@ type ThingMsgDisconnect struct {
 	Id   string
 }
 
-// ThingMsgCreated is sent when as new Thing is created on a server
+// ThingMsgCreated is sent when a new Thing is created on a server
 type ThingMsgCreated struct {
 	Path  string
 	Id    string
@@ -70,6 +70,14 @@ type ThingMsgCreated struct {
 type ThingMsgDeleted struct {
 	Path string
 	Id   string
+}
+
+// ThingMsgeAdopted is sent when as new Thing is adopted on a server
+type ThingMsgAdopted struct {
+	Path  string
+	Id    string
+	Model string
+	Name  string
 }
 
 // Thing implements Thinger and is the base structure for building things
