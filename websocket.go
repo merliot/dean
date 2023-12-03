@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"net/url"
 
 	"golang.org/x/net/websocket"
 )
