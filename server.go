@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"sort"
 	"strings"
@@ -38,23 +37,20 @@ type Server struct {
 	port     string
 	user     string
 	passwd   string
-	dialURLs string
 }
 
 // NewServer returns a server, serving the Thinger
-func NewServer(thinger Thinger) *Server {
+func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	var s Server
 	var id, _, _ = thinger.Identity()
 
-	s.port = os.Getenv("PORT")
-	s.user = os.Getenv("USER")
-	s.passwd = os.Getenv("PASSWD")
-	s.dialURLs = os.Getenv("DIAL_URLS")
+	s.port = port
+	s.user = user
+	s.passwd = passwd
 
 	println("    PORT:     ", s.port)
 	println("    USER:     ", s.user)
 	println("    PASSWD:   ", s.passwd)
-	println("    DIAL_URLS:", s.dialURLs)
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)
@@ -346,8 +342,8 @@ func (s *Server) MaxSockets(maxSockets int) {
 }
 
 // Dial connects server to other servers
-func (s *Server) Dial() {
-	for _, u := range strings.Split(s.dialURLs, ",") {
+func (s *Server) Dial(dialURLs string) {
+	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
 			println("Error parsing URL:", err.Error())

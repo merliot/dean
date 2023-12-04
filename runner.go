@@ -61,8 +61,8 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 }
 
 // Dial connects runner to other servers
-func (r *Runner) Dial() {
-	for _, u := range strings.Split(r.dialURLs, ",") {
+func (r *Runner) Dial(dialURLs string) {
+	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
 			println("Error parsing URL:", err.Error())
