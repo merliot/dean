@@ -3,7 +3,6 @@ package dean
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 )
@@ -16,15 +15,13 @@ type Runner struct {
 
 	user     string
 	passwd   string
-	dialURLs string
 }
 
-func NewRunner(thinger Thinger) *Runner {
+func NewRunner(thinger Thinger, user, passwd string) *Runner {
 	var r Runner
 
-	r.user = os.Getenv("USER")
-	r.passwd = os.Getenv("PASSWD")
-	r.dialURLs = os.Getenv("DIAL_URLS")
+	r.user = user
+	r.passwd = passwd
 
 	r.thinger = thinger
 	r.thinger.SetOnline(true)

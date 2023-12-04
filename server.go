@@ -49,8 +49,6 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.passwd = passwd
 
 	println("    PORT:     ", s.port)
-	println("    USER:     ", s.user)
-	println("    PASSWD:   ", s.passwd)
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)

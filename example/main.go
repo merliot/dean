@@ -60,8 +60,6 @@ func (t *thing) Run(i *dean.Injector) {
 
 func main() {
 	t := New("id", "model", "name")
-	server := dean.NewServer(t)
-	server.Addr = ":8080"
-	go server.ListenAndServe()
+	server := dean.NewServer(t, "", "", "8080")
 	server.Run()
 }
