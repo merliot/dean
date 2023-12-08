@@ -14,3 +14,6 @@ var (
 func init() {
 	tinynet.NetConnect(ssid, pass)
 }
+
+func main() {
+}

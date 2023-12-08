@@ -5,6 +5,7 @@ package tinynet
 import (
 	"errors"
 	"net"
+	"net/netip"
 	"time"
 
 	"tinygo.org/x/drivers/netdev"
@@ -31,14 +32,14 @@ func NetConnect(ssid, pass string) error {
 
 func GetHardwareAddr() (net.HardwareAddr, error) {
 	if link == nil {
-		return nil, errors.New("Not available")
+		return net.HardwareAddr{}, errors.New("Not available")
 	}
 	return link.GetHardwareAddr()
 }
 
-func GetIPAddr() (net.IP, error) {
+func Addr() (netip.Addr, error) {
 	if dev == nil {
-		return nil, errors.New("Not available")
+		return netip.Addr{}, errors.New("Not available")
 	}
-	return dev.GetIPAddr()
+	return dev.Addr()
 }
