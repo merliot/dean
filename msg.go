@@ -1,6 +1,9 @@
 package dean
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Msg is sent and received on a bus via a socket
 type Msg struct {
