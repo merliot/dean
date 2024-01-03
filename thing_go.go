@@ -4,12 +4,13 @@ package dean
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
 func ThingStore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		println("THINGSTORE")
+		fmt.Println("THINGSTORE")
 		id, model, _ := t.Identity()
 		storeName := model + "-" + id
 		bytes, _ := json.Marshal(t)
@@ -19,7 +20,7 @@ func ThingStore(t Thinger) {
 
 func ThingRestore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		println("THINGRESTORE")
+		fmt.Println("THINGRESTORE")
 		id, model, _ := t.Identity()
 		storeName := model + "-" + id
 		bytes, err := os.ReadFile(storeName)

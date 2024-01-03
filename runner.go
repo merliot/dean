@@ -13,8 +13,8 @@ type Runner struct {
 	bus      *Bus
 	injector *Injector
 
-	user     string
-	passwd   string
+	user   string
+	passwd string
 }
 
 func NewRunner(thinger Thinger, user, passwd string) *Runner {
@@ -62,7 +62,7 @@ func (r *Runner) Dial(dialURLs string) {
 	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
-			println("Error parsing URL:", err.Error())
+			fmt.Println("Error parsing URL:", err.Error())
 			continue
 		}
 		switch purl.Scheme {

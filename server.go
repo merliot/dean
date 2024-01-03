@@ -34,9 +34,9 @@ type Server struct {
 	handlersMu sync.RWMutex
 	handlers   map[string]http.HandlerFunc // keyed by path
 
-	port     string
-	user     string
-	passwd   string
+	port   string
+	user   string
+	passwd string
 }
 
 // NewServer returns a server, serving the Thinger
@@ -344,7 +344,7 @@ func (s *Server) Dial(dialURLs string) {
 	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
-			println("Error parsing URL:", err.Error())
+			fmt.Println("Error parsing URL:", err.Error())
 			continue
 		}
 		switch purl.Scheme {

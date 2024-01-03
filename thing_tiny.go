@@ -2,14 +2,16 @@
 
 package dean
 
+import "fmt"
+
 func ThingStore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		println("THINGSTORE - not implemented")
+		fmt.Println("THINGSTORE - not implemented")
 	}
 }
 
 func ThingRestore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		println("THINGRESTORE - not implemented")
+		fmt.Println("THINGRESTORE - not implemented")
 	}
 }
