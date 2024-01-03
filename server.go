@@ -48,7 +48,7 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.user = user
 	s.passwd = passwd
 
-	println("    PORT:     ", s.port)
+	fmt.Println("    PORT:     ", s.port)
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)
@@ -93,7 +93,7 @@ func (s *Server) UnregisterModel(model string) {
 }
 
 func (s *Server) connect(socket Socketer) {
-	println("*** CONNECT ", socket.Name(), socket)
+	fmt.Println("*** CONNECT ", socket.Name(), socket)
 
 	s.socketsMu.Lock()
 	s.sockets[socket] = nil
@@ -107,7 +107,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	socket := msg.src
 
-	println("*** ANNOUNCE ", socket.Name(), ann.Id, ann.Model, ann.Name)
+	fmt.Println("*** ANNOUNCE ", socket.Name(), ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
@@ -162,7 +162,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 }
 
 func (s *Server) disconnect(socket Socketer) {
-	println("*** DISCONNECT", socket.Name())
+	fmt.Println("*** DISCONNECT", socket.Name())
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()

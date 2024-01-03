@@ -65,9 +65,9 @@ func (w *webSocket) Send(msg *Msg) error {
 		return fmt.Errorf("Send on nil connection")
 	}
 	if msg.src == nil {
-		println("sending:", msg.String())
+		fmt.Println("sending:", msg.String())
 	} else {
-		println("sending:", msg.src.Name(), msg.String())
+		fmt.Println("sending:", msg.src.Name(), msg.String())
 	}
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
@@ -156,13 +156,13 @@ func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 }
 
 func (w *webSocket) connect(conn *websocket.Conn) {
-	println("connecting")
+	fmt.Println("connecting")
 	w.conn = conn
 	w.bus.plugin(w)
 }
 
 func (w *webSocket) disconnect() {
-	println("disconnecting")
+	fmt.Println("disconnecting")
 	w.bus.unplug(w)
 	w.conn = nil
 }
@@ -190,7 +190,7 @@ func (w *webSocket) serveClient() {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if w.closing {
-			println("closing")
+			fmt.Println("closing")
 			break
 		}
 
@@ -205,13 +205,13 @@ func (w *webSocket) serveClient() {
 		} else if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			// allow timeout errors
 		} else {
-			println("disconnecting", err.Error())
+			fmt.Println("disconnecting", err.Error())
 			break
 		}
 
 		if time.Now().After(w.pingSent.Add(w.pingPeriod)) {
 			if !w.pongRecieved {
-				println("no pong; disconnecting")
+				fmt.Println("no pong; disconnecting")
 				break
 			}
 			w.ping()
@@ -228,7 +228,7 @@ func (w *webSocket) serveServer() {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if w.closing {
-			println("closing")
+			fmt.Println("closing")
 			break
 		}
 
