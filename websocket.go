@@ -221,7 +221,7 @@ func (w *webSocket) serveClient() {
 
 func (w *webSocket) serveServer() {
 
-	pingCheck := w.pingPeriod + time.Second
+	pingCheck := w.pingPeriod + (4 * time.Second)
 	lastRecv := time.Now()
 
 	for {
