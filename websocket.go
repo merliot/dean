@@ -251,7 +251,7 @@ func (w *webSocket) serveServer() {
 
 		if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			if time.Now().After(lastRecv.Add(pingCheck)) {
-				fmt.Println("timeout, disconnecting", err.Error())
+				fmt.Println("timeout, disconnecting", time.Now().Sub(lastRecv), err.Error())
 				break
 			}
 			continue
