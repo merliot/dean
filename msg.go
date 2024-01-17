@@ -25,10 +25,10 @@ func (m *Msg) String() string {
 // Reply.
 func (m *Msg) Reply() *Msg {
 	if m.src == nil {
-		fmt.Println("Can't reply to message: source is nil")
+		fmt.Printf("Can't reply to message: source is nil\r\n")
 		return m
 	}
-	fmt.Println("Reply: src", m.src)
+	fmt.Printf("Reply: src %s msg %s\r\n", m.src, m)
 	m.src.Send(m)
 	return m
 }
@@ -37,10 +37,10 @@ func (m *Msg) Reply() *Msg {
 // source socket is excluded.
 func (m *Msg) Broadcast() *Msg {
 	if m.bus == nil {
-		fmt.Println("Can't broadcast message: bus is nil")
+		fmt.Printf("Can't broadcast message: bus is nil\r\n")
 		return m
 	}
-	fmt.Println("Broadcast: tag", m.src.Tag(), m)
+	fmt.Printf("Broadcast: tag %s %s\r\n", m.src.Tag(), m)
 	m.bus.broadcast(m)
 	return m
 }
@@ -49,7 +49,7 @@ func (m *Msg) Broadcast() *Msg {
 func (m *Msg) Unmarshal(v any) *Msg {
 	err := json.Unmarshal(m.payload, v)
 	if err != nil {
-		fmt.Println("JSON unmarshal error", err.Error())
+		fmt.Printf("JSON unmarshal error %s\r\n", err.Error())
 	}
 	return m
 }
@@ -59,7 +59,7 @@ func (m *Msg) Marshal(v any) *Msg {
 	var err error
 	m.payload, err = json.Marshal(v)
 	if err != nil {
-		fmt.Println("JSON marshal error", err.Error())
+		fmt.Printf("JSON marshal error %s\r\n", err.Error())
 	}
 	return m
 }

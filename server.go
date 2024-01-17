@@ -48,7 +48,7 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.user = user
 	s.passwd = passwd
 
-	fmt.Println("    PORT:     ", s.port)
+	fmt.Printf("    PORT:     %s\r\n", s.port)
 
 	s.makers = Makers{}
 	s.things = make(map[string]Thinger)
@@ -93,7 +93,7 @@ func (s *Server) UnregisterModel(model string) {
 }
 
 func (s *Server) connect(socket Socketer) {
-	fmt.Println("*** CONNECT ", socket)
+	fmt.Printf("*** CONNECT %s\r\n", socket)
 
 	s.socketsMu.Lock()
 	s.sockets[socket] = nil
@@ -107,14 +107,14 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	socket := msg.src
 
-	fmt.Println("*** ANNOUNCE ", socket, ann.Id, ann.Model, ann.Name)
+	fmt.Printf("*** ANNOUNCE %s %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
 
 	thinger, ok := s.things[ann.Id]
 	if !ok {
-		fmt.Println("Ignoring annoucement: unknown thing Id", ann.Id)
+		fmt.Printf("Ignoring annoucement: unknown thing Id %s\r\n", ann.Id)
 		socket.Close()
 		return
 	}
@@ -122,19 +122,19 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	var id, model, name = thinger.Identity()
 
 	if model != ann.Model {
-		fmt.Println("Ignoring annoucement: model doesn't match", id, model, ann.Model)
+		fmt.Printf("Ignoring annoucement: model doesn't match %s %s %s\r\n", id, model, ann.Model)
 		socket.Close()
 		return
 	}
 
 	if name != ann.Name {
-		fmt.Println("Ignoring annoucement: name doesn't match", id, name, ann.Name)
+		fmt.Printf("Ignoring annoucement: name doesn't match %s %s %s\r\n", id, name, ann.Name)
 		socket.Close()
 		return
 	}
 
 	if thinger.IsOnline() {
-		fmt.Println("Ignoring annoucement: thing already connected", id)
+		fmt.Printf("Ignoring annoucement: thing already connected %s\r\n", id)
 		socket.Close()
 		return
 	}
@@ -162,7 +162,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 }
 
 func (s *Server) disconnect(socket Socketer) {
-	fmt.Println("*** DISCONNECT", socket)
+	fmt.Printf("*** DISCONNECT %s\r\n", socket)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
@@ -309,7 +309,7 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("Bus handle %s\r\n", msg)
+		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
 		var rmsg ThingMsg
 
 		msg.Unmarshal(&rmsg)
@@ -344,7 +344,7 @@ func (s *Server) Dial(dialURLs string) {
 	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
-			fmt.Println("Error parsing URL:", err.Error())
+			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
 			continue
 		}
 		switch purl.Scheme {

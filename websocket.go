@@ -61,11 +61,7 @@ func (w *webSocket) Send(msg *Msg) error {
 	if w.conn == nil {
 		return fmt.Errorf("Send on nil connection")
 	}
-	if msg.src == nil {
-		fmt.Println("sending:", msg)
-	} else {
-		fmt.Println("sending:", msg.src, msg)
-	}
+	fmt.Printf("Sending %s: %s\r\n", w, msg)
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
 
@@ -107,7 +103,7 @@ func (w *webSocket) announced(announce *Msg) bool {
 
 	// Send an announcement msg
 	if err := w.Send(announce); err != nil {
-		fmt.Println("error sending announcement:", err.Error())
+		fmt.Printf("Error sending announcement: %s\r\n", err.Error())
 		return false
 	}
 
@@ -127,7 +123,7 @@ func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 
 	cfg, err := w.newConfig(user, passwd)
 	if err != nil {
-		fmt.Println("Error configuring websocket:", err.Error())
+		fmt.Printf("Error configuring websocket: %s\r\n", err.Error())
 		return
 	}
 
@@ -145,7 +141,7 @@ func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 			// Close websocket
 			conn.Close()
 		} else {
-			fmt.Println("dial error", err.Error())
+			fmt.Printf("Dial error %s: %s\r\n", w, err.Error())
 		}
 
 		// try again in a second
@@ -154,13 +150,13 @@ func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 }
 
 func (w *webSocket) connect(conn *websocket.Conn) {
-	fmt.Printf("connecting %s\n", w)
+	fmt.Printf("Connecting %s\n", w)
 	w.conn = conn
 	w.bus.plugin(w)
 }
 
 func (w *webSocket) disconnect() {
-	fmt.Printf("disconnecting %s\n", w)
+	fmt.Printf("Disconnecting %s\n", w)
 	w.bus.unplug(w)
 	w.conn = nil
 }
@@ -188,7 +184,7 @@ func (w *webSocket) serveClient() {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if w.closing {
-			fmt.Println("closing")
+			fmt.Printf("Closing %s\r\n", w)
 			break
 		}
 
@@ -203,13 +199,13 @@ func (w *webSocket) serveClient() {
 		} else if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			// allow timeout errors
 		} else {
-			fmt.Println("disconnecting", err.Error())
+			fmt.Printf("Disconnecting %s: %s\r\n", w, err.Error())
 			break
 		}
 
 		if time.Now().After(w.pingSent.Add(w.pingPeriod)) {
 			if !w.pongRecieved {
-				fmt.Println("no pong; disconnecting")
+				fmt.Printf("No pong; disconnecting %s\r\n", w)
 				break
 			}
 			w.ping()
@@ -226,7 +222,7 @@ func (w *webSocket) serveServer() {
 		var msg = &Msg{bus: w.bus, src: w}
 
 		if w.closing {
-			fmt.Println("closing")
+			fmt.Printf("Closing %s\r\n", w)
 			break
 		}
 
@@ -238,7 +234,7 @@ func (w *webSocket) serveServer() {
 				// Received ping, send pong
 				err := websocket.Message.Send(w.conn, string(pongMsg))
 				if err != nil {
-					fmt.Println("error sending pong, disconnecting", err.Error())
+					fmt.Printf("Error sending pong, disconnecting %s: %s\r\n", w, err.Error())
 					break
 				}
 			} else {
@@ -249,13 +245,13 @@ func (w *webSocket) serveServer() {
 
 		if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			if time.Now().After(lastRecv.Add(pingCheck)) {
-				fmt.Println("timeout, disconnecting", time.Now().Sub(lastRecv).String(), err.Error())
+				fmt.Printf("Timeout, disconnecting %s %s %s\r\n", w, time.Now().Sub(lastRecv).String(), err.Error())
 				break
 			}
 			continue
 		}
 
-		fmt.Println("disconnecting", err.Error())
+		fmt.Printf("Disconnecting %s: %s\r\n", w, err.Error())
 		break
 	}
 }

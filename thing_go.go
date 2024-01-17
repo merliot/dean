@@ -10,7 +10,7 @@ import (
 
 func ThingStore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		fmt.Println("THINGSTORE")
+		fmt.Printf("THINGSTORE\r\n")
 		id, model, _ := t.Identity()
 		storeName := model + "-" + id
 		bytes, _ := json.Marshal(t)
@@ -20,7 +20,7 @@ func ThingStore(t Thinger) {
 
 func ThingRestore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		fmt.Println("THINGRESTORE")
+		fmt.Printf("THINGRESTORE\r\n")
 		id, model, _ := t.Identity()
 		storeName := model + "-" + id
 		bytes, err := os.ReadFile(storeName)

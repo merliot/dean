@@ -6,12 +6,12 @@ import "fmt"
 
 func ThingStore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		fmt.Println("THINGSTORE - not implemented")
+		fmt.Printf("THINGSTORE - not implemented\r\n")
 	}
 }
 
 func ThingRestore(t Thinger) {
 	if t.TestFlag(ThingFlagMetal) {
-		fmt.Println("THINGRESTORE - not implemented")
+		fmt.Printf("THINGRESTORE - not implemented\r\n")
 	}
 }

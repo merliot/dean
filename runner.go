@@ -35,7 +35,7 @@ func NewRunner(thinger Thinger, user, passwd string) *Runner {
 
 func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("Bus handle %s\r\n", msg)
+		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
 		var rmsg ThingMsg
 
 		msg.Unmarshal(&rmsg)
@@ -62,7 +62,7 @@ func (r *Runner) Dial(dialURLs string) {
 	for _, u := range strings.Split(dialURLs, ",") {
 		purl, err := url.Parse(u)
 		if err != nil {
-			fmt.Println("Error parsing URL:", err.Error())
+			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
 			continue
 		}
 		switch purl.Scheme {
