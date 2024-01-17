@@ -28,7 +28,7 @@ func (m *Msg) Reply() *Msg {
 		fmt.Println("Can't reply to message: source is nil")
 		return m
 	}
-	fmt.Println("Reply: src", m.src.Name())
+	fmt.Println("Reply: src", m.src)
 	m.src.Send(m)
 	return m
 }
@@ -40,7 +40,7 @@ func (m *Msg) Broadcast() *Msg {
 		fmt.Println("Can't broadcast message: bus is nil")
 		return m
 	}
-	fmt.Println("Broadcast: tag", m.src.Tag(), m.String())
+	fmt.Println("Broadcast: tag", m.src.Tag(), m)
 	m.bus.broadcast(m)
 	return m
 }

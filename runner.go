@@ -35,7 +35,7 @@ func NewRunner(thinger Thinger, user, passwd string) *Runner {
 
 func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("Bus handle %s\r\n", msg.String())
+		fmt.Printf("Bus handle %s\r\n", msg)
 		var rmsg ThingMsg
 
 		msg.Unmarshal(&rmsg)
@@ -67,8 +67,8 @@ func (r *Runner) Dial(dialURLs string) {
 		}
 		switch purl.Scheme {
 		case "ws", "wss":
-			ws := newWebSocket(purl, r.bus)
-			go ws.Dial(r.user, r.passwd, u, r.thinger.Announce())
+			ws := newWebSocket(purl, "", r.bus)
+			go ws.Dial(r.user, r.passwd, r.thinger.Announce())
 		}
 	}
 }

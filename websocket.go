@@ -28,10 +28,16 @@ type webSocket struct {
 
 const pingPeriodMin = time.Second
 
-func newWebSocket(url *url.URL, bus *Bus) *webSocket {
+func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 	w := &webSocket{}
 
-	name := "ws:" + url.String()
+	var name string
+	if remoteAddr == "" {
+		name = "ws:localhost::" + url.String()
+	} else {
+		name = "ws:" + url.String() + "::" + remoteAddr
+	}
+
 	w.socket = socket{name, "", 0, bus}
 	w.url = url
 
@@ -49,15 +55,6 @@ func (w *webSocket) Close() {
 	w.closing = true
 }
 
-func (w *webSocket) sendRaw(msg *Msg) error {
-	w.Lock()
-	defer w.Unlock()
-	if w.conn == nil {
-		return fmt.Errorf("Send on nil connection")
-	}
-	return websocket.Message.Send(w.conn, msg.payload)
-}
-
 func (w *webSocket) Send(msg *Msg) error {
 	w.Lock()
 	defer w.Unlock()
@@ -65,9 +62,9 @@ func (w *webSocket) Send(msg *Msg) error {
 		return fmt.Errorf("Send on nil connection")
 	}
 	if msg.src == nil {
-		fmt.Println("sending:", msg.String())
+		fmt.Println("sending:", msg)
 	} else {
-		fmt.Println("sending:", msg.src.Name(), msg.String())
+		fmt.Println("sending:", msg.src, msg)
 	}
 	return websocket.Message.Send(w.conn, string(msg.payload))
 }
@@ -81,7 +78,8 @@ func (w *webSocket) getId() string {
 	return ""
 }
 
-func (w *webSocket) newConfig(user, passwd, url string) (*websocket.Config, error) {
+func (w *webSocket) newConfig(user, passwd string) (*websocket.Config, error) {
+	url := w.url.String()
 	origin := "http://localhost/"
 
 	// Configure the websocket
@@ -125,9 +123,9 @@ func (w *webSocket) announced(announce *Msg) bool {
 	return false
 }
 
-func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
+func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 
-	cfg, err := w.newConfig(user, passwd, url)
+	cfg, err := w.newConfig(user, passwd)
 	if err != nil {
 		fmt.Println("Error configuring websocket:", err.Error())
 		return
@@ -156,13 +154,13 @@ func (w *webSocket) Dial(user, passwd, url string, announce *Msg) {
 }
 
 func (w *webSocket) connect(conn *websocket.Conn) {
-	fmt.Println("connecting")
+	fmt.Printf("connecting %s\n", w)
 	w.conn = conn
 	w.bus.plugin(w)
 }
 
 func (w *webSocket) disconnect() {
-	fmt.Println("disconnecting")
+	fmt.Printf("disconnecting %s\n", w)
 	w.bus.unplug(w)
 	w.conn = nil
 }

@@ -7,7 +7,7 @@ type Socketer interface {
 	// Send the msg on the socket
 	Send(*Msg) error
 	// Name of socket
-	Name() string
+	String() string
 	// Tag returns the socket tag
 	Tag() string
 	// SetTag set the socket tag.  A socket tag is like a VLAN ID.
@@ -39,7 +39,7 @@ func (s *socket) Send(msg *Msg) error {
 	return nil
 }
 
-func (s *socket) Name() string {
+func (s *socket) String() string {
 	return s.name
 }
 

@@ -93,7 +93,7 @@ func (s *Server) UnregisterModel(model string) {
 }
 
 func (s *Server) connect(socket Socketer) {
-	fmt.Println("*** CONNECT ", socket.Name(), socket)
+	fmt.Println("*** CONNECT ", socket)
 
 	s.socketsMu.Lock()
 	s.sockets[socket] = nil
@@ -107,7 +107,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	socket := msg.src
 
-	fmt.Println("*** ANNOUNCE ", socket.Name(), ann.Id, ann.Model, ann.Name)
+	fmt.Println("*** ANNOUNCE ", socket, ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
@@ -162,7 +162,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 }
 
 func (s *Server) disconnect(socket Socketer) {
-	fmt.Println("*** DISCONNECT", socket.Name())
+	fmt.Println("*** DISCONNECT", socket)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
@@ -309,7 +309,7 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
-		fmt.Printf("Bus handle %s\r\n", msg.String())
+		fmt.Printf("Bus handle %s\r\n", msg)
 		var rmsg ThingMsg
 
 		msg.Unmarshal(&rmsg)
@@ -349,14 +349,14 @@ func (s *Server) Dial(dialURLs string) {
 		}
 		switch purl.Scheme {
 		case "ws", "wss":
-			ws := newWebSocket(purl, s.bus)
-			go ws.Dial(s.user, s.passwd, u, s.thinger.Announce())
+			ws := newWebSocket(purl, "", s.bus)
+			go ws.Dial(s.user, s.passwd, s.thinger.Announce())
 		}
 	}
 }
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
-	ws := newWebSocket(r.URL, s.bus)
+	ws := newWebSocket(r.URL, r.RemoteAddr, s.bus)
 	thingId := ws.getId()
 	serverId, _, _ := s.thinger.Identity()
 	if serverId != thingId {
@@ -506,7 +506,7 @@ func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, htmlBegin)
 
-	fmt.Fprintln(w, "Thing: ", s.thinger.String())
+	fmt.Fprintln(w, "Thing: ", s.thinger)
 
 	s.handlersMu.RLock()
 	handlers := make([]string, 0, len(s.handlers))
@@ -530,10 +530,10 @@ func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 			tag = "{self}"
 		}
 		if thinger != nil {
-			sockets = append(sockets, tag+", "+socket.Name()+
+			sockets = append(sockets, tag+", "+socket.String()+
 				" "+thinger.String())
 		} else {
-			sockets = append(sockets, tag+", "+socket.Name())
+			sockets = append(sockets, tag+", "+socket.String())
 		}
 	}
 	s.socketsMu.Unlock()
