@@ -93,7 +93,7 @@ func (s *Server) UnregisterModel(model string) {
 }
 
 func (s *Server) connect(socket Socketer) {
-	fmt.Printf("*** CONNECT %s\r\n", socket)
+	fmt.Printf("\r\n*** CONNECT %s\r\n", socket)
 
 	s.socketsMu.Lock()
 	s.sockets[socket] = nil
@@ -107,7 +107,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	socket := msg.src
 
-	fmt.Printf("*** ANNOUNCE %s %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
+	fmt.Printf("\r\n*** ANNOUNCE %s %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()

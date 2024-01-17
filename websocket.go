@@ -150,13 +150,13 @@ func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 }
 
 func (w *webSocket) connect(conn *websocket.Conn) {
-	fmt.Printf("Connecting %s\n", w)
+	//fmt.Printf("Connecting %s\n", w)
 	w.conn = conn
 	w.bus.plugin(w)
 }
 
 func (w *webSocket) disconnect() {
-	fmt.Printf("Disconnecting %s\n", w)
+	//fmt.Printf("Disconnecting %s\n", w)
 	w.bus.unplug(w)
 	w.conn = nil
 }
@@ -199,7 +199,7 @@ func (w *webSocket) serveClient() {
 		} else if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			// allow timeout errors
 		} else {
-			fmt.Printf("Disconnecting %s: %s\r\n", w, err.Error())
+			fmt.Printf("\r\nDisconnecting %s: %s\r\n", w, err.Error())
 			break
 		}
 
@@ -245,13 +245,13 @@ func (w *webSocket) serveServer() {
 
 		if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			if time.Now().After(lastRecv.Add(pingCheck)) {
-				fmt.Printf("Timeout, disconnecting %s %s %s\r\n", w, time.Now().Sub(lastRecv).String(), err.Error())
+				fmt.Printf("\r\nTimeout, disconnecting %s %s %s\r\n", w, time.Now().Sub(lastRecv).String(), err.Error())
 				break
 			}
 			continue
 		}
 
-		fmt.Printf("Disconnecting %s: %s\r\n", w, err.Error())
+		fmt.Printf("\r\nDisconnecting %s: %s\r\n", w, err.Error())
 		break
 	}
 }
