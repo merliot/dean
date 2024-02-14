@@ -107,7 +107,9 @@ const (
 )
 
 func (t *Thing) Subscribers() Subscribers           { return nil }
+func (t *Thing) Setup()                             {}
 func (t *Thing) Run(*Injector)                      { select {} }
+func (t *Thing) FailSafe()                          {}
 func (t *Thing) Identity() (string, string, string) { return t.Id, t.Model, t.Name }
 func (t *Thing) Lock()                              { t.mu.Lock() }
 func (t *Thing) Unlock()                            { t.mu.Unlock() }
