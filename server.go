@@ -368,14 +368,25 @@ func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 
 // Run the server
 func (s *Server) Run() {
+
+	// If we crash, put thinger in fail safe mode
+	defer func() {
+		if recover() != nil {
+			s.thinger.FailSafe()
+		}
+	}()
+
+	// Thinger is metal when run in server
+	s.thinger.SetFlag(ThingFlagMetal)
+
+	// Setup thinger
+	s.thinger.Setup()
+
 	// Start http server if valid listening port
 	if s.port != "" {
 		s.Addr = ":" + s.port
 		go s.ListenAndServe()
 	}
-
-	// Thinger is metal when run in server
-	s.thinger.SetFlag(ThingFlagMetal)
 
 	// Run thinger's main loop
 	s.thinger.Run(s.injector)

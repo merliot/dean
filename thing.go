@@ -9,7 +9,9 @@ import (
 type Thinger interface {
 	Subscribers() Subscribers
 	Announce() *Msg
+	Setup()
 	Run(*Injector)
+	FailSafe()
 	Identity() (string, string, string)
 	IsOnline() bool
 	SetOnline(bool)
