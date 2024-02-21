@@ -75,6 +75,10 @@ func (r *Runner) Dial(dialURLs string) {
 
 // Run the main run loop
 func (r *Runner) Run() {
+	// Thinger is metal when run in runner
 	r.thinger.SetFlag(ThingFlagMetal)
+	// Setup thinger
+	s.thinger.Setup()
+	// Run thinger's main loop
 	r.thinger.Run(r.injector)
 }
