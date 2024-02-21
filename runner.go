@@ -78,7 +78,7 @@ func (r *Runner) Run() {
 	// Thinger is metal when run in runner
 	r.thinger.SetFlag(ThingFlagMetal)
 	// Setup thinger
-	s.thinger.Setup()
+	r.thinger.Setup()
 	// Run thinger's main loop
 	r.thinger.Run(r.injector)
 }
