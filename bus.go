@@ -2,8 +2,8 @@ package dean
 
 import (
 	"fmt"
-	"sync"
-	//sync "github.com/sasha-s/go-deadlock"
+	//"sync"
+	sync "github.com/sasha-s/go-deadlock"
 )
 
 var defaultMaxSockets = 80

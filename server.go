@@ -11,9 +11,10 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"sync"
 
-	//sync "github.com/sasha-s/go-deadlock"
+	//"sync"
+
+	sync "github.com/sasha-s/go-deadlock"
 	"golang.org/x/net/websocket"
 )
 
@@ -307,6 +308,11 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	return nil
 }
 
+type myLocker interface {
+	Lock()
+	Unlock()
+}
+
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
@@ -322,7 +328,7 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 			msg.src.SetFlag(SocketFlagBcast)
 		}
 
-		if locker, ok := thinger.(sync.Locker); ok {
+		if locker, ok := thinger.(myLocker); ok {
 			locker.Lock()
 			defer locker.Unlock()
 		}
