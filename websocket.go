@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -17,7 +16,7 @@ import (
 // webSocket wraps a websocket.Conn and implements the Socketer imterface
 type webSocket struct {
 	socket
-	sync.Mutex
+	mutex
 	url          *url.URL
 	conn         *websocket.Conn
 	closing      bool

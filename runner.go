@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
 )
 
 // Runner runs a Thing
@@ -45,7 +44,7 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 			msg.src.SetFlag(SocketFlagBcast)
 		}
 
-		if locker, ok := thinger.(sync.Locker); ok {
+		if locker, ok := thinger.(Locker); ok {
 			locker.Lock()
 			defer locker.Unlock()
 		}

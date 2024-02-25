@@ -2,8 +2,6 @@ package dean
 
 import (
 	"fmt"
-	//"sync"
-	sync "github.com/sasha-s/go-deadlock"
 )
 
 var defaultMaxSockets = 80
@@ -16,10 +14,10 @@ var defaultMaxSockets = 80
 // tag on the bus.
 type Bus struct {
 	name       string
-	socketsMu  sync.RWMutex
+	socketsMu  rwMutex
 	sockets    map[Socketer]bool
 	socketQ    chan bool
-	handlersMu sync.RWMutex
+	handlersMu rwMutex
 	handlers   map[string]func(*Msg)
 	connect    func(Socketer)
 	disconnect func(Socketer)

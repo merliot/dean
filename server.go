@@ -12,9 +12,6 @@ import (
 	"sort"
 	"strings"
 
-	//"sync"
-
-	sync "github.com/sasha-s/go-deadlock"
 	"golang.org/x/net/websocket"
 )
 
@@ -26,13 +23,13 @@ type Server struct {
 	injector *Injector
 	subs     Subscribers
 
-	makersMu   sync.RWMutex
+	makersMu   rwMutex
 	makers     Makers
-	thingsMu   sync.RWMutex
+	thingsMu   rwMutex
 	things     map[string]Thinger // keyed by id
-	socketsMu  sync.RWMutex
+	socketsMu  rwMutex
 	sockets    map[Socketer]Thinger // keyed by socket
-	handlersMu sync.RWMutex
+	handlersMu rwMutex
 	handlers   map[string]http.HandlerFunc // keyed by path
 
 	port   string
@@ -308,11 +305,6 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	return nil
 }
 
-type myLocker interface {
-	Lock()
-	Unlock()
-}
-
 func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 	return func(msg *Msg) {
 		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
@@ -328,7 +320,7 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 			msg.src.SetFlag(SocketFlagBcast)
 		}
 
-		if locker, ok := thinger.(myLocker); ok {
+		if locker, ok := thinger.(Locker); ok {
 			locker.Lock()
 			defer locker.Unlock()
 		}

@@ -1,10 +1,5 @@
 package dean
 
-import (
-	//"sync"
-	sync "github.com/sasha-s/go-deadlock"
-)
-
 // Thinger defines a thing interface
 type Thinger interface {
 	Subscribers() Subscribers
@@ -25,6 +20,11 @@ type Subscribers map[string]func(*Msg)
 // Maker can make a Thing
 type Maker interface {
 	ThingMaker
+}
+
+type Locker interface {
+	Lock()
+	Unlock()
 }
 
 // ThingMaker returns a Thinger
@@ -90,7 +90,7 @@ type Thing struct {
 	Name   string
 	Online bool
 	flags  uint32
-	mu     sync.Mutex
+	mu     mutex
 }
 
 func NewThing(id, model, name string) Thing {
