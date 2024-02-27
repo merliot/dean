@@ -78,7 +78,7 @@ func (b *Bus) plugin(s Socketer) {
 	//fmt.Printf("--- PLUGIN %s ---\r\n", s)
 
 	// block here when socketQ is full
-	println(len(b.socketQ))
+	//println(len(b.socketQ))
 	b.socketQ <- true
 
 	b.socketsMu.Lock()
