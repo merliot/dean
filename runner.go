@@ -68,6 +68,8 @@ func (r *Runner) Dial(dialURLs string) {
 		case "ws", "wss":
 			ws := newWebSocket(purl, "", r.bus)
 			go ws.Dial(r.user, r.passwd, r.thinger.Announce())
+		default:
+			println("Scheme must be ws or wss:", u)
 		}
 	}
 }
