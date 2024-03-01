@@ -5,12 +5,13 @@ package dean
 import (
 	"html/template"
 	"io/fs"
+	"io/ioutil"
 )
 
 // CompositeFS is an ordered (layered) file system, built up from individual
 // file systems
 type CompositeFS struct {
-	fileSystems []fs.FS
+	fileSystems []fs.ReadFileFS
 }
 
 func NewCompositeFS() *CompositeFS {
@@ -19,12 +20,11 @@ func NewCompositeFS() *CompositeFS {
 
 // AddFS adds fsys to the composite fs.  Order matters: first added is lowest
 // in priority when searching for a file name in the composite fs.
-func (c *CompositeFS) AddFS(fsys fs.FS) {
+func (c *CompositeFS) AddFS(fsys fs.ReadFileFS) {
 	c.fileSystems = append(c.fileSystems, fsys)
 }
 
-// Open a file by name
-func (c *CompositeFS) Open(name string) (fs.File, error) {
+func (c *CompositeFS) newest(name string) (fs.File, error) {
 
 	// Start with newest (last added) FS, giving newer FSes priority over
 	// older FSes when searching for file name.  The first FS with a
@@ -38,6 +38,21 @@ func (c *CompositeFS) Open(name string) (fs.File, error) {
 	}
 
 	return nil, fs.ErrNotExist
+}
+
+// Open a file by name
+func (c *CompositeFS) Open(name string) (fs.File, error) {
+	return c.newest(name)
+}
+
+// Read a file
+func (c *CompositeFS) ReadFile(name string) ([]byte, error) {
+	file, err := c.newest(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return ioutil.ReadAll(file)
 }
 
 // ParseFS returns a template by parsing the composite file system for the
