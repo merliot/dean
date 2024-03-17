@@ -3,8 +3,8 @@
 package dean
 
 import (
-	//"sync"
-	sync "github.com/sasha-s/go-deadlock"
+	"sync"
+	//sync "github.com/sasha-s/go-deadlock"
 )
 
 type mutex struct {
