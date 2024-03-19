@@ -340,6 +340,9 @@ func (s *Server) MaxSockets(maxSockets int) {
 // Dial connects server to other servers
 func (s *Server) Dial(dialURLs string) {
 	for _, u := range strings.Split(dialURLs, ",") {
+		if u == "" {
+			continue
+		}
 		purl, err := url.Parse(u)
 		if err != nil {
 			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
@@ -349,6 +352,8 @@ func (s *Server) Dial(dialURLs string) {
 		case "ws", "wss":
 			ws := newWebSocket(purl, "", s.bus)
 			go ws.Dial(s.user, s.passwd, s.thinger.Announce())
+		default:
+			println("Scheme must be ws or wss:", u)
 		}
 	}
 }
