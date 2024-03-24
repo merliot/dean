@@ -1,10 +1,10 @@
 module github.com/merliot/dean
 
-go 1.21.0
+go 1.22.0
 
 require (
-	golang.org/x/crypto v0.19.0
-	golang.org/x/net v0.21.0
+	golang.org/x/crypto v0.21.0
+	golang.org/x/net v0.22.0
 	tinygo.org/x/drivers v0.27.0
 )
 
