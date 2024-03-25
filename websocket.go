@@ -239,6 +239,7 @@ func (w *webSocket) serveServer() {
 			} else {
 				w.bus.receive(msg)
 			}
+			fmt.Printf("MSG %s\r\n", msg)
 			continue
 		}
 
