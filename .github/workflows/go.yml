@@ -5,9 +5,7 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
 
@@ -20,6 +18,8 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: 'stable'
+
+    - name: Version
       run: go version
 
     - name: Build
