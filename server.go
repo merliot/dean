@@ -353,9 +353,6 @@ func (s *Server) Dial(dialURLs string) {
 			ws := newWebSocket(purl, "", s.bus)
 			go ws.Dial(s.user, s.passwd, s.thinger.Announce())
 		default:
-			if i == 99 {
-				machine.CPUReset()
-			}
 			println("Scheme must be ws or wss:", u)
 		}
 	}
