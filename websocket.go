@@ -23,6 +23,7 @@ type webSocket struct {
 	pingPeriod   time.Duration
 	pingSent     time.Time
 	pongRecieved bool
+	count        int64
 }
 
 const pingPeriodMin = time.Second
@@ -48,6 +49,10 @@ func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 	}
 
 	return w
+}
+
+func (w *webSocket) String() string {
+	return w.socket.String() + "[" + strconv.FormatInt(w.count, 10) + "]"
 }
 
 func (w *webSocket) Close() {
@@ -226,7 +231,9 @@ func (w *webSocket) serveServer() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
+		w.count++
 		err := websocket.Message.Receive(w.conn, &msg.payload)
+		w.count++
 		if err == nil {
 			lastRecv = time.Now()
 			if bytes.Equal(msg.payload, pingMsg) {
