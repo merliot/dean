@@ -160,7 +160,7 @@ func (s *Server) handleAnnounce(msg *Msg) {
 }
 
 func (s *Server) disconnect(socket Socketer) {
-	fmt.Printf("*** DISCONNECT %s\r\n", socket)
+	fmt.Printf("\r\n*** DISCONNECT %s\r\n", socket)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
@@ -353,6 +353,9 @@ func (s *Server) Dial(dialURLs string) {
 			ws := newWebSocket(purl, "", s.bus)
 			go ws.Dial(s.user, s.passwd, s.thinger.Announce())
 		default:
+			if i == 99 {
+				machine.CPUReset()
+			}
 			println("Scheme must be ws or wss:", u)
 		}
 	}
