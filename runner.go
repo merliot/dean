@@ -101,4 +101,5 @@ func (r *Runner) Run() {
 	r.thinger.Setup()
 	// Run thinger's main loop
 	r.thinger.Run(r.injector)
+	println("THINGER", thinger.Name(), thinger.Id(), "EXITED!")
 }
