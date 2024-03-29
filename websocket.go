@@ -123,7 +123,7 @@ func (w *webSocket) announced(announce *Msg) bool {
 	return false
 }
 
-func (w *webSocket) Dial(user, passwd string, announce *Msg) {
+func (w *webSocket) Dial(user, passwd string, announce *Msg, tries int) {
 
 	cfg, err := w.newConfig(user, passwd)
 	if err != nil {
@@ -131,7 +131,8 @@ func (w *webSocket) Dial(user, passwd string, announce *Msg) {
 		return
 	}
 
-	for {
+	// tries == -1 means try forever
+	for i := 0; tries < 0 || i < tries; i++ {
 		// Dial the websocket
 		conn, err := websocket.DialConfig(cfg)
 		if err == nil {

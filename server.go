@@ -337,21 +337,37 @@ func (s *Server) MaxSockets(maxSockets int) {
 	s.bus.MaxSockets(maxSockets)
 }
 
-// Dial connects server to other servers
-func (s *Server) Dial(dialURLs string) {
-	for _, u := range strings.Split(dialURLs, ",") {
+// Dial connects server to other servers using a websocket.  url is
+//
+//	"ws://<server:port>/ws/&ping-period=<x>"   (HTTP)
+//
+// or
+//
+//	"wss://<server:port>/ws/&ping-period=<x>"  (HTTPS)
+//
+// ping-period (optional) in seconds to set ping-pong period on the websocket.
+// Ping-pong is for detecting half-closed TCP sockets so both endpoints shut
+// down the socket.
+
+func (s *Server) Dial(url *url.URL, tries int) Socketer {
+	ws := newWebSocket(url, "", s.bus)
+	go ws.Dial(s.user, s.passwd, s.thinger.Announce(), tries)
+	return ws
+}
+
+func (s *Server) Dials(durls string) {
+	for _, u := range strings.Split(durls, ",") {
 		if u == "" {
 			continue
 		}
-		purl, err := url.Parse(u)
+		durl, err := url.Parse(u)
 		if err != nil {
 			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
 			continue
 		}
-		switch purl.Scheme {
+		switch durl.Scheme {
 		case "ws", "wss":
-			ws := newWebSocket(purl, "", s.bus)
-			go ws.Dial(s.user, s.passwd, s.thinger.Announce())
+			s.Dial(durl, -1)
 		default:
 			println("Scheme must be ws or wss:", u)
 		}
