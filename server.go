@@ -409,7 +409,8 @@ func (s *Server) Run() {
 
 	// Run thinger's main loop
 	s.thinger.Run(s.injector)
-	println("THINGER", thinger.Name(), thinger.Id(), "EXITED!")
+	id, _, name := s.thinger.Identity()
+	println("THINGER", name, id, "EXITED!")
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
