@@ -101,9 +101,7 @@ func (s *Server) connect(socket Socketer) {
 	fmt.Printf("\r\n*** CONNECT %s\r\n", socket)
 
 	s.socketsMu.Lock()
-	s.dumpSockets("creating")
 	s.sockets[socket] = nil
-	s.dumpSockets("created")
 	s.socketsMu.Unlock()
 }
 
@@ -152,9 +150,12 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
 
-	s.dumpSockets("announce")
+	_, ok = s.sockets[socket]
+	if !ok {
+		s.dumpSockets("announce")
+	}
+
 	s.sockets[socket] = thinger
-	s.dumpSockets("announced")
 
 	msg.Marshal(&ThingMsg{"get/state"}).Reply()
 
@@ -176,7 +177,10 @@ func (s *Server) disconnect(socket Socketer) {
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
 
-	thinger := s.sockets[socket]
+	thinger, ok := s.sockets[socket]
+	if !ok {
+		s.dumpSockets("deleting")
+	}
 
 	if thinger != nil {
 		var msg Msg
@@ -198,9 +202,7 @@ func (s *Server) disconnect(socket Socketer) {
 		}
 	}
 
-	s.dumpSockets("deleting")
 	delete(s.sockets, socket)
-	s.dumpSockets("deleted")
 }
 
 // GetModels returns a list of register models
