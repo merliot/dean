@@ -110,7 +110,15 @@ func (s *Server) handleAnnounce(msg *Msg) {
 	var ann ThingMsgAnnounce
 	msg.Unmarshal(&ann)
 
+	s.socketsMu.Lock()
+	defer s.socketsMu.Unlock()
+
 	socket := msg.src
+	if _, ok = s.sockets[socket]; !ok {
+		fmt.Printf("Ignoring announcement: socket already disconnected: %s\r\n", socket)
+		socket.Close()
+		return
+	}
 
 	fmt.Printf("\r\n*** ANNOUNCE %s %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
 
@@ -146,14 +154,6 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	thinger.SetOnline(true)
 	socket.SetTag(id)
-
-	s.socketsMu.Lock()
-	defer s.socketsMu.Unlock()
-
-	_, ok = s.sockets[socket]
-	if !ok {
-		s.dumpSockets("announce")
-	}
 
 	s.sockets[socket] = thinger
 
