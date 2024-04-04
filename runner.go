@@ -88,7 +88,7 @@ func (r *Runner) Dials(durls string) {
 		case "ws", "wss":
 			r.Dial(durl, -1)
 		default:
-			println("Scheme must be ws or wss:", u)
+			fmt.Println("Scheme must be ws or wss:", u)
 		}
 	}
 }
@@ -102,5 +102,5 @@ func (r *Runner) Run() {
 	// Run thinger's main loop
 	r.thinger.Run(r.injector)
 	id, _, name := r.thinger.Identity()
-	println("THINGER", name, id, "EXITED!")
+	fmt.Println("THINGER", name, id, "EXITED!")
 }

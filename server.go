@@ -384,7 +384,7 @@ func (s *Server) Dials(durls string) {
 		case "ws", "wss":
 			s.Dial(durl, -1)
 		default:
-			println("Scheme must be ws or wss:", u)
+			fmt.Println("Scheme must be ws or wss:", u)
 		}
 	}
 }
@@ -425,7 +425,7 @@ func (s *Server) Run() {
 	// Run thinger's main loop
 	s.thinger.Run(s.injector)
 	id, _, name := s.thinger.Identity()
-	println("THINGER", name, id, "EXITED!")
+	fmt.Println("THINGER", name, id, "EXITED!")
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
