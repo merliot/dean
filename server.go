@@ -76,6 +76,12 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	return &s
 }
 
+func (s *Server) NewInjector(id string) *Injector {
+	injector := NewInjector("thinger "+id+" injector", s.bus)
+	injector.sock.SetTag(id)
+	return injector
+}
+
 // RegisterModel registers a new Thing model
 func (s *Server) RegisterModel(model string, maker ThingMaker) {
 	s.makersMu.Lock()
