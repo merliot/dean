@@ -17,20 +17,12 @@ import (
 type webSocket struct {
 	socket
 	mutex
-	url           *url.URL
-	conn          *websocket.Conn
-	closing       bool
-	pingPeriod    time.Duration
-	pingSent      time.Time
-	pongRecieved  bool
-	count         int64
-	err           int64
-	pong          int64
-	pongerr       int64
-	good          int64
-	errtimeout    int64
-	timeout       int64
-	errdisconnect int64
+	url          *url.URL
+	conn         *websocket.Conn
+	closing      bool
+	pingPeriod   time.Duration
+	pingSent     time.Time
+	pongRecieved bool
 }
 
 const pingPeriodMin = time.Second
@@ -56,19 +48,6 @@ func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 	}
 
 	return w
-}
-
-func (w *webSocket) String() string {
-	return w.socket.String() + "[" +
-		strconv.FormatInt(w.count, 10) + "," +
-		strconv.FormatInt(w.err, 10) + "," +
-		strconv.FormatInt(w.pong, 10) + "," +
-		strconv.FormatInt(w.pongerr, 10) + "," +
-		strconv.FormatInt(w.good, 10) + "," +
-		strconv.FormatInt(w.errtimeout, 10) + "," +
-		strconv.FormatInt(w.timeout, 10) + "," +
-		strconv.FormatInt(w.errdisconnect, 10) +
-		"]"
 }
 
 func (w *webSocket) Close() {
@@ -248,42 +227,31 @@ func (w *webSocket) serveServer() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		w.count++
 		err := websocket.Message.Receive(w.conn, &msg.payload)
-		w.count++
-		if err != nil {
-			w.err++
-		}
 		if err == nil {
 			lastRecv = time.Now()
 			if bytes.Equal(msg.payload, pingMsg) {
 				// Received ping, send pong
 				err := websocket.Message.Send(w.conn, string(pongMsg))
-				w.pong++
 				if err != nil {
-					w.pongerr++
 					fmt.Printf("Error sending pong, disconnecting %s: %s\r\n", w, err.Error())
 					break
 				}
 			} else {
-				w.good++
 				w.bus.receive(msg)
 			}
 			continue
 		}
 
 		if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
-			w.errtimeout++
 			if time.Now().After(lastRecv.Add(pingCheck)) {
 				fmt.Printf("\r\nTimeout, disconnecting %s %s %s\r\n", w, time.Now().Sub(lastRecv).String(), err.Error())
-				w.timeout++
 				break
 			}
 			continue
 		}
 
 		fmt.Printf("\r\nDisconnecting %s: %s\r\n", w, err.Error())
-		w.errdisconnect++
 		break
 	}
 }
