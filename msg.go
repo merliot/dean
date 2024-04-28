@@ -7,9 +7,23 @@ import (
 
 // Msg is sent and received on a bus via a socket
 type Msg struct {
+	Tags    []string
 	bus     *Bus
 	src     Socketer
 	payload []byte
+}
+
+func (m *Msg) tagInsert(tag string) {
+	m.Tags = append([]string{tag}, m.Tags...)
+}
+
+func (m *Msg) tagStrip() string {
+	if len(m.Tags) == 0 {
+		return "" // No tags to remove
+	}
+	tag := m.Tags[0]
+	m.Tags = m.Tags[1:]
+	return tag
 }
 
 // Bytes returns the msg payload
