@@ -19,6 +19,7 @@ import (
 type Server struct {
 	thinger Thinger
 	http.Server
+	mux      *http.ServeMux
 	bus      *Bus
 	injector *Injector
 	subs     Subscribers
@@ -62,16 +63,16 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.bus.Handle("", s.busHandle(thinger))
 	s.injector = NewInjector("server injector", s.bus)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", s.root)
-	s.Handler = mux
+	s.mux = http.NewServeMux()
+	s.Handler = s.mux
 
 	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("", handler)
+		s.mux.Handle("/", handler)
 	}
+
 	s.HandleFunc("/server-state", s.serverState)
-	s.HandleFunc("/ws/", s.serveWebSocket)
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+	s.HandleFunc("/ws/{$}", s.serveWebSocket)
+	s.HandleFunc("/ws/"+id+"/{$}", s.serveWebSocket)
 
 	return &s
 }
@@ -259,7 +260,7 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	if handler, ok := thinger.(http.Handler); ok {
 		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
 	}
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+	s.HandleFunc("/ws/"+id+"/{$}", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
 	s.injector.Inject(&msg)
@@ -278,7 +279,7 @@ func (s *Server) DeleteThing(id string) error {
 		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
 
-	s.Unhandle("/ws/" + id + "/")
+	s.Unhandle("/ws/" + id + "/{$}")
 	s.Unhandle("/" + id + "/")
 	s.bus.Unhandle(id)
 
@@ -318,7 +319,7 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	if handler, ok := thinger.(http.Handler); ok {
 		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
 	}
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+	s.HandleFunc("/ws/"+id+"/{$}", s.serveWebSocket)
 
 	msg.Marshal(&ThingMsgAdopted{Path: "adopted/thing", Id: id, Model: model, Name: name})
 	s.injector.Inject(&msg)
@@ -434,7 +435,7 @@ func (s *Server) Run() {
 	fmt.Println("THINGER", name, id, "EXITED!")
 }
 
-func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
+func (s *Server) softmux(w http.ResponseWriter, r *http.Request) {
 	_path := r.URL.Path
 
 	// try exact match first
@@ -470,6 +471,7 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 
+	println("root ***", r.URL.Path)
 	/*
 		fmt.Printf("[%s] %s %s %s\n",
 			r.RemoteAddr,
@@ -481,7 +483,7 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 
 	// skip basic authentication if no user
 	if s.user == "" {
-		s.mux(w, r)
+		s.softmux(w, r)
 		return
 	}
 
@@ -498,7 +500,7 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 		passMatch := (subtle.ConstantTimeCompare(passHash[:], rpassHash[:]) == 1)
 
 		if userMatch && passMatch {
-			s.mux(w, r)
+			s.softmux(w, r)
 			return
 		}
 	}
@@ -521,6 +523,7 @@ func (s *Server) runHandler(path string, w http.ResponseWriter, r *http.Request)
 func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
+	s.mux.HandleFunc(path, handler)
 	s.handlers[path] = handler
 }
 
@@ -528,6 +531,7 @@ func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
 func (s *Server) Handle(path string, handler http.Handler) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
+	s.mux.Handle(path, handler)
 	s.handlers[path] = handler.ServeHTTP
 }
 
@@ -535,6 +539,7 @@ func (s *Server) Handle(path string, handler http.Handler) {
 func (s *Server) Unhandle(path string) {
 	s.handlersMu.Lock()
 	defer s.handlersMu.Unlock()
+	s.mux.Handle(path, http.NotFoundHandler())
 	delete(s.handlers, path)
 }
 
@@ -605,7 +610,7 @@ func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(handlers)
 
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Bus Handlers")
+	fmt.Fprintln(w, "Bus Message Handlers")
 	for _, handler := range handlers {
 		fmt.Fprintf(w, "\t\"%s\"\n", handler)
 	}
