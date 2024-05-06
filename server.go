@@ -25,6 +25,8 @@ type Server struct {
 
 	makersMu   rwMutex
 	makers     Makers
+	modelsMu   rwMutex
+	models     map[string]Thinger // model prototypes keyed by model
 	thingsMu   rwMutex
 	things     map[string]Thinger // keyed by id
 	socketsMu  rwMutex
@@ -49,6 +51,7 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	fmt.Printf("    PORT:     %s\r\n", s.port)
 
 	s.makers = Makers{}
+	s.models = make(map[string]Thinger)
 	s.things = make(map[string]Thinger)
 	s.sockets = make(map[Socketer]Thinger)
 	s.handlers = make(map[string]http.HandlerFunc)
@@ -63,8 +66,9 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.injector = NewInjector("server injector", s.bus)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", s.root)
 	s.Handler = mux
+
+	mux.HandleFunc("/", s.root)
 
 	if handler, ok := thinger.(http.Handler); ok {
 		s.Handle("", handler)
@@ -87,6 +91,14 @@ func (s *Server) RegisterModel(model string, maker ThingMaker) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	s.makers[model] = maker
+
+	s.modelsMu.Lock()
+	defer s.modelsMu.Unlock()
+	s.models[model] = maker("proto", model, "proto")
+
+	if handler, ok := s.models[model].(http.Handler); ok {
+		s.Handle("/model/"+model+"/", http.StripPrefix("/model/"+model+"/", handler))
+	}
 }
 
 // UnregisterModel unregisters the Thing model
@@ -94,6 +106,12 @@ func (s *Server) UnregisterModel(model string) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	delete(s.makers, model)
+
+	s.modelsMu.Lock()
+	defer s.modelsMu.Unlock()
+	delete(s.models, model)
+
+	s.Unhandle("/model/" + model + "/")
 }
 
 func (s *Server) dumpSockets(quote string) {
@@ -257,7 +275,7 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	s.bus.Handle(id, s.busHandle(thinger))
 
 	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+		s.Handle("/device/"+id+"/", http.StripPrefix("/device/"+id+"/", handler))
 	}
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
@@ -279,7 +297,7 @@ func (s *Server) DeleteThing(id string) error {
 	}
 
 	s.Unhandle("/ws/" + id + "/")
-	s.Unhandle("/" + id + "/")
+	s.Unhandle("/device/" + id + "/")
 	s.bus.Unhandle(id)
 
 	delete(s.things, id)
@@ -435,6 +453,13 @@ func (s *Server) Run() {
 }
 
 func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
+
+	// Custom ServeMux.
+	//
+	// I tried using go1.22 http mux and it worked great,
+	// but I couldn't figure out how to delete a route.  Need it for routes
+	// like /ws/{id} or /device/{id} that come and go.
+
 	_path := r.URL.Path
 
 	// try exact match first
@@ -448,11 +473,22 @@ func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// redirect /id/* to child
+	// redirect /device/{id}/* to child
+	// e.g. /device/7667a30b-a3855397/js/temp.js
 	parts := strings.Split(_path, "/")
-	if len(parts) > 1 {
-		id := parts[1]
-		newpath := "/" + id + "/"
+	if len(parts) > 2 && parts[1] == "device" {
+		id := parts[2]
+		newpath := "/device/" + id + "/"
+		if ok := s.runHandler(newpath, w, r); ok {
+			return
+		}
+	}
+
+	// redirect /model/{model}/* to model prototype
+	// e.g. /model/temp/js/temp.js
+	if len(parts) > 2 && parts[1] == "model" {
+		model := parts[2]
+		newpath := "/model/" + model + "/"
 		if ok := s.runHandler(newpath, w, r); ok {
 			return
 		}
