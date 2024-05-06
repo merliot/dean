@@ -25,16 +25,16 @@ func (t *thing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.FileServer(http.FS(fs)).ServeHTTP(w, r)
 }
 
-func (t *thing) getState(msg *dean.Msg) {
+func (t *thing) getState(msg *dean.Packet) {
 	t.Path = "state"
 	msg.Marshal(t).Reply()
 }
 
-func (t *thing) update(msg *dean.Msg) {
+func (t *thing) update(msg *dean.Packet) {
 	msg.Unmarshal(t).Broadcast()
 }
 
-func (t *thing) reset(msg *dean.Msg) {
+func (t *thing) reset(msg *dean.Packet) {
 	t.Path = "update"
 	t.Count = 0
 	msg.Marshal(t).Reply().Broadcast()
@@ -49,7 +49,7 @@ func (t *thing) Subscribers() dean.Subscribers {
 }
 
 func (t *thing) Run(i *dean.Injector) {
-	var msg dean.Msg
+	var msg dean.Packet
 	for {
 		t.Path = "update"
 		t.Count++

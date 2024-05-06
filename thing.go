@@ -3,7 +3,7 @@ package dean
 // Thinger defines a thing interface
 type Thinger interface {
 	Subscribers() Subscribers
-	Announce() *Msg
+	Announce() *Packet
 	Setup()
 	Run(*Injector)
 	FailSafe()
@@ -15,7 +15,7 @@ type Thinger interface {
 	TestFlag(uint32) bool
 }
 
-type Subscribers map[string]func(*Msg)
+type Subscribers map[string]func(*Packet)
 
 // Maker can make a Thing
 type Maker interface {
@@ -125,10 +125,10 @@ func (t *Thing) String() string {
 
 // Announce returns an announcement msg.  The announcement msg identifies the
 // Thing.
-func (t *Thing) Announce() *Msg {
-	var msg Msg
+func (t *Thing) Announce() *Packet {
+	var pkt Packet
 	var ann = ThingMsgAnnounce{"announce", t.Id, t.Model, t.Name}
-	return msg.Marshal(&ann)
+	return pkt.Marshal(&ann)
 }
 
 // ValidId is a non-empty string with only [a-z], [A-Z], [0-9],

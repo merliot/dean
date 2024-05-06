@@ -32,16 +32,16 @@ func NewRunner(thinger Thinger, user, passwd string) *Runner {
 	return &r
 }
 
-func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
-	return func(msg *Msg) {
-		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
-		var rmsg ThingMsg
+func (r *Runner) busHandle(thinger Thinger) func(*Packet) {
+	return func(pkt *Packet) {
+		fmt.Printf("Bus handle src %s msg %s\r\n", pkt.src, pkt)
+		var msg ThingMsg
 
-		msg.Unmarshal(&rmsg)
+		pkt.Unmarshal(&msg)
 
-		switch rmsg.Path {
+		switch msg.Path {
 		case "get/state", "state":
-			msg.src.SetFlag(SocketFlagBcast)
+			pkt.src.SetFlag(SocketFlagBcast)
 		}
 
 		if locker, ok := thinger.(Locker); ok {
@@ -50,8 +50,8 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[rmsg.Path]; ok {
-			sub(msg)
+		if sub, ok := subs[msg.Path]; ok {
+			sub(pkt)
 		}
 	}
 }
@@ -65,8 +65,8 @@ func (r *Runner) busHandle(thinger Thinger) func(*Msg) {
 //	"wss://<server:port>/ws/&ping-period=<x>"  (HTTPS)
 //
 // ping-period (optional) in seconds to set ping-pong period on the websocket.
-// Ping-pong is for detecting half-closed TCP sockets so both endpoints shut
-// down the socket.
+// Ping-pong is for detecting half-closed TCP sockets so one endpoint is closed
+// if the other endpoint closes.
 
 func (r *Runner) Dial(url *url.URL, tries int) Socketer {
 	ws := newWebSocket(url, "", r.bus)
@@ -74,19 +74,19 @@ func (r *Runner) Dial(url *url.URL, tries int) Socketer {
 	return ws
 }
 
-func (r *Runner) Dials(durls string) {
-	for _, u := range strings.Split(durls, ",") {
+func (r *Runner) Dials(urls string) {
+	for _, u := range strings.Split(urls, ",") {
 		if u == "" {
 			continue
 		}
-		durl, err := url.Parse(u)
+		url, err := url.Parse(u)
 		if err != nil {
 			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
 			continue
 		}
-		switch durl.Scheme {
+		switch url.Scheme {
 		case "ws", "wss":
-			r.Dial(durl, -1)
+			r.Dial(url, -1)
 		default:
 			fmt.Println("Scheme must be ws or wss:", u)
 		}

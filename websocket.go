@@ -54,14 +54,14 @@ func (w *webSocket) Close() {
 	w.closing = true
 }
 
-func (w *webSocket) Send(msg *Msg) error {
+func (w *webSocket) Send(packet *Packet) error {
 	w.Lock()
 	defer w.Unlock()
 	if w.conn == nil {
 		return fmt.Errorf("Send on nil connection")
 	}
-	fmt.Printf("Sending %s: %s\r\n", w, msg)
-	return websocket.Message.Send(w.conn, string(msg.payload))
+	fmt.Printf("Sending %s: %s\r\n", w, packet)
+	return websocket.Message.Send(w.conn, string(packet.message))
 }
 
 func (w *webSocket) getId() string {
@@ -96,21 +96,21 @@ func (w *webSocket) newConfig(user, passwd string) (*websocket.Config, error) {
 	return config, nil
 }
 
-func (w *webSocket) announced(announce *Msg) bool {
+func (w *webSocket) announced(announce *Packet) bool {
 
-	var msg = &Msg{bus: w.bus, src: w}
+	var packet = &Packet{bus: w.bus, src: w}
 
-	// Send an announcement msg
+	// Send an announcement packet
 	if err := w.Send(announce); err != nil {
 		fmt.Printf("Error sending announcement: %s\r\n", err.Error())
 		return false
 	}
 
-	// Any msg received is an ack of the announcement
+	// Any packet received is an ack of the announcement
 	w.conn.SetReadDeadline(time.Now().Add(time.Second))
-	err := websocket.Message.Receive(w.conn, &msg.payload)
+	err := websocket.Message.Receive(w.conn, &packet.message)
 	if err == nil {
-		w.bus.receive(msg)
+		w.bus.receive(packet)
 		return true
 	}
 
@@ -118,7 +118,7 @@ func (w *webSocket) announced(announce *Msg) bool {
 	return false
 }
 
-func (w *webSocket) Dial(user, passwd string, announce *Msg, tries int) {
+func (w *webSocket) Dial(user, passwd string, announce *Packet, tries int) {
 
 	cfg, err := w.newConfig(user, passwd)
 	if err != nil {
@@ -181,7 +181,7 @@ func (w *webSocket) serveClient() {
 	w.ping()
 
 	for {
-		var msg = &Msg{bus: w.bus, src: w}
+		var packet = &Packet{bus: w.bus, src: w}
 
 		if w.closing {
 			fmt.Printf("Closing %s\r\n", w)
@@ -189,12 +189,12 @@ func (w *webSocket) serveClient() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(w.conn, &msg.payload)
+		err := websocket.Message.Receive(w.conn, &packet.message)
 		if err == nil {
-			if bytes.Equal(msg.payload, pongMsg) {
+			if bytes.Equal(packet.message, pongMsg) {
 				w.pongRecieved = true
 			} else {
-				w.bus.receive(msg)
+				w.bus.receive(packet)
 			}
 		} else if netErr, ok := err.(*net.OpError); ok && netErr.Timeout() {
 			// allow timeout errors
@@ -219,7 +219,7 @@ func (w *webSocket) serveServer() {
 	lastRecv := time.Now()
 
 	for {
-		var msg = &Msg{bus: w.bus, src: w}
+		var packet = &Packet{bus: w.bus, src: w}
 
 		if w.closing {
 			fmt.Printf("Closing %s\r\n", w)
@@ -227,10 +227,10 @@ func (w *webSocket) serveServer() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(w.conn, &msg.payload)
+		err := websocket.Message.Receive(w.conn, &packet.message)
 		if err == nil {
 			lastRecv = time.Now()
-			if bytes.Equal(msg.payload, pingMsg) {
+			if bytes.Equal(packet.message, pingMsg) {
 				// Received ping, send pong
 				err := websocket.Message.Send(w.conn, string(pongMsg))
 				if err != nil {
@@ -238,7 +238,7 @@ func (w *webSocket) serveServer() {
 					break
 				}
 			} else {
-				w.bus.receive(msg)
+				w.bus.receive(packet)
 			}
 			continue
 		}

@@ -1,6 +1,6 @@
 package dean
 
-// Injector is a one-way socket used for injecting msgs onto the bus.  The msgs
+// Injector is a one-way socket used for injecting pkts onto the bus.  The pkts
 // cannot be sent back (replied) on an injector socket.
 type Injector struct {
 	sock socket
@@ -12,8 +12,8 @@ func NewInjector(name string, bus *Bus) *Injector {
 	return i
 }
 
-// Inject a msg onto the bus
-func (i *Injector) Inject(msg *Msg) {
-	msg.bus, msg.src = i.sock.bus, &i.sock
-	i.sock.bus.receive(msg)
+// Inject a pkt onto the bus
+func (i *Injector) Inject(pkt *Packet) {
+	pkt.bus, pkt.src = i.sock.bus, &i.sock
+	i.sock.bus.receive(pkt)
 }

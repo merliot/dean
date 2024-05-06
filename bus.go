@@ -6,19 +6,19 @@ import (
 
 var defaultMaxSockets = 200
 
-// Bus is a logical msg broadcast bus.  Msgs arrive on sockets connected to the
-// bus.  A received msg can be broadcast to the other sockets, or replied back
-// to sender.  A socket has a tag, and the bus segregates the sockets by tag.
-// Msgs arriving on a tagged socket will be broadcast only to other sockets
-// with same tag.  Think of a tag as a VLAN.  The empty tag "" is the default
-// tag on the bus.
+// Bus is a logical packet broadcast bus.  Packets arrive on sockets connected
+// to the bus.  A received packet can be broadcast to the other sockets, or
+// replied back to sender.  A socket has a tag, and the bus segregates the
+// sockets by tag.  Packets arriving on a tagged socket will be broadcast only
+// to other sockets with same tag.  Think of a tag as a VLAN.  The empty tag ""
+// is the default tag on the bus.
 type Bus struct {
 	name       string
 	socketsMu  rwMutex
 	sockets    map[Socketer]bool
 	socketQ    chan bool
 	handlersMu rwMutex
-	handlers   map[string]func(*Msg)
+	handlers   map[string]func(*Packet)
 	connect    func(Socketer)
 	disconnect func(Socketer)
 }
@@ -35,14 +35,14 @@ func NewBus(name string, connect, disconnect func(Socketer)) *Bus {
 		name:       name,
 		sockets:    make(map[Socketer]bool),
 		socketQ:    make(chan bool, defaultMaxSockets),
-		handlers:   make(map[string]func(*Msg)),
+		handlers:   make(map[string]func(*Packet)),
 		connect:    connect,
 		disconnect: disconnect,
 	}
 }
 
-// Handle sets the msg handler for a msg tag
-func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
+// Handle sets the packet handler for a packet tag
+func (b *Bus) Handle(tag string, handler func(*Packet)) bool {
 	if handler == nil {
 		panic("handler is nil")
 	}
@@ -55,7 +55,7 @@ func (b *Bus) Handle(tag string, handler func(*Msg)) bool {
 	return false
 }
 
-// Unhandle removes the msg handle for the msg tag
+// Unhandle removes the packet handle for the packet tag
 func (b *Bus) Unhandle(tag string) {
 	b.handlersMu.Lock()
 	defer b.handlersMu.Unlock()
@@ -104,27 +104,28 @@ func (b *Bus) unplug(s Socketer) {
 	<-b.socketQ
 }
 
-// broadcast msg to all sockets with matching tag, skipping the source socket src
-func (b *Bus) broadcast(msg *Msg) {
+// broadcast packet to all sockets with matching tag, skipping the source
+// socket src
+func (b *Bus) broadcast(packet *Packet) {
 	b.socketsMu.RLock()
 	defer b.socketsMu.RUnlock()
 	for sock := range b.sockets {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
-		if msg.src != sock &&
-			msg.src.Tag() == sock.Tag() &&
+		if packet.src != sock &&
+			packet.src.Tag() == sock.Tag() &&
 			sock.TestFlag(SocketFlagBcast) {
-			fmt.Printf("Broadcast: src %s dst %s msg %s\r\n", msg.src, sock, msg)
-			sock.Send(msg)
+			fmt.Printf("Broadcast: src %s dst %s packet %s\r\n", packet.src, sock, packet)
+			sock.Send(packet)
 		}
 	}
 }
 
-// receive will call the msg handler for the matching tag
-func (b *Bus) receive(msg *Msg) {
+// receive will call the packet handler for the matching tag
+func (b *Bus) receive(packet *Packet) {
 	b.handlersMu.RLock()
 	defer b.handlersMu.RUnlock()
-	tag := msg.src.Tag()
+	tag := packet.src.Tag()
 	if handler, ok := b.handlers[tag]; ok {
-		handler(msg)
+		handler(packet)
 	}
 }

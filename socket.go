@@ -4,8 +4,8 @@ package dean
 type Socketer interface {
 	// Close the socket
 	Close()
-	// Send the msg on the socket
-	Send(*Msg) error
+	// Send the pkt on the socket
+	Send(*Packet) error
 	// Name of socket
 	String() string
 	// Tag returns the socket tag
@@ -27,7 +27,7 @@ type socket struct {
 }
 
 const (
-	// Socket is broadcast-ready.  If flag is not set, msgs will not be
+	// Socket is broadcast-ready.  If flag is not set, pkts will not be
 	// broadcast on this socket.
 	SocketFlagBcast uint32 = 1 << iota
 )
@@ -35,7 +35,7 @@ const (
 func (s *socket) Close() {
 }
 
-func (s *socket) Send(msg *Msg) error {
+func (s *socket) Send(pkt *Packet) error {
 	return nil
 }
 

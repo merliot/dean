@@ -129,15 +129,15 @@ func (s *Server) connect(socket Socketer) {
 	s.socketsMu.Unlock()
 }
 
-func (s *Server) handleAnnounce(msg *Msg) {
+func (s *Server) handleAnnounce(pkt *Packet) {
 	var ok bool
 	var ann ThingMsgAnnounce
-	msg.Unmarshal(&ann)
+	pkt.Unmarshal(&ann)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
 
-	socket := msg.src
+	socket := pkt.src
 	if _, ok = s.sockets[socket]; !ok {
 		fmt.Printf("Ignoring announcement: socket already disconnected: %s\r\n", socket)
 		socket.Close()
@@ -181,16 +181,16 @@ func (s *Server) handleAnnounce(msg *Msg) {
 
 	s.sockets[socket] = thinger
 
-	msg.Marshal(&ThingMsg{"get/state"}).Reply()
+	pkt.Marshal(&ThingMsg{"get/state"}).Reply()
 
-	msg.Marshal(&ThingMsgConnect{"connected", id, model, name})
-	s.injector.Inject(msg)
+	pkt.Marshal(&ThingMsgConnect{"connected", id, model, name})
+	s.injector.Inject(pkt)
 
 	// Notify other sockets with tag == id
-	msg.Marshal(&ThingMsg{"online"})
+	pkt.Marshal(&ThingMsg{"online"})
 	for sock := range s.sockets {
 		if sock.Tag() == id && sock != socket {
-			sock.Send(msg)
+			sock.Send(pkt)
 		}
 	}
 }
@@ -207,21 +207,21 @@ func (s *Server) disconnect(socket Socketer) {
 	}
 
 	if thinger != nil {
-		var msg Msg
+		var pkt Packet
 		var id, _, _ = thinger.Identity()
 
 		thinger.SetOnline(false)
 
-		msg.Marshal(&ThingMsgDisconnect{"disconnected", id})
-		s.injector.Inject(&msg)
+		pkt.Marshal(&ThingMsgDisconnect{"disconnected", id})
+		s.injector.Inject(&pkt)
 
 		socket.SetTag("")
 
 		// Notify other sockets with tag == id
-		msg.Marshal(&ThingMsg{"offline"})
+		pkt.Marshal(&ThingMsg{"offline"})
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
-				sock.Send(&msg)
+				sock.Send(&pkt)
 			}
 		}
 	}
@@ -242,7 +242,7 @@ func (s *Server) GetModels() []string {
 
 // CreateThing creates a new Thing based on model
 func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
-	var msg Msg
+	var pkt Packet
 
 	if !ValidId(id) {
 		return nil, fmt.Errorf("Invalid ID.  A valid ID is a non-empty string with only [a-z], [A-Z], [0-9], or underscore characters.")
@@ -279,15 +279,15 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	}
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
-	msg.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
-	s.injector.Inject(&msg)
+	pkt.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
+	s.injector.Inject(&pkt)
 
 	return thinger, nil
 }
 
 // DeleteThing deletes a Thing given id
 func (s *Server) DeleteThing(id string) error {
-	var msg Msg
+	var pkt Packet
 
 	s.thingsMu.Lock()
 	defer s.thingsMu.Unlock()
@@ -302,8 +302,8 @@ func (s *Server) DeleteThing(id string) error {
 
 	delete(s.things, id)
 
-	msg.Marshal(&ThingMsgDeleted{Path: "deleted/thing", Id: id})
-	s.injector.Inject(&msg)
+	pkt.Marshal(&ThingMsgDeleted{Path: "deleted/thing", Id: id})
+	s.injector.Inject(&pkt)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
@@ -319,7 +319,7 @@ func (s *Server) DeleteThing(id string) error {
 
 // AdoptThing adds a thing to server
 func (s *Server) AdoptThing(thinger Thinger) error {
-	var msg Msg
+	var pkt Packet
 	var id, model, name = thinger.Identity()
 
 	s.thingsMu.Lock()
@@ -338,25 +338,25 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	}
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
-	msg.Marshal(&ThingMsgAdopted{Path: "adopted/thing", Id: id, Model: model, Name: name})
-	s.injector.Inject(&msg)
+	pkt.Marshal(&ThingMsgAdopted{Path: "adopted/thing", Id: id, Model: model, Name: name})
+	s.injector.Inject(&pkt)
 
 	return nil
 }
 
-func (s *Server) busHandle(thinger Thinger) func(*Msg) {
-	return func(msg *Msg) {
-		fmt.Printf("Bus handle src %s msg %s\r\n", msg.src, msg)
-		var rmsg ThingMsg
+func (s *Server) busHandle(thinger Thinger) func(*Packet) {
+	return func(pkt *Packet) {
+		fmt.Printf("Bus handle src %s msg %s\r\n", pkt.src, pkt)
+		var rpkt ThingMsg
 
-		msg.Unmarshal(&rmsg)
+		pkt.Unmarshal(&rpkt)
 
-		switch rmsg.Path {
+		switch rpkt.Path {
 		case "announce":
-			go s.handleAnnounce(msg)
+			go s.handleAnnounce(pkt)
 			return
 		case "get/state", "state":
-			msg.src.SetFlag(SocketFlagBcast)
+			pkt.src.SetFlag(SocketFlagBcast)
 		}
 
 		if locker, ok := thinger.(Locker); ok {
@@ -365,8 +365,8 @@ func (s *Server) busHandle(thinger Thinger) func(*Msg) {
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[rmsg.Path]; ok {
-			sub(msg)
+		if sub, ok := subs[rpkt.Path]; ok {
+			sub(pkt)
 		}
 	}
 }
@@ -394,19 +394,19 @@ func (s *Server) Dial(url *url.URL, tries int) Socketer {
 	return ws
 }
 
-func (s *Server) Dials(durls string) {
-	for _, u := range strings.Split(durls, ",") {
+func (s *Server) Dials(urls string) {
+	for _, u := range strings.Split(urls, ",") {
 		if u == "" {
 			continue
 		}
-		durl, err := url.Parse(u)
+		url, err := url.Parse(u)
 		if err != nil {
 			fmt.Printf("Error parsing URL: %s\r\n", err.Error())
 			continue
 		}
-		switch durl.Scheme {
+		switch url.Scheme {
 		case "ws", "wss":
-			s.Dial(durl, -1)
+			s.Dial(url, -1)
 		default:
 			fmt.Println("Scheme must be ws or wss:", u)
 		}
