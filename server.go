@@ -181,13 +181,13 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 
 	s.sockets[socket] = thinger
 
-	pkt.Marshal(&ThingMsg{"get/state"}).Reply()
+	pkt.Marshal(&ThingMsg{Path: "get/state"}).Reply()
 
 	pkt.Marshal(&ThingMsgConnect{"connected", id, model, name})
 	s.injector.Inject(pkt)
 
 	// Notify other sockets with tag == id
-	pkt.Marshal(&ThingMsg{"online"})
+	pkt.Marshal(&ThingMsg{Path: "online"})
 	for sock := range s.sockets {
 		if sock.Tag() == id && sock != socket {
 			sock.Send(pkt)
@@ -218,7 +218,7 @@ func (s *Server) disconnect(socket Socketer) {
 		socket.SetTag("")
 
 		// Notify other sockets with tag == id
-		pkt.Marshal(&ThingMsg{"offline"})
+		pkt.Marshal(&ThingMsg{Path: "offline"})
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				sock.Send(&pkt)

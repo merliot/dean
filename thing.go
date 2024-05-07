@@ -33,8 +33,21 @@ type ThingMaker func(id, model, name string) Thinger
 // Makers is a map of ThinkMakers, keyed by model
 type Makers map[string]ThingMaker
 
-// ThingMsg is the prototypical msg.  All msgs have the Path member.
+// ThingMsg is the base message struct.  Other messages are composed with ThingMsg.
 type ThingMsg struct {
+
+	// Tags is dotted string of tags in the format "xxx.yyy.zzz", where
+	// xxx, yyy, and zzz are thing tags (ids) and xxx is the parent thing
+	// of yyy and yyy is the parent thing of device zzz, and so on.
+	//
+	// For example, thing id=hub-01 with child thing id=thing-01 would have
+	// message on the hub bus with Tags="hub-01.thing-01".
+	Tags string
+
+	// Path identifies the message type.  Paths are defined by the
+	// application.  There are a few reserved Paths:
+	//
+	//     "ping", "pong", "get/state", "state", "online", "offline"
 	Path string
 }
 

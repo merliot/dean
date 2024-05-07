@@ -23,6 +23,8 @@ type webSocket struct {
 	pingPeriod   time.Duration
 	pingSent     time.Time
 	pongRecieved bool
+	pingPkt      Packet
+	pongPkt      Packet
 }
 
 const pingPeriodMin = time.Second
@@ -47,6 +49,9 @@ func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 		w.pingPeriod = pingPeriodMin
 	}
 
+	w.pingPkt.Marshal(&ThingMsg{Path: "ping"})
+	w.pongPkt.Marshal(&ThingMsg{Path: "pong"})
+
 	return w
 }
 
@@ -54,14 +59,14 @@ func (w *webSocket) Close() {
 	w.closing = true
 }
 
-func (w *webSocket) Send(packet *Packet) error {
+func (w *webSocket) Send(pkt *Packet) error {
 	w.Lock()
 	defer w.Unlock()
 	if w.conn == nil {
 		return fmt.Errorf("Send on nil connection")
 	}
-	fmt.Printf("Sending %s: %s\r\n", w, packet)
-	return websocket.Message.Send(w.conn, string(packet.message))
+	fmt.Printf("Sending %s: %s\r\n", w, pkt)
+	return websocket.Message.Send(w.conn, string(pkt.message))
 }
 
 func (w *webSocket) getId() string {
@@ -161,9 +166,6 @@ func (w *webSocket) disconnect() {
 	w.conn = nil
 }
 
-var pingMsg = []byte("ping")
-var pongMsg = []byte("pong")
-
 func (w *webSocket) serve(conn *websocket.Conn) {
 	w.connect(conn)
 	w.serveServer()
@@ -173,7 +175,7 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 func (w *webSocket) ping() {
 	w.pongRecieved = false
 	w.pingSent = time.Now()
-	websocket.Message.Send(w.conn, string(pingMsg))
+	w.Send(&w.pingPkt)
 }
 
 func (w *webSocket) serveClient() {
@@ -191,7 +193,7 @@ func (w *webSocket) serveClient() {
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
 		err := websocket.Message.Receive(w.conn, &packet.message)
 		if err == nil {
-			if bytes.Equal(packet.message, pongMsg) {
+			if bytes.Equal(packet.message, w.pongPkt.message) {
 				w.pongRecieved = true
 			} else {
 				w.bus.receive(packet)
@@ -230,9 +232,9 @@ func (w *webSocket) serveServer() {
 		err := websocket.Message.Receive(w.conn, &packet.message)
 		if err == nil {
 			lastRecv = time.Now()
-			if bytes.Equal(packet.message, pingMsg) {
+			if bytes.Equal(packet.message, w.pingPkt.message) {
 				// Received ping, send pong
-				err := websocket.Message.Send(w.conn, string(pongMsg))
+				err := w.Send(&w.pongPkt)
 				if err != nil {
 					fmt.Printf("Error sending pong, disconnecting %s: %s\r\n", w, err.Error())
 					break
