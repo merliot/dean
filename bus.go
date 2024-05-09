@@ -124,7 +124,7 @@ func (b *Bus) broadcast(packet *Packet) {
 func (b *Bus) receive(packet *Packet) {
 	b.handlersMu.RLock()
 	defer b.handlersMu.RUnlock()
-	tag := packet.popTag()
+	tag := packet.src.Tag()
 	if handler, ok := b.handlers[tag]; ok {
 		handler(packet)
 	}

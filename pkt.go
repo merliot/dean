@@ -3,14 +3,13 @@ package dean
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 // Packet is sent and received on a bus via a socket
 type Packet struct {
-	bus     *Bus
-	src     Socketer
-	tags    string // tag chain
+	bus *Bus
+	src Socketer
+	//tags    string // tag chain
 	message []byte // payload
 }
 
@@ -23,6 +22,7 @@ func (p *Packet) String() string {
 	return string(p.message)
 }
 
+/*
 // Tag pops the first tag off the tag chain and returns the tag
 func (p *Packet) popTag() string {
 	tags := strings.SplitN(p.tags, ".", 2)
@@ -34,6 +34,7 @@ func (p *Packet) popTag() string {
 	}
 	return tags[0]
 }
+*/
 
 // Reply sends the packet back to sender
 func (p *Packet) Reply() *Packet {
