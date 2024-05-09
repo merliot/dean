@@ -103,6 +103,8 @@ func (s *Server) RegisterModel(model string, maker ThingMaker) {
 
 // UnregisterModel unregisters the Thing model
 func (s *Server) UnregisterModel(model string) {
+	s.Unhandle("/model/" + model + "/")
+
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	delete(s.makers, model)
@@ -110,8 +112,10 @@ func (s *Server) UnregisterModel(model string) {
 	s.modelsMu.Lock()
 	defer s.modelsMu.Unlock()
 	delete(s.models, model)
+}
 
-	s.Unhandle("/model/" + model + "/")
+func (s *Server) Models() map[string]Thinger {
+	return s.models
 }
 
 func (s *Server) dumpSockets(quote string) {
@@ -183,7 +187,12 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 
 	pkt.Marshal(&ThingMsg{Path: "get/state"}).Reply()
 
-	pkt.Marshal(&ThingMsgConnect{"connected", id, model, name})
+	pkt.Marshal(&ThingMsgConnect{
+		Path:  "connected",
+		Id:    id,
+		Model: model,
+		Name:  name,
+	})
 	s.injector.Inject(pkt)
 
 	// Notify other sockets with tag == id
@@ -212,7 +221,7 @@ func (s *Server) disconnect(socket Socketer) {
 
 		thinger.SetOnline(false)
 
-		pkt.Marshal(&ThingMsgDisconnect{"disconnected", id})
+		pkt.Marshal(&ThingMsgDisconnect{Path: "disconnected", Id: id})
 		s.injector.Inject(&pkt)
 
 		socket.SetTag("")
@@ -227,17 +236,6 @@ func (s *Server) disconnect(socket Socketer) {
 	}
 
 	delete(s.sockets, socket)
-}
-
-// GetModels returns a list of register models
-func (s *Server) GetModels() []string {
-	var models []string
-	s.makersMu.RLock()
-	defer s.makersMu.RUnlock()
-	for model := range s.makers {
-		models = append(models, model)
-	}
-	return models
 }
 
 // CreateThing creates a new Thing based on model
@@ -347,11 +345,11 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 	return func(pkt *Packet) {
 		fmt.Printf("Bus handle src %s msg %s\r\n", pkt.src, pkt)
-		var rpkt ThingMsg
+		var msg ThingMsg
 
-		pkt.Unmarshal(&rpkt)
+		pkt.Unmarshal(&msg)
 
-		switch rpkt.Path {
+		switch msg.Path {
 		case "announce":
 			go s.handleAnnounce(pkt)
 			return
@@ -365,7 +363,7 @@ func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[rpkt.Path]; ok {
+		if sub, ok := subs[msg.Path]; ok {
 			sub(pkt)
 		}
 	}

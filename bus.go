@@ -120,11 +120,11 @@ func (b *Bus) broadcast(packet *Packet) {
 	}
 }
 
-// receive will call the packet handler for the matching tag
+// receive will call the packet handler for the packet tag
 func (b *Bus) receive(packet *Packet) {
 	b.handlersMu.RLock()
 	defer b.handlersMu.RUnlock()
-	tag := packet.src.Tag()
+	tag := packet.popTag()
 	if handler, ok := b.handlers[tag]; ok {
 		handler(packet)
 	}

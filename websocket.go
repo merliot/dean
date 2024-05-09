@@ -16,7 +16,6 @@ import (
 // webSocket wraps a websocket.Conn and implements the Socketer imterface
 type webSocket struct {
 	socket
-	mutex
 	url          *url.URL
 	conn         *websocket.Conn
 	closing      bool
@@ -49,8 +48,8 @@ func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 		w.pingPeriod = pingPeriodMin
 	}
 
-	w.pingPkt.Marshal(&ThingMsg{Path: "ping"})
-	w.pongPkt.Marshal(&ThingMsg{Path: "pong"})
+	w.pingPkt.Marshal(&struct{ Path string }{Path: "ping"})
+	w.pongPkt.Marshal(&struct{ Path string }{Path: "pong"})
 
 	return w
 }
@@ -59,14 +58,16 @@ func (w *webSocket) Close() {
 	w.closing = true
 }
 
-func (w *webSocket) Send(pkt *Packet) error {
-	w.Lock()
-	defer w.Unlock()
+func (w *webSocket) send(pkt *Packet) error {
 	if w.conn == nil {
 		return fmt.Errorf("Send on nil connection")
 	}
-	fmt.Printf("Sending %s: %s\r\n", w, pkt)
 	return websocket.Message.Send(w.conn, string(pkt.message))
+}
+
+func (w *webSocket) Send(pkt *Packet) error {
+	fmt.Printf("Sending %s: %s\r\n", w, pkt)
+	return w.send(pkt)
 }
 
 func (w *webSocket) getId() string {
@@ -175,7 +176,7 @@ func (w *webSocket) serve(conn *websocket.Conn) {
 func (w *webSocket) ping() {
 	w.pongRecieved = false
 	w.pingSent = time.Now()
-	w.Send(&w.pingPkt)
+	w.send(&w.pingPkt)
 }
 
 func (w *webSocket) serveClient() {
@@ -234,7 +235,7 @@ func (w *webSocket) serveServer() {
 			lastRecv = time.Now()
 			if bytes.Equal(packet.message, w.pingPkt.message) {
 				// Received ping, send pong
-				err := w.Send(&w.pongPkt)
+				err := w.send(&w.pongPkt)
 				if err != nil {
 					fmt.Printf("Error sending pong, disconnecting %s: %s\r\n", w, err.Error())
 					break

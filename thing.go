@@ -1,5 +1,10 @@
 package dean
 
+import (
+	"html/template"
+	"strings"
+)
+
 // Thinger defines a thing interface
 type Thinger interface {
 	Subscribers() Subscribers
@@ -36,23 +41,29 @@ type Makers map[string]ThingMaker
 // ThingMsg is the base message struct.  Other messages are composed with ThingMsg.
 type ThingMsg struct {
 
-	// Tags is dotted string of tags in the format "xxx.yyy.zzz", where
-	// xxx, yyy, and zzz are thing tags (ids) and xxx is the parent thing
-	// of yyy and yyy is the parent thing of device zzz, and so on.
+	// Tags is a dotted-list of tags, i.e. xxx.yyy.zzz.  Empty Tags means
+	// the message has reached its destination.  A Tag is added to the
+	// message as the message ingresses a tagged connection.  Each ingress
+	// into a tagged connection adds another tag.  The tags are dotted
+	// together, with the left-most tag being the tag of the last
+	// connection.  Likewise, on egress of tagged a connection, the
+	// left-most tag is stripped from Tags.
 	//
-	// For example, thing id=hub-01 with child thing id=thing-01 would have
-	// message on the hub bus with Tags="hub-01.thing-01".
+	// A tag in Tags should pass ValidId().
+
 	Tags string
 
 	// Path identifies the message type.  Paths are defined by the
 	// application.  There are a few reserved Paths:
 	//
 	//     "ping", "pong", "get/state", "state", "online", "offline"
+
 	Path string
 }
 
 // ThingMsgAnnounce is sent to annouce a Thing to a server
 type ThingMsgAnnounce struct {
+	Tags  string
 	Path  string
 	Id    string
 	Model string
@@ -61,6 +72,7 @@ type ThingMsgAnnounce struct {
 
 // ThingMsgConnect is sent when a Thing connects to a server
 type ThingMsgConnect struct {
+	Tags  string
 	Path  string
 	Id    string
 	Model string
@@ -69,12 +81,14 @@ type ThingMsgConnect struct {
 
 // ThingMsgDisconnect is sent when a Thing disconnects from a server
 type ThingMsgDisconnect struct {
+	Tags string
 	Path string
 	Id   string
 }
 
 // ThingMsgCreated is sent when a new Thing is created on a server
 type ThingMsgCreated struct {
+	Tags  string
 	Path  string
 	Id    string
 	Model string
@@ -83,12 +97,14 @@ type ThingMsgCreated struct {
 
 // ThingMsgDeleted is sent when Thing is deleted from a server
 type ThingMsgDeleted struct {
+	Tags string
 	Path string
 	Id   string
 }
 
-// ThingMsgeAdopted is sent when as new Thing is adopted on a server
+// ThingMsgAdopted is sent when as new Thing is adopted on a server
 type ThingMsgAdopted struct {
+	Tags  string
 	Path  string
 	Id    string
 	Model string
@@ -97,6 +113,7 @@ type ThingMsgAdopted struct {
 
 // Thing implements Thinger and is the base structure for building things
 type Thing struct {
+	Tags   string
 	Path   string
 	Id     string
 	Model  string
@@ -131,6 +148,7 @@ func (t *Thing) SetOnline(online bool)              { t.Online = online }
 func (t *Thing) SetFlag(flag uint32)                { t.flags |= flag }
 func (t *Thing) TestFlag(flag uint32) bool          { return (t.flags & flag) != 0 }
 func (t *Thing) IsMetal() bool                      { return t.TestFlag(ThingFlagMetal) }
+func (t *Thing) ModelTitle() template.JS            { return template.JS(strings.Title(t.Model)) }
 
 func (t *Thing) String() string {
 	return "[Id: " + t.Id + ", Model: " + t.Model + ", Name: " + t.Name + "]"
@@ -140,7 +158,12 @@ func (t *Thing) String() string {
 // Thing.
 func (t *Thing) Announce() *Packet {
 	var pkt Packet
-	var ann = ThingMsgAnnounce{"announce", t.Id, t.Model, t.Name}
+	var ann = ThingMsgAnnounce{
+		Path:  "announce",
+		Id:    t.Id,
+		Model: t.Model,
+		Name:  t.Name,
+	}
 	return pkt.Marshal(&ann)
 }
 
