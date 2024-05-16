@@ -106,26 +106,26 @@ func (b *Bus) unplug(s Socketer) {
 
 // broadcast packet to all sockets with matching tag, skipping the source
 // socket src
-func (b *Bus) broadcast(packet *Packet) {
+func (b *Bus) broadcast(pkt *Packet) {
 	b.socketsMu.RLock()
 	defer b.socketsMu.RUnlock()
 	for sock := range b.sockets {
 		//println("  sock tag", sock.Tag(), "name", sock.Name())
-		if packet.src != sock &&
-			packet.src.Tag() == sock.Tag() &&
+		if pkt.src != sock &&
+			pkt.src.Tag() == sock.Tag() &&
 			sock.TestFlag(SocketFlagBcast) {
-			fmt.Printf("Broadcast: src %s dst %s packet %s\r\n", packet.src, sock, packet)
-			sock.Send(packet)
+			fmt.Printf("Bcast  src %s dst %s packet %s\r\n", pkt.src, sock, pkt)
+			sock.Send(pkt)
 		}
 	}
 }
 
 // receive will call the packet handler for the packet tag
-func (b *Bus) receive(packet *Packet) {
+func (b *Bus) receive(pkt *Packet) {
+	fmt.Printf("Recv  %s\r\n", pkt)
 	b.handlersMu.RLock()
 	defer b.handlersMu.RUnlock()
-	tag := packet.src.Tag()
-	if handler, ok := b.handlers[tag]; ok {
-		handler(packet)
+	if handler, ok := b.handlers[pkt.Tags]; ok {
+		handler(pkt)
 	}
 }

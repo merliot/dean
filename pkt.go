@@ -9,32 +9,23 @@ import (
 type Packet struct {
 	bus *Bus
 	src Socketer
-	//tags    string // tag chain
-	message []byte // payload
-}
-
-// Bytes returns the packet message
-func (p *Packet) Bytes() []byte {
-	return p.message
+	message
 }
 
 func (p *Packet) String() string {
-	return string(p.message)
+	return fmt.Sprintf("[%s] %s", p.src, p.message.String())
 }
 
-/*
-// Tag pops the first tag off the tag chain and returns the tag
-func (p *Packet) popTag() string {
-	tags := strings.SplitN(p.tags, ".", 2)
-	switch len(tags) {
-	case 1:
-		p.tags = ""
-	case 2:
-		p.tags = tags[1]
-	}
-	return tags[0]
+func (p *Packet) SetPath(path string) *Packet {
+	p.Path = path
+	return p
 }
-*/
+
+// Clear empties the packet's message payload
+func (p *Packet) Clear() *Packet {
+	p.Payload = []byte{}
+	return p
+}
 
 // Reply sends the packet back to sender
 func (p *Packet) Reply() *Packet {
@@ -42,7 +33,6 @@ func (p *Packet) Reply() *Packet {
 		fmt.Printf("Can't reply to sender: source is nil\r\n")
 		return p
 	}
-	fmt.Printf("Reply: src %s msg %s\r\n", p.src, p)
 	p.src.Send(p)
 	return p
 }
@@ -54,15 +44,14 @@ func (p *Packet) Broadcast() *Packet {
 		fmt.Printf("Can't broadcast packet: bus is nil\r\n")
 		return p
 	}
-	fmt.Printf("Broadcast: tag %s %s\r\n", p.src.Tag(), p)
+	fmt.Printf("Bcast %s\r\n", p)
 	p.bus.broadcast(p)
 	return p
 }
 
 // Unmarshal the packet message as JSON into v
 func (p *Packet) Unmarshal(v any) *Packet {
-	err := json.Unmarshal(p.message, v)
-	if err != nil {
+	if err := json.Unmarshal(p.Payload, v); err != nil {
 		fmt.Printf("JSON unmarshal error %s\r\n", err.Error())
 	}
 	return p
@@ -71,7 +60,7 @@ func (p *Packet) Unmarshal(v any) *Packet {
 // Marshal the packet message as JSON from v
 func (p *Packet) Marshal(v any) *Packet {
 	var err error
-	p.message, err = json.Marshal(v)
+	p.Payload, err = json.Marshal(v)
 	if err != nil {
 		fmt.Printf("JSON marshal error %s\r\n", err.Error())
 	}

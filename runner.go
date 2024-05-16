@@ -34,12 +34,8 @@ func NewRunner(thinger Thinger, user, passwd string) *Runner {
 
 func (r *Runner) busHandle(thinger Thinger) func(*Packet) {
 	return func(pkt *Packet) {
-		fmt.Printf("Bus handle src %s msg %s\r\n", pkt.src, pkt)
-		var msg ThingMsg
 
-		pkt.Unmarshal(&msg)
-
-		switch msg.Path {
+		switch pkt.Path {
 		case "get/state", "state":
 			pkt.src.SetFlag(SocketFlagBcast)
 		}
@@ -50,7 +46,7 @@ func (r *Runner) busHandle(thinger Thinger) func(*Packet) {
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[msg.Path]; ok {
+		if sub, ok := subs[pkt.Path]; ok {
 			sub(pkt)
 		}
 	}

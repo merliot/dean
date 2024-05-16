@@ -185,10 +185,9 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 
 	s.sockets[socket] = thinger
 
-	pkt.Marshal(&ThingMsg{Path: "get/state"}).Reply()
+	pkt.Clear().SetPath("get/state").Reply()
 
-	pkt.Marshal(&ThingMsgConnect{
-		Path:  "connected",
+	pkt.SetPath("connected").Marshal(&ThingMsgConnect{
 		Id:    id,
 		Model: model,
 		Name:  name,
@@ -196,7 +195,7 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 	s.injector.Inject(pkt)
 
 	// Notify other sockets with tag == id
-	pkt.Marshal(&ThingMsg{Path: "online"})
+	pkt.Clear().SetPath("online")
 	for sock := range s.sockets {
 		if sock.Tag() == id && sock != socket {
 			sock.Send(pkt)
@@ -221,13 +220,13 @@ func (s *Server) disconnect(socket Socketer) {
 
 		thinger.SetOnline(false)
 
-		pkt.Marshal(&ThingMsgDisconnect{Path: "disconnected", Id: id})
+		pkt.SetPath("disconnected").Marshal(&ThingMsgDisconnect{Id: id})
 		s.injector.Inject(&pkt)
 
 		socket.SetTag("")
 
 		// Notify other sockets with tag == id
-		pkt.Marshal(&ThingMsg{Path: "offline"})
+		pkt.Clear().SetPath("offline")
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				sock.Send(&pkt)
@@ -277,7 +276,7 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 	}
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
-	pkt.Marshal(&ThingMsgCreated{Path: "created/thing", Id: id, Model: model, Name: name})
+	pkt.SetPath("created/thing").Marshal(&ThingMsgCreated{Id: id, Model: model, Name: name})
 	s.injector.Inject(&pkt)
 
 	return thinger, nil
@@ -300,7 +299,7 @@ func (s *Server) DeleteThing(id string) error {
 
 	delete(s.things, id)
 
-	pkt.Marshal(&ThingMsgDeleted{Path: "deleted/thing", Id: id})
+	pkt.SetPath("deleted/thing").Marshal(&ThingMsgDeleted{Id: id})
 	s.injector.Inject(&pkt)
 
 	s.socketsMu.Lock()
@@ -332,11 +331,11 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	s.bus.Handle(id, s.busHandle(thinger))
 
 	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("/"+id+"/", http.StripPrefix("/"+id+"/", handler))
+		s.Handle("/device/"+id+"/", http.StripPrefix("/device/"+id+"/", handler))
 	}
 	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
-	pkt.Marshal(&ThingMsgAdopted{Path: "adopted/thing", Id: id, Model: model, Name: name})
+	pkt.SetPath("adopted/thing").Marshal(&ThingMsgAdopted{Id: id, Model: model, Name: name})
 	s.injector.Inject(&pkt)
 
 	return nil
@@ -344,12 +343,8 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 
 func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 	return func(pkt *Packet) {
-		fmt.Printf("Bus handle src %s msg %s\r\n", pkt.src, pkt)
-		var msg ThingMsg
 
-		pkt.Unmarshal(&msg)
-
-		switch msg.Path {
+		switch pkt.Path {
 		case "announce":
 			go s.handleAnnounce(pkt)
 			return
@@ -363,7 +358,7 @@ func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 		}
 
 		subs := thinger.Subscribers()
-		if sub, ok := subs[msg.Path]; ok {
+		if sub, ok := subs[pkt.Path]; ok {
 			sub(pkt)
 		}
 	}

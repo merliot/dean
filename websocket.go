@@ -1,7 +1,7 @@
 package dean
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -48,8 +48,8 @@ func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 		w.pingPeriod = pingPeriodMin
 	}
 
-	w.pingPkt.Marshal(&struct{ Path string }{Path: "ping"})
-	w.pongPkt.Marshal(&struct{ Path string }{Path: "pong"})
+	w.pingPkt = Packet{message: message{Path: "ping"}}
+	w.pongPkt = Packet{message: message{Path: "pong"}}
 
 	return w
 }
@@ -62,11 +62,15 @@ func (w *webSocket) send(pkt *Packet) error {
 	if w.conn == nil {
 		return fmt.Errorf("Send on nil connection")
 	}
-	return websocket.Message.Send(w.conn, string(pkt.message))
+	data, err := json.Marshal(pkt.message)
+	if err != nil {
+		return err
+	}
+	return websocket.Message.Send(w.conn, string(data))
 }
 
 func (w *webSocket) Send(pkt *Packet) error {
-	fmt.Printf("Sending %s: %s\r\n", w, pkt)
+	fmt.Printf("Send  %s\r\n", pkt)
 	return w.send(pkt)
 }
 
@@ -114,7 +118,7 @@ func (w *webSocket) announced(announce *Packet) bool {
 
 	// Any packet received is an ack of the announcement
 	w.conn.SetReadDeadline(time.Now().Add(time.Second))
-	err := websocket.Message.Receive(w.conn, &packet.message)
+	err := websocket.Message.Receive(w.conn, packet.Bytes())
 	if err == nil {
 		w.bus.receive(packet)
 		return true
@@ -181,6 +185,8 @@ func (w *webSocket) ping() {
 
 func (w *webSocket) serveClient() {
 
+	var data []byte
+
 	w.ping()
 
 	for {
@@ -192,9 +198,14 @@ func (w *webSocket) serveClient() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(w.conn, &packet.message)
+		err := websocket.Message.Receive(w.conn, &data)
 		if err == nil {
-			if bytes.Equal(packet.message, w.pongPkt.message) {
+			err = json.Unmarshal(data, &packet.message)
+			if err != nil {
+				fmt.Printf("Error unmarshaling packet, skipping %s: %s\r\n", w, err.Error())
+				continue
+			}
+			if packet.Path == w.pongPkt.Path {
 				w.pongRecieved = true
 			} else {
 				w.bus.receive(packet)
@@ -218,6 +229,8 @@ func (w *webSocket) serveClient() {
 
 func (w *webSocket) serveServer() {
 
+	var data []byte
+
 	pingCheck := w.pingPeriod + (4 * time.Second)
 	lastRecv := time.Now()
 
@@ -230,10 +243,15 @@ func (w *webSocket) serveServer() {
 		}
 
 		w.conn.SetReadDeadline(time.Now().Add(time.Second))
-		err := websocket.Message.Receive(w.conn, &packet.message)
+		err := websocket.Message.Receive(w.conn, &data)
 		if err == nil {
+			err = json.Unmarshal(data, &packet.message)
+			if err != nil {
+				fmt.Printf("Error unmarshaling packet, skipping %s: %s\r\n", w, err.Error())
+				continue
+			}
 			lastRecv = time.Now()
-			if bytes.Equal(packet.message, w.pingPkt.message) {
+			if packet.Path == w.pingPkt.Path {
 				// Received ping, send pong
 				err := w.send(&w.pongPkt)
 				if err != nil {
