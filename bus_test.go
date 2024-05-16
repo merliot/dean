@@ -40,31 +40,32 @@ func TestInvalidUnhandle(t *testing.T) {
 }
 
 func TestMultipleHandlers(t *testing.T) {
-	foo := func(packet *Packet) { packet.src.SetTag("bar") }
-	bar := func(packet *Packet) { packet.src.SetTag("baz") }
-	baz := func(packet *Packet) { packet.src.SetTag("") }
-	none := func(packet *Packet) { packet.src.SetTag("foo") }
+	foo := func(packet *Packet) { packet.Tags = "bar" }
+	bar := func(packet *Packet) { packet.Tags = "baz" }
+	baz := func(packet *Packet) { packet.Tags = "" }
+	none := func(packet *Packet) { packet.Tags = "foo" }
 	bus := NewBus("test bus", nil, nil)
 	bus.Handle("foo", foo)
 	bus.Handle("bar", bar)
 	bus.Handle("baz", baz)
 	bus.Handle("", none)
 	sock := &socket{"test socket", "foo", 0, bus}
-	packet := &Packet{bus, sock, nil}
+	packet := &Packet{bus: bus, src: sock}
+	packet.Tags = "foo"
 	bus.receive(packet)
 	bus.receive(packet)
 	bus.receive(packet)
-	if packet.src.Tag() != "" {
-		t.Error("Expected \"\", got", packet.src.Tag())
+	if packet.Tags != "" {
+		t.Error("Expected \"\", got", packet.Tags)
 	}
 	bus.receive(packet)
-	if packet.src.Tag() != "foo" {
-		t.Error("Expected foo, got", packet.src.Tag())
+	if packet.Tags != "foo" {
+		t.Error("Expected foo, got", packet.Tags)
 	}
 	bus.Unhandle("foo")
 	bus.receive(packet)
-	if packet.src.Tag() != "foo" {
-		t.Error("Expected foo, got", packet.src.Tag())
+	if packet.Tags != "" {
+		t.Error("Expected \"\", got", packet.Tags)
 	}
 }
 
@@ -98,7 +99,7 @@ func TestBroadcast(t *testing.T) {
 	bus.plugin(sock2)
 	bus.plugin(sock3)
 	bus.plugin(sock4)
-	packet := &Packet{bus, sock1, nil}
+	packet := &Packet{bus: bus, src: sock1}
 	bus.broadcast(packet)
 	if !(!sock1.sent && sock2.sent && !sock3.sent && sock4.sent) {
 		t.Error("Broadcast failed")
