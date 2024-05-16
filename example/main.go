@@ -26,8 +26,7 @@ func (t *thing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *thing) getState(msg *dean.Packet) {
-	t.Path = "state"
-	msg.Marshal(t).Reply()
+	msg.SetPath("state").Marshal(t).Reply()
 }
 
 func (t *thing) update(msg *dean.Packet) {
@@ -35,9 +34,8 @@ func (t *thing) update(msg *dean.Packet) {
 }
 
 func (t *thing) reset(msg *dean.Packet) {
-	t.Path = "update"
 	t.Count = 0
-	msg.Marshal(t).Reply().Broadcast()
+	msg.SetPath("update").Marshal(t).Reply().Broadcast()
 }
 
 func (t *thing) Subscribers() dean.Subscribers {
@@ -49,11 +47,10 @@ func (t *thing) Subscribers() dean.Subscribers {
 }
 
 func (t *thing) Run(i *dean.Injector) {
-	var msg dean.Packet
+	var pkt dean.Packet
 	for {
-		t.Path = "update"
 		t.Count++
-		i.Inject(msg.Marshal(t))
+		i.Inject(pkt.SetPath("update").Marshal(t))
 		time.Sleep(time.Second)
 	}
 }
