@@ -8,7 +8,7 @@ import (
 // Thinger defines a thing interface
 type Thinger interface {
 	Subscribers() Subscribers
-	Announce() *Packet
+	Announce(*webSocket) *Packet
 	Setup()
 	Run(*Injector)
 	FailSafe()
@@ -119,8 +119,8 @@ func (t *Thing) String() string {
 
 // Announce returns an announcement msg.  The announcement msg identifies the
 // Thing.
-func (t *Thing) Announce() *Packet {
-	var pkt Packet
+func (t *Thing) Announce(ws *webSocket) *Packet {
+	var pkt = Packet{src: ws}
 	var ann = ThingMsgAnnounce{
 		Id:    t.Id,
 		Model: t.Model,

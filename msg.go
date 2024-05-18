@@ -44,6 +44,14 @@ func (m *message) PathEqual(m2 *message) bool {
 	return m.Path == m2.Path
 }
 
+func (m *message) pushTag(tag string) {
+	if m.Tags == "" {
+		m.Tags = tag
+	} else {
+		m.Tags = tag + "." + m.Tags
+	}
+}
+
 // popTag pops the first tag off the message tag chain and returns the tag
 func (m *message) popTag() string {
 	if m.Tags == "" {

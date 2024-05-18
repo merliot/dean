@@ -66,7 +66,7 @@ func (r *Runner) busHandle(thinger Thinger) func(*Packet) {
 
 func (r *Runner) Dial(url *url.URL, tries int) Socketer {
 	ws := newWebSocket(url, "", r.bus)
-	go ws.Dial(r.user, r.passwd, r.thinger.Announce(), tries)
+	go ws.Dial(r.user, r.passwd, r.thinger.Announce(ws), tries)
 	return ws
 }
 

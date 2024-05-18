@@ -126,7 +126,7 @@ func (s *Server) dumpSockets(quote string) {
 }
 
 func (s *Server) connect(socket Socketer) {
-	fmt.Printf("\r\n*** CONNECT %s\r\n", socket)
+	fmt.Printf("\r\n*** CONNECT [%s]\r\n", socket)
 
 	s.socketsMu.Lock()
 	s.sockets[socket] = nil
@@ -148,7 +148,7 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 		return
 	}
 
-	fmt.Printf("\r\n*** ANNOUNCE %s %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
+	fmt.Printf("\r\n*** ANNOUNCE [%s] %s %s %s\r\n", socket, ann.Id, ann.Model, ann.Name)
 
 	s.thingsMu.RLock()
 	defer s.thingsMu.RUnlock()
@@ -162,6 +162,12 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 
 	var id, model, name = thinger.Identity()
 
+	if thinger.IsOnline() {
+		fmt.Printf("Ignoring annoucement: thing already connected %s\r\n", id)
+		socket.Close()
+		return
+	}
+
 	if model != ann.Model {
 		fmt.Printf("Ignoring annoucement: model doesn't match %s %s %s\r\n", id, model, ann.Model)
 		socket.Close()
@@ -174,18 +180,12 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 		return
 	}
 
-	if thinger.IsOnline() {
-		fmt.Printf("Ignoring annoucement: thing already connected %s\r\n", id)
-		socket.Close()
-		return
-	}
-
 	thinger.SetOnline(true)
 	socket.SetTag(id)
 
 	s.sockets[socket] = thinger
 
-	pkt.Clear().SetPath("get/state").Reply()
+	pkt.ClearPayload().SetPath("get/state").Reply()
 
 	pkt.SetPath("connected").Marshal(&ThingMsgConnect{
 		Id:    id,
@@ -195,7 +195,7 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 	s.injector.Inject(pkt)
 
 	// Notify other sockets with tag == id
-	pkt.Clear().SetPath("online")
+	pkt.ClearPayload().SetPath("online")
 	for sock := range s.sockets {
 		if sock.Tag() == id && sock != socket {
 			sock.Send(pkt)
@@ -204,7 +204,7 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 }
 
 func (s *Server) disconnect(socket Socketer) {
-	fmt.Printf("\r\n*** DISCONNECT %s\r\n", socket)
+	fmt.Printf("\r\n*** DISCONNECT [%s]\r\n", socket)
 
 	s.socketsMu.Lock()
 	defer s.socketsMu.Unlock()
@@ -226,7 +226,7 @@ func (s *Server) disconnect(socket Socketer) {
 		socket.SetTag("")
 
 		// Notify other sockets with tag == id
-		pkt.Clear().SetPath("offline")
+		pkt.ClearPayload().SetPath("offline")
 		for sock := range s.sockets {
 			if sock.Tag() == id && sock != socket {
 				sock.Send(&pkt)
@@ -343,6 +343,7 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 
 func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 	return func(pkt *Packet) {
+		println(pkt.Path)
 
 		switch pkt.Path {
 		case "announce":
@@ -359,6 +360,7 @@ func (s *Server) busHandle(thinger Thinger) func(*Packet) {
 
 		subs := thinger.Subscribers()
 		if sub, ok := subs[pkt.Path]; ok {
+			println("found sub for", pkt.Path)
 			sub(pkt)
 		}
 	}
@@ -383,7 +385,7 @@ func (s *Server) MaxSockets(maxSockets int) {
 
 func (s *Server) Dial(url *url.URL, tries int) Socketer {
 	ws := newWebSocket(url, "", s.bus)
-	go ws.Dial(s.user, s.passwd, s.thinger.Announce(), tries)
+	go ws.Dial(s.user, s.passwd, s.thinger.Announce(ws), tries)
 	return ws
 }
 

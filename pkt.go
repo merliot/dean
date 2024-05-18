@@ -16,13 +16,18 @@ func (p *Packet) String() string {
 	return fmt.Sprintf("[%s] %s", p.src, p.message.String())
 }
 
+func (p *Packet) PushTag(tag string) *Packet {
+	p.pushTag(tag)
+	return p
+}
+
 func (p *Packet) SetPath(path string) *Packet {
 	p.Path = path
 	return p
 }
 
-// Clear empties the packet's message payload
-func (p *Packet) Clear() *Packet {
+// ClearPayload empties the packet's message payload
+func (p *Packet) ClearPayload() *Packet {
 	p.Payload = []byte{}
 	return p
 }

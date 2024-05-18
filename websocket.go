@@ -109,6 +109,7 @@ func (w *webSocket) newConfig(user, passwd string) (*websocket.Config, error) {
 func (w *webSocket) announced(announce *Packet) bool {
 
 	var packet = &Packet{bus: w.bus, src: w}
+	var data []byte
 
 	// Send an announcement packet
 	if err := w.Send(announce); err != nil {
@@ -118,13 +119,19 @@ func (w *webSocket) announced(announce *Packet) bool {
 
 	// Any packet received is an ack of the announcement
 	w.conn.SetReadDeadline(time.Now().Add(time.Second))
-	err := websocket.Message.Receive(w.conn, packet.Bytes())
+	err := websocket.Message.Receive(w.conn, &data)
 	if err == nil {
+		err = json.Unmarshal(data, &packet.message)
+		if err != nil {
+			fmt.Printf("Error unmarshaling packet %s: %s\r\n", w, err.Error())
+			return false
+		}
 		w.bus.receive(packet)
 		return true
 	}
 
 	// Announcement was not acked
+	fmt.Printf("Announcement not ACKed %s: %s\r\n", w)
 	return false
 }
 
