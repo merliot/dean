@@ -118,7 +118,8 @@ func (w *webSocket) announced(announce *Packet) bool {
 	}
 
 	// Any packet received is an ack of the announcement
-	w.conn.SetReadDeadline(time.Now().Add(time.Second))
+	timeout := time.Second
+	w.conn.SetReadDeadline(time.Now().Add(timeout))
 	err := websocket.Message.Receive(w.conn, &data)
 	if err == nil {
 		err = json.Unmarshal(data, &packet.message)
@@ -131,7 +132,7 @@ func (w *webSocket) announced(announce *Packet) bool {
 	}
 
 	// Announcement was not acked
-	fmt.Printf("Announcement not ACKed %s: %s\r\n", w)
+	fmt.Printf("Announcement not ACKed %s\r\n", w)
 	return false
 }
 
