@@ -54,7 +54,7 @@ func (p *Packet) Broadcast() *Packet {
 	return p
 }
 
-// Unmarshal the packet message as JSON into v
+// Unmarshal the packet message payload as JSON into v
 func (p *Packet) Unmarshal(v any) *Packet {
 	if err := json.Unmarshal(p.Payload, v); err != nil {
 		fmt.Printf("JSON unmarshal error %s\r\n", err.Error())
@@ -62,7 +62,7 @@ func (p *Packet) Unmarshal(v any) *Packet {
 	return p
 }
 
-// Marshal the packet message as JSON from v
+// Marshal the packet message payload as JSON from v
 func (p *Packet) Marshal(v any) *Packet {
 	var err error
 	p.Payload, err = json.Marshal(v)
@@ -70,4 +70,14 @@ func (p *Packet) Marshal(v any) *Packet {
 		fmt.Printf("JSON marshal error %s\r\n", err.Error())
 	}
 	return p
+}
+
+// SetMessage sets the packet message from data
+func (p *Packet) SetMessage(data []byte) error {
+	return json.Unmarshal(data, &p.message)
+}
+
+// Message returns the packet message as data
+func (p *Packet) Message() ([]byte, error) {
+	return json.Marshal(p.message)
 }
