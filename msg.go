@@ -45,6 +45,9 @@ func (m *message) PathEqual(m2 *message) bool {
 }
 
 func (m *message) pushTag(tag string) {
+	if tag == "" {
+		return
+	}
 	if m.Tags == "" {
 		m.Tags = tag
 	} else {
@@ -65,4 +68,9 @@ func (m *message) popTag() string {
 		m.Tags = tags[1]
 	}
 	return tags[0]
+}
+
+// getTag returns the first tag on the tag chain
+func (m *message) getTag() string {
+	return strings.SplitN(m.Tags, ".", 2)[0]
 }

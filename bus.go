@@ -122,10 +122,21 @@ func (b *Bus) broadcast(pkt *Packet) {
 
 // receive will call the packet handler for the packet tag
 func (b *Bus) receive(pkt *Packet) {
+	var tag string
+	var trunk = pkt.src.TestFlag(SocketFlagTrunk)
+
 	fmt.Printf("Recv  %s\r\n", pkt)
-	tag := pkt.popTag()
+
+	if trunk {
+		tag = pkt.getTag()
+	} else {
+		tag = pkt.src.Tag()
+		pkt.pushTag(tag)
+	}
+
 	b.handlersMu.RLock()
 	defer b.handlersMu.RUnlock()
+
 	if handler, ok := b.handlers[tag]; ok {
 		handler(pkt)
 	}

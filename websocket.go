@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -32,19 +31,25 @@ type webSocket struct {
 func newWebSocket(url *url.URL, remoteAddr string, bus *Bus) *webSocket {
 	w := &webSocket{}
 
-	var name string
-	if remoteAddr == "" {
-		name = "ws:localhost::" + url.String()
-	} else {
-		name = "ws:" + url.String() + "::" + remoteAddr
-	}
-
-	w.socket = socket{name, "", 0, bus}
-	w.url = url
+	v := url.Query()
 
 	/* param ping-period */
-	period, _ := strconv.Atoi(url.Query().Get("ping-period"))
+	period, _ := strconv.Atoi(v.Get("ping-period"))
 	w.pingPeriod = time.Duration(period) * time.Second
+
+	/* param trunk */
+	flags := uint32(0)
+	if v.Has("trunk") {
+		flags |= SocketFlagTrunk
+	}
+
+	name := url.Path
+	if remoteAddr != "" {
+		name += "::" + remoteAddr
+	}
+
+	w.socket = socket{name, "", flags, bus}
+	w.url = url
 
 	return w
 }
@@ -66,16 +71,11 @@ func (w *webSocket) send(pkt *Packet) error {
 
 func (w *webSocket) Send(pkt *Packet) error {
 	fmt.Printf("Send  %s\r\n", pkt)
-	return w.send(pkt)
-}
-
-func (w *webSocket) getId() string {
-	/* get ID from /ws/[id]/ */
-	parts := strings.Split(w.url.Path, "/")
-	if len(parts) == 4 {
-		return parts[2]
+	trunk := w.TestFlag(SocketFlagTrunk)
+	if !trunk {
+		pkt.popTag()
 	}
-	return ""
+	return w.send(pkt)
 }
 
 func (w *webSocket) newConfig(user, passwd string) (*websocket.Config, error) {
@@ -101,13 +101,13 @@ func (w *webSocket) newConfig(user, passwd string) (*websocket.Config, error) {
 	return config, nil
 }
 
-func (w *webSocket) announced(announce *Packet) bool {
+func (w *webSocket) announced(announcement *Packet) bool {
 
 	var packet = &Packet{bus: w.bus, src: w}
 	var data []byte
 
 	// Send an announcement packet
-	if err := w.Send(announce); err != nil {
+	if err := w.Send(announcement); err != nil {
 		fmt.Printf("Error sending announcement: %s\r\n", err.Error())
 		return false
 	}
@@ -131,7 +131,7 @@ func (w *webSocket) announced(announce *Packet) bool {
 	return false
 }
 
-func (w *webSocket) Dial(user, passwd string, announce *Packet, tries int) {
+func (w *webSocket) Dial(user, passwd string, announcement *Packet, tries int) {
 
 	cfg, err := w.newConfig(user, passwd)
 	if err != nil {
@@ -146,7 +146,7 @@ func (w *webSocket) Dial(user, passwd string, announce *Packet, tries int) {
 		if err == nil {
 			w.connect(conn)
 			// Send announcement
-			if w.announced(announce) {
+			if w.announced(announcement) {
 				// Serve websocket until EOF or error
 				w.serveClient()
 			}

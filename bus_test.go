@@ -49,7 +49,7 @@ func TestMultipleHandlers(t *testing.T) {
 	bus.Handle("bar", bar)
 	bus.Handle("baz", baz)
 	bus.Handle("", none)
-	sock := &socket{"test socket", "foo", 0, bus}
+	sock := &socket{"test socket", "", SocketFlagTrunk, bus}
 	packet := &Packet{bus: bus, src: sock}
 	packet.Tags = "foo"
 	bus.receive(packet)
@@ -64,8 +64,8 @@ func TestMultipleHandlers(t *testing.T) {
 	}
 	bus.Unhandle("foo")
 	bus.receive(packet)
-	if packet.Tags != "" {
-		t.Error("Expected \"\", got", packet.Tags)
+	if packet.Tags != "foo" {
+		t.Error("Expected foo, got", packet.Tags)
 	}
 }
 

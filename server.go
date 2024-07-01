@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"sort"
 	"strings"
 
@@ -19,20 +18,18 @@ import (
 type Server struct {
 	thinger Thinger
 	http.Server
+	mux      *http.ServeMux
 	bus      *Bus
 	injector *Injector
 	subs     Subscribers
 
-	makersMu   rwMutex
-	makers     Makers
-	modelsMu   rwMutex
-	models     map[string]Thinger // model prototypes keyed by model
-	thingsMu   rwMutex
-	things     map[string]Thinger // keyed by id
-	socketsMu  rwMutex
-	sockets    map[Socketer]Thinger // keyed by socket
-	handlersMu rwMutex
-	handlers   map[string]http.HandlerFunc // keyed by path
+	makersMu  rwMutex
+	makers    Makers
+	models    map[string]Thinger // model prototypes keyed by model
+	thingsMu  rwMutex
+	things    map[string]Thinger // things keyed by id
+	socketsMu rwMutex
+	sockets   map[Socketer]Thinger // sockets keyed by socket
 
 	port   string
 	user   string
@@ -42,19 +39,17 @@ type Server struct {
 // NewServer returns a server, serving the Thinger
 func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	var s Server
-	var id, _, _ = thinger.Identity()
+
+	fmt.Printf("SERVER PORT:     %s\r\n", port)
 
 	s.port = port
 	s.user = user
 	s.passwd = passwd
 
-	fmt.Printf("    PORT:     %s\r\n", s.port)
-
 	s.makers = Makers{}
 	s.models = make(map[string]Thinger)
 	s.things = make(map[string]Thinger)
 	s.sockets = make(map[Socketer]Thinger)
-	s.handlers = make(map[string]http.HandlerFunc)
 
 	s.thinger = thinger
 	s.thinger.SetOnline(true)
@@ -65,17 +60,18 @@ func NewServer(thinger Thinger, user, passwd, port string) *Server {
 	s.bus.Handle("", s.busHandle(thinger))
 	s.injector = NewInjector("server injector", s.bus)
 
-	mux := http.NewServeMux()
-	s.Handler = mux
+	s.mux = http.NewServeMux()
+	s.Handler = s.mux
 
-	mux.HandleFunc("/", s.root)
+	s.mux.HandleFunc("/server-state", s.basicAuthHandlerFunc(s.serverState))
+	s.mux.HandleFunc("/ws/", s.basicAuthHandlerFunc(s.serveWebSocket))
+
+	_, model, _ := thinger.Identity()
+	s.registerModelHandler(model, thinger)
 
 	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("", handler)
+		s.mux.Handle("/", s.basicAuthHandler(handler))
 	}
-	s.HandleFunc("/server-state", s.serverState)
-	s.HandleFunc("/ws/", s.serveWebSocket)
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
 
 	return &s
 }
@@ -86,32 +82,25 @@ func (s *Server) NewInjector(id string) *Injector {
 	return injector
 }
 
+// registerModelHandler registers an HTTP handler for a given model.  It avoids
+// a 301 redirect by registering both the path with and without the trailing
+// slash.
+func (s *Server) registerModelHandler(model string, thinger Thinger) {
+	if handler, ok := thinger.(http.Handler); ok {
+		prefix := "/model/" + model
+		stripHandler := http.StripPrefix(prefix, handler)
+		s.mux.Handle(prefix, s.basicAuthHandler(stripHandler))
+		s.mux.Handle(prefix+"/", s.basicAuthHandler(stripHandler))
+	}
+}
+
 // RegisterModel registers a new Thing model
 func (s *Server) RegisterModel(model string, maker ThingMaker) {
 	s.makersMu.Lock()
 	defer s.makersMu.Unlock()
 	s.makers[model] = maker
-
-	s.modelsMu.Lock()
-	defer s.modelsMu.Unlock()
 	s.models[model] = maker("proto", model, "proto")
-
-	if handler, ok := s.models[model].(http.Handler); ok {
-		s.Handle("/model/"+model+"/", http.StripPrefix("/model/"+model+"/", handler))
-	}
-}
-
-// UnregisterModel unregisters the Thing model
-func (s *Server) UnregisterModel(model string) {
-	s.Unhandle("/model/" + model + "/")
-
-	s.makersMu.Lock()
-	defer s.makersMu.Unlock()
-	delete(s.makers, model)
-
-	s.modelsMu.Lock()
-	defer s.modelsMu.Unlock()
-	delete(s.models, model)
+	s.registerModelHandler(model, s.models[model])
 }
 
 func (s *Server) Models() map[string]Thinger {
@@ -194,8 +183,8 @@ func (s *Server) handleAnnounce(pkt *Packet) {
 	})
 	s.injector.Inject(pkt)
 
-	// Notify other sockets with tag == id
-	pkt.ClearPayload().SetPath("online")
+	// Notify "online" to other sockets with tag == id
+	pkt.PushTag(id).ClearPayload().SetPath("online")
 	for sock := range s.sockets {
 		if sock.Tag() == id && sock != socket {
 			sock.Send(pkt)
@@ -271,11 +260,6 @@ func (s *Server) CreateThing(id, model, name string) (Thinger, error) {
 
 	s.bus.Handle(id, s.busHandle(thinger))
 
-	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("/device/"+id+"/", http.StripPrefix("/device/"+id+"/", handler))
-	}
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
-
 	pkt.SetPath("created/thing").Marshal(&ThingMsgCreated{Id: id, Model: model, Name: name})
 	s.injector.Inject(&pkt)
 
@@ -293,8 +277,6 @@ func (s *Server) DeleteThing(id string) error {
 		return fmt.Errorf("Thing ID '%s' not found", id)
 	}
 
-	s.Unhandle("/ws/" + id + "/")
-	s.Unhandle("/device/" + id + "/")
 	s.bus.Unhandle(id)
 
 	delete(s.things, id)
@@ -327,13 +309,8 @@ func (s *Server) AdoptThing(thinger Thinger) error {
 	}
 
 	s.things[id] = thinger
-
 	s.bus.Handle(id, s.busHandle(thinger))
-
-	if handler, ok := thinger.(http.Handler); ok {
-		s.Handle("/device/"+id+"/", http.StripPrefix("/device/"+id+"/", handler))
-	}
-	s.HandleFunc("/ws/"+id+"/", s.serveWebSocket)
+	s.registerModelHandler(model, thinger)
 
 	pkt.SetPath("adopted/thing").Marshal(&ThingMsgAdopted{Id: id, Model: model, Name: name})
 	s.injector.Inject(&pkt)
@@ -385,7 +362,8 @@ func (s *Server) MaxSockets(maxSockets int) {
 
 func (s *Server) Dial(url *url.URL, tries int) Socketer {
 	ws := newWebSocket(url, "", s.bus)
-	go ws.Dial(s.user, s.passwd, s.thinger.Announce(ws), tries)
+	announcement := s.thinger.Announce(ws)
+	go ws.Dial(s.user, s.passwd, announcement, tries)
 	return ws
 }
 
@@ -410,11 +388,6 @@ func (s *Server) Dials(urls string) {
 
 func (s *Server) serveWebSocket(w http.ResponseWriter, r *http.Request) {
 	ws := newWebSocket(r.URL, r.RemoteAddr, s.bus)
-	thingId := ws.getId()
-	serverId, _, _ := s.thinger.Identity()
-	if serverId != thingId {
-		ws.SetTag(thingId)
-	}
 	serv := websocket.Server{Handler: websocket.Handler(ws.serve)}
 	serv.ServeHTTP(w, r)
 }
@@ -447,73 +420,11 @@ func (s *Server) Run() {
 	fmt.Println("THINGER", name, id, "EXITED!")
 }
 
-func (s *Server) mux(w http.ResponseWriter, r *http.Request) {
-
-	// Custom ServeMux.
-	//
-	// I tried using go1.22 http mux and it worked great,
-	// but I couldn't figure out how to delete a route.  Need it for routes
-	// like /ws/{id} or /device/{id} that come and go.
-
-	_path := r.URL.Path
-
-	// try exact match first
-	if ok := s.runHandler(_path, w, r); ok {
-		return
-	}
-
-	// try with removing last element from path
-	dir, _ := path.Split(_path)
-	if ok := s.runHandler(dir, w, r); ok {
-		return
-	}
-
-	// redirect /device/{id}/* to child
-	// e.g. /device/7667a30b-a3855397/js/temp.js
-	parts := strings.Split(_path, "/")
-	if len(parts) > 2 && parts[1] == "device" {
-		id := parts[2]
-		newpath := "/device/" + id + "/"
-		if ok := s.runHandler(newpath, w, r); ok {
-			return
-		}
-	}
-
-	// redirect /model/{model}/* to model prototype
-	// e.g. /model/temp/js/temp.js
-	if len(parts) > 2 && parts[1] == "model" {
-		model := parts[2]
-		newpath := "/model/" + model + "/"
-		if ok := s.runHandler(newpath, w, r); ok {
-			return
-		}
-	}
-
-	// everything else
-	if ok := s.runHandler("", w, r); ok {
-		return
-	}
-
-	// failed to find a match
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(w, "%s not found", _path)
-}
-
-func (s *Server) root(w http.ResponseWriter, r *http.Request) {
-
-	/*
-		fmt.Printf("[%s] %s %s %s\n",
-			r.RemoteAddr,
-			r.Method,
-			r.URL.Path,
-			r.Proto,
-		)
-	*/
-
+// basicAuth middleware to check HTTP Basic Authentication
+func (s *Server) basicAuth(w http.ResponseWriter, r *http.Request) bool {
 	// skip basic authentication if no user
 	if s.user == "" {
-		s.mux(w, r)
-		return
+		return true
 	}
 
 	ruser, rpasswd, ok := r.BasicAuth()
@@ -529,44 +440,36 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 		passMatch := (subtle.ConstantTimeCompare(passHash[:], rpassHash[:]) == 1)
 
 		if userMatch && passMatch {
-			s.mux(w, r)
-			return
+			return true
 		}
 	}
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+
+	return false
 }
 
-func (s *Server) runHandler(path string, w http.ResponseWriter, r *http.Request) bool {
-	s.handlersMu.RLock()
-	handler, ok := s.handlers[path]
-	s.handlersMu.RUnlock()
-	if ok {
-		handler(w, r)
+// basicAuthHandler middleware function for http.Handler
+func (s *Server) basicAuthHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !s.basicAuth(w, r) {
+			return
+		}
+		// Call the next handler if the credentials are valid
+		next.ServeHTTP(w, r)
+	})
+}
+
+// basicAuthHandlerFunc middleware function for http.HandlerFunc
+func (s *Server) basicAuthHandlerFunc(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.basicAuth(w, r) {
+			return
+		}
+		// Call the next handler if the credentials are valid
+		next(w, r)
 	}
-	return ok
-}
-
-// HandleFunc registers an http handler func for path
-func (s *Server) HandleFunc(path string, handler http.HandlerFunc) {
-	s.handlersMu.Lock()
-	defer s.handlersMu.Unlock()
-	s.handlers[path] = handler
-}
-
-// HandleFunc registers an http handler for path
-func (s *Server) Handle(path string, handler http.Handler) {
-	s.handlersMu.Lock()
-	defer s.handlersMu.Unlock()
-	s.handlers[path] = handler.ServeHTTP
-}
-
-// Unhandle unregisters the http handler (or func) for path
-func (s *Server) Unhandle(path string) {
-	s.handlersMu.Lock()
-	defer s.handlersMu.Unlock()
-	delete(s.handlers, path)
 }
 
 var htmlBegin = `
@@ -592,20 +495,6 @@ func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintln(w, "Thing: ", s.thinger)
 
-	s.handlersMu.RLock()
-	handlers := make([]string, 0, len(s.handlers))
-	for key := range s.handlers {
-		handlers = append(handlers, key)
-	}
-	s.handlersMu.RUnlock()
-	sort.Strings(handlers)
-
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Handlers")
-	for _, handler := range handlers {
-		fmt.Fprintf(w, "\t\"%s\"\n", handler)
-	}
-
 	s.socketsMu.Lock()
 	sockets := make([]string, 0, len(s.sockets))
 	for socket, thinger := range s.sockets {
@@ -629,7 +518,7 @@ func (s *Server) serverState(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "\t%s\n", socket)
 	}
 
-	handlers = make([]string, 0, len(s.bus.handlers))
+	handlers := make([]string, 0, len(s.bus.handlers))
 	for key := range s.bus.handlers {
 		handlers = append(handlers, key)
 	}

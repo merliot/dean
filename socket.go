@@ -30,6 +30,9 @@ const (
 	// Socket is broadcast-ready.  If flag is not set, pkts will not be
 	// broadcast on this socket.
 	SocketFlagBcast uint32 = 1 << iota
+	// Socket is in trunk mode.  Trunk mode will not tag/strip outer-most
+	// tag from pkt on egress/ingress.
+	SocketFlagTrunk
 )
 
 func (s *socket) Close() {
@@ -40,7 +43,15 @@ func (s *socket) Send(pkt *Packet) error {
 }
 
 func (s *socket) String() string {
-	return s.name
+	flags := "|"
+	if s.TestFlag(SocketFlagBcast) {
+		flags += "B"
+	}
+	if s.TestFlag(SocketFlagTrunk) {
+		flags += "T"
+	}
+	flags += "|"
+	return s.tag + flags + s.name
 }
 
 func (s *socket) Tag() string {
